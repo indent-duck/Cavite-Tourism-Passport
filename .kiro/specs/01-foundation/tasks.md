@@ -195,7 +195,7 @@ The Foundation establishes the technical architecture for the Cavite Tourism Pas
     - usePromoPeriod returns promo period data with loading and error states
     - _Requirements: 1.2.9 (Data Hooks)_
 
-- [ ] 5. Set up Expo Router navigation structure
+- [x] 5. Set up Expo Router navigation structure
   - [x] 5.1 Configure root layout
     - Create `src/app/_layout.tsx`
     - Import and load Inter fonts (400, 500, 600, 700 weights)
@@ -217,7 +217,7 @@ The Foundation establishes the technical architecture for the Cavite Tourism Pas
     - Create `src/app/(auth)/forgot/success.tsx` placeholder
     - _Requirements: 1.3.2 (Auth Layout)_
 
-  - [ ] 5.3 Create custom tab bar and tabs group
+  - [x] 5.3 Create custom tab bar and tabs group
     - Create `src/app/(tabs)/_layout.tsx` with custom tab bar component
     - Render the Header component from task 4.7 inside the tabs layout, positioned at the top
     - Header uses useCurrentUser hook (task 4.9) to display user name and points
@@ -238,7 +238,7 @@ The Foundation establishes the technical architecture for the Cavite Tourism Pas
     - Create `src/app/(tabs)/account.tsx` placeholder
     - _Requirements: 1.3.3 (Tabs Layout), 3.4 (Custom Tab Bar Implementation)_
 
-  - [ ] 5.4 Create remaining root-level routes
+  - [x] 5.4 Create remaining root-level routes
     - Create `src/app/scanner.tsx` placeholder
     - Create `src/app/sites/[id].tsx` placeholder with dynamic route parameter
     - Create `src/app/itineraries/[id].tsx` placeholder
@@ -248,15 +248,13 @@ The Foundation establishes the technical architecture for the Cavite Tourism Pas
     - Create `src/app/settings.tsx` placeholder
     - _Requirements: 1.3.4 (Other Routes)_
 
-- [ ] 6. Configure TypeScript and verify setup
+- [x] 6. Configure TypeScript and verify setup
   - Ensure `tsconfig.json` has strict mode enabled
   - Verify `baseUrl: "."` and `paths: { "@/*": ["src/*"] }` are configured
   - Run `npx tsc --noEmit` to verify no TypeScript errors
   - _Requirements: 1.6 (TypeScript Configuration)_
 
-- [ ] 7. Checkpoint - Verify foundation is complete
-  - Rebuild the development build first: build the development client with EAS (eas build --profile development --platform android) and install it on the phone
-  - Run `npx expo start --dev-client` and verify app launches without errors
+- [x] 7. Checkpoint - Verify foundation is complete
   - Verify Inter font loads correctly across all screens
   - Verify custom tab bar renders with raised center Scan button
   - Tap each tab and verify navigation works

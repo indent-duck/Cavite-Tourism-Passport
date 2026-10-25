@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '@/theme';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
@@ -35,15 +35,26 @@ export function PromoChip({ testID }: PromoChipProps) {
   }
 
   // Format dates as "MMM D" (e.g., "Jan 1")
-  const formatDate = (date: Date) => {
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const formatDate = (dateInput: Date | string) => {
+    // Convert to Date object if it's a string (happens after serialization)
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[date.getMonth()];
     const day = date.getDate();
     return `${month} ${day}`;
   };
 
   const startDate = formatDate(promoPeriod.startDate);
   const endDate = formatDate(promoPeriod.endDate);
-  const year = promoPeriod.endDate.getFullYear();
+  
+  // Get year from end date
+  const endDateObj = typeof promoPeriod.endDate === 'string' 
+    ? new Date(promoPeriod.endDate) 
+    : promoPeriod.endDate;
+  const year = endDateObj.getFullYear();
+  
   const promoText = `Promo: ${startDate} - ${endDate}, ${year}`;
 
   return (
