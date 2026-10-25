@@ -1,0 +1,127 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Set up project structure and theme system": [
+      {
+        "executionId": "fb44656b-85eb-4ef7-9019-45c7c825235d",
+        "chatSessionId": "sess_c317eacf-3fbb-48d8-a9ba-b4d5889faf48",
+        "timestamp": 1792900112101
+      },
+      {
+        "executionId": "fb44656b-85eb-4ef7-9019-45c7c825235d",
+        "chatSessionId": "sess_c317eacf-3fbb-48d8-a9ba-b4d5889faf48",
+        "timestamp": 1792900297925
+      }
+    ],
+    "2. Install and configure dependencies": [
+      {
+        "executionId": "ad3c4f0f-3ab3-473b-8fbd-f929eb83875c",
+        "chatSessionId": "sess_8d3d48fa-f26a-4f9e-89d0-387f19386846",
+        "timestamp": 1792911291519
+      },
+      {
+        "executionId": "ad3c4f0f-3ab3-473b-8fbd-f929eb83875c",
+        "chatSessionId": "sess_8d3d48fa-f26a-4f9e-89d0-387f19386846",
+        "timestamp": 1792912134348
+      }
+    ],
+    "2.1 Install required dependencies": [
+      {
+        "executionId": "2ada9dd1-4845-4443-88b1-116ea89128d7",
+        "chatSessionId": "sess_e34a5b96-95ac-4de8-884c-d4a836c6ad72",
+        "timestamp": 1792912533861
+      },
+      {
+        "executionId": "2ada9dd1-4845-4443-88b1-116ea89128d7",
+        "chatSessionId": "sess_e34a5b96-95ac-4de8-884c-d4a836c6ad72",
+        "timestamp": 1792912647360
+      }
+    ],
+    "2.2 Remove unwanted dependencies": [
+      {
+        "executionId": "85741c2d-cfc1-4303-9e63-5cd6cf4bd343",
+        "chatSessionId": "sess_e815de42-87c1-4ca5-8dad-0b433518dd0c",
+        "timestamp": 1792913392365
+      }
+    ],
+    "3.1 Define all TypeScript types": [
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913495575
+      },
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913579782
+      }
+    ],
+    "3.5 Create constants file": [
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913496363
+      },
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913580557
+      }
+    ],
+    "3.2 Create mock data matching requirements": [
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913585947
+      },
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792914504283
+      }
+    ],
+    "3.3 Create API abstraction layer": [
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913586760
+      },
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792914503226
+      }
+    ],
+    "3.4 Configure React Query with persistence": [
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792913587476
+      },
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792914502776
+      }
+    ],
+    "3. Create data layer foundation": [
+      {
+        "executionId": "4816f683-d27e-4e67-9fce-52f9d2306e8a",
+        "chatSessionId": "sess_2a574849-662a-4e7c-9973-94c58882025f",
+        "timestamp": 1792914504562
+      }
+    ],
+    "3.6 Clean up template files and prepare for UI components": [
+      {
+        "executionId": "df558396-f756-4805-b46f-6c306e4d27ad",
+        "chatSessionId": "sess_c1066520-8bd4-46f1-8d27-1e8987a62757",
+        "timestamp": 1792923481370
+      },
+      {
+        "executionId": "df558396-f756-4805-b46f-6c306e4d27ad",
+        "chatSessionId": "sess_c1066520-8bd4-46f1-8d27-1e8987a62757",
+        "timestamp": 1792924006778
+      }
+    ]
+  }
+}

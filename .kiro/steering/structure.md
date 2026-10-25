@@ -2,6 +2,8 @@
 
 ## Folder layout
 
+> Routes live in `src/app/` (the current Expo template location), not in a root `app/` folder. Wherever this file or the design README says `app/...`, read it as `src/app/...`. All other paths are unchanged, and the `@/` alias points to `src/`.
+
 ```
 app/                         # Expo Router routes only, kept thin
   _layout.tsx
