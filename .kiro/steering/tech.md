@@ -44,6 +44,11 @@
 ## Permissions
 Request camera and location permission before showing the scanner screen. Handle the denied state with the blocked screen described in `product.md`.
 
+## Testing and builds
+- Test on a **physical Android phone only**. No Android Studio and no emulators are used in this project.
+- The development build is created in the cloud with EAS (`eas build --profile development --platform android`) and installed on the phone as an APK. Do not use `npx expo run:android`.
+- Day to day, run `npx expo start --dev-client` and open the app on the phone over Wi-Fi (use `--tunnel` if the network blocks it). Rebuild the dev client only when native packages or `app.json` plugin settings change.
+
 ## Code conventions
 - Functional components with hooks. TypeScript strict, no `any`.
 - Route files use default exports (required by Expo Router). All other modules use named exports.
