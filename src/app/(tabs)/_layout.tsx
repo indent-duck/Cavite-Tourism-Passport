@@ -1,4 +1,4 @@
-﻿import { Header } from '@/components/ui/Header';
+import { Header } from '@/components/ui/Header';
 import { PromoChip } from '@/components/ui/PromoChip';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { colors, radii, shadows, spacing, typography } from '@/theme';

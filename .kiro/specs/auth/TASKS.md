@@ -65,7 +65,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Validation logic: length >= 8, `/\d/.test(password)`, `/[A-Z]/.test(password)`, `/[!@#$%^&*]/.test(password)`
   - _Requirements: Password strength validation with visual feedback_
 
-- [ ] 6. Implement login screen
+- [x] 6. Implement login screen
   - Update `src/app/(auth)/login.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Layout from top to bottom: heritage seal (80px circle, simplified icon or "1898" text), "Official Digital Pass" badge (pill shape), headline "Cavite Tourism Passport" (displayLargeMobile), description text (bodyMedium), form card (white background, 12px radius, 16px padding), "Don't have an account? Sign up" link, provincial footnote at bottom
@@ -82,7 +82,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Password input: `secureTextEntry={true}`, `autoCapitalize="none"`, toggle button for visibility
   - _Requirements: 1.1 (Login screen)_
 
-- [ ] 7. Implement sign up step 1 - email entry
+- [x] 7. Implement sign up step 1 - email entry
   - Update `src/app/(auth)/signup/email.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Layout: back button (top-left, 40px circle), step badge "STEP 1 OF 3" (top-center, pill), progress bar (33.33% fill, accent color), book icon badge "Official Tourism Identity", headline "Create your digital passport" (displayLargeMobile), description, email TextInput, info card with "Civic Exploration ID" and shield icon (optional, keep if in design), terms checkbox with text "By continuing, you agree to the Provincial Tourism Terms of Service & Privacy Policy.", "Continue" Button (primary, full width, arrow_forward icon), "Already have an account? Log in" link (bottom center)
@@ -95,7 +95,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Show loading state on button
   - _Requirements: 1.2 (Sign up step 1)_
 
-- [ ] 8. Implement sign up step 2 - code verification
+- [x] 8. Implement sign up step 2 - code verification
   - Update `src/app/(auth)/signup/verify.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Get email from router params: `const { email } = useLocalSearchParams<{ email: string }>()`
@@ -109,7 +109,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Back button calls `router.back()`
   - _Requirements: 1.3 (Sign up step 2)_
 
-- [ ] 9. Implement sign up step 3 - personal details
+- [x] 9. Implement sign up step 3 - personal details
   - Update `src/app/(auth)/signup/details.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Get email from router params
@@ -122,7 +122,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Back button calls `router.back()`
   - _Requirements: 1.4 (Sign up step 3)_
 
-- [ ] 10. Implement forgot password step 1 - email entry
+- [x] 10. Implement forgot password step 1 - email entry
   - Update `src/app/(auth)/forgot/email.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Use `useAuth.sendCode` function
@@ -134,7 +134,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Show loading state on button
   - _Requirements: 1.5 (Forgot password step 1)_
 
-- [ ] 11. Implement forgot password step 2 - code verification
+- [x] 11. Implement forgot password step 2 - code verification
   - Update `src/app/(auth)/forgot/verify.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Get email from router params
@@ -146,7 +146,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Back button calls `router.back()`
   - _Requirements: 1.6 (Forgot password step 2)_
 
-- [ ] 12. Implement forgot password step 3 - new password entry
+- [x] 12. Implement forgot password step 3 - new password entry
   - Update `src/app/(auth)/forgot/new-password.tsx` replacing placeholder
   - Use ScreenContainer with scrollable prop
   - Get email from router params
@@ -159,7 +159,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Back button calls `router.back()`
   - _Requirements: 1.7 (Forgot password step 3)_
 
-- [ ] 13. Implement forgot password success screen
+- [x] 13. Implement forgot password success screen
   - Update `src/app/(auth)/forgot/success.tsx` replacing placeholder
   - Use ScreenContainer without scrollable prop (content fits in viewport)
   - Layout: centered vertical layout, success icon check_circle (64px, success color, filled) in 120px circle background (10% opacity success color), headline "Password reset successful!" (displayLargeMobile, center-aligned), message "Your password has been successfully reset. You can now log in with your new password." (bodyMedium, center-aligned, max width 300px), "Log in" Button (primary, full width or max 300px, arrow_forward icon)
@@ -168,13 +168,13 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - No back button (success is terminal state)
   - _Requirements: 1.8 (Forgot password success)_
 
-- [ ] 14. Remove development placeholders from login screen
+- [x] 14. Remove development placeholders from login screen
   - Open `src/app/(auth)/login.tsx`
   - Remove any temporary navigation buttons or dev-only UI elements (e.g., "Go to Explore" button)
   - Keep only production UI elements from task 6
   - _Requirements: Clean production-ready login screen_
 
-- [ ] 15. Checkpoint - run type check and linter
+- [x] 15. Checkpoint - run type check and linter
   - Run `npx tsc --noEmit` in terminal
   - Fix any TypeScript errors until command reports 0 errors
   - Run `npx expo lint` in terminal

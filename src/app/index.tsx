@@ -1,4 +1,4 @@
-﻿import { Redirect } from 'expo-router';
+import { Redirect } from 'expo-router';
 
 export default function Index() {
   // Temporary redirect to tabs for foundation checkpoint testing
