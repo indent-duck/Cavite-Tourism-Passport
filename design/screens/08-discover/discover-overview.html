@@ -1,0 +1,641 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "passport-leather": "#0B2A4A",
+            "passport-foil": "#F89C48",
+            "primary": "#003260",
+            "primary-container": "#004987",
+            "secondary-container": "#fc8127",
+            "surface-card": "#F4F6FA",
+            "border-divider": "#E5E7EB",
+            "text-secondary": "#6B7280"
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+    }
+    .pb-safe {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="h-full w-full bg-white text-[#0a1b39] antialiased select-none">
+<!-- 1. ROOT APP SHELL (Flex Column, 100vh max-height, overflow-hidden) -->
+<div class="w-full relative" style="height: 100vh; max-height: 100vh; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'Inter', sans-serif;">
+<!-- TOP HEADER (Status Bar + User Bar: flex-shrink-0) -->
+<header class="flex-shrink-0 z-30 bg-white border-b border-[#E5E7EB]">
+<!-- iOS Status Bar -->
+<div class="px-5 pt-2 pb-1 flex items-center justify-between text-xs font-semibold text-[#1B2A49]">
+<span>9:41</span>
+<div class="flex items-center gap-1.5 text-[#1B2A49]">
+<span class="material-symbols-outlined text-[15px] font-bold">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[15px] font-bold">wifi</span>
+<span class="material-symbols-outlined text-[17px] font-bold">battery_full</span>
+</div>
+</div>
+<!-- App Header Bar (Zero avatars/profile pictures per strict brief) -->
+<div class="px-4 py-2.5 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-base font-bold text-[#1B2A49] leading-tight tracking-tight">Juan Dela Cruz</span>
+<a class="inline-flex items-center gap-1.5 mt-0.5 text-left focus:outline-none group" href="{{DATA:SCREEN:SCREEN_16}}">
+<span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#F47B20]/15 text-[#F47B20]">
+<svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+</svg>
+</span>
+<span class="text-xs font-bold text-[#F47B20] tracking-tight">★ 450 pts</span>
+</a>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F4F6FA] border border-[#E5E7EB] text-[11px] font-semibold text-[#1B2A49] shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-[#2E9E5B]"></span>
+<span>Promo: Jan 1 - Mar 31, 2027</span>
+</div>
+</div>
+</header>
+<!-- SEGMENTED TOGGLE BAR (flex-shrink: 0; background: #FFFFFF; padding: 12px 16px; border-bottom: 1px solid #E5E7EB;) -->
+<div class="z-20" style="flex-shrink: 0; background: #FFFFFF; padding: 12px 16px; border-bottom: 1px solid #E5E7EB;">
+<div class="bg-[#F4F6FA] p-1 rounded-full flex border border-[#E5E7EB]">
+<button class="flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-[#6B7280]" id="tab-btn-events" onclick="showEventsTab()" type="button">
+<span class="material-symbols-outlined text-sm">celebration</span>
+<span>Events</span>
+</button>
+<button class="flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-[#004987] text-white shadow-sm" id="tab-btn-about" onclick="showAboutTab()" type="button">
+<span class="material-symbols-outlined text-sm">map</span>
+<span>About Cavite</span>
+</button>
+</div>
+</div>
+<!-- MAIN SCROLL CONTENT AREA -->
+<main class="w-full bg-[#FFFFFF]" id="scroll-main" style="flex: 1 1 0%; min-height: 0; overflow-y: auto !important; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding-bottom: 100px;">
+<!-- ============================================== -->
+<!-- TAB 1: EVENTS VIEW (Hidden by default)       -->
+<!-- ============================================== -->
+<div class="hidden px-4 pt-4 pb-12 space-y-4" id="view-events">
+<!-- Title & Subtitle -->
+<div class="flex items-center justify-between pb-1">
+<div>
+<h2 class="text-xl font-bold text-[#0B2A4A] tracking-tight">Provincial Festivals &amp; Events</h2>
+<p class="text-xs text-[#6B7280] mt-0.5">Explore vibrant cultural fiestas across Cavite municipalities</p>
+</div>
+<span class="w-8 h-8 rounded-full bg-[#004987]/10 text-[#004987] flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+</span>
+</div>
+<!-- Filter Chips -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+<button class="px-3 py-1 rounded-full bg-[#004987] text-white text-xs font-semibold whitespace-nowrap shadow-sm">All</button>
+<button class="px-3 py-1 rounded-full bg-[#F4F6FA] border border-[#E5E7EB] text-[#1B2A49] text-xs font-medium whitespace-nowrap hover:bg-slate-100">Happening Now</button>
+<button class="px-3 py-1 rounded-full bg-[#F4F6FA] border border-[#E5E7EB] text-[#1B2A49] text-xs font-medium whitespace-nowrap hover:bg-slate-100">Upcoming</button>
+<button class="px-3 py-1 rounded-full bg-[#F4F6FA] border border-[#E5E7EB] text-[#1B2A49] text-xs font-medium whitespace-nowrap hover:bg-slate-100">Cultural</button>
+</div>
+<!-- Festival Cards List (NO reminder buttons per brief) -->
+<div class="space-y-4 pt-1">
+<!-- 1. Pahimis Coffee Festival -->
+<div class="bg-[#F4F6FA] rounded-xl overflow-hidden shadow-sm border border-[#E5E7EB] flex flex-col">
+<div class="relative h-44 w-full">
+<img class="w-full h-full object-cover" data-alt="Vibrant Pahimis coffee festival dancer in Amadeo Cavite holding a basket of freshly harvested dark brown coffee beans dressed in colorful folkloric woven costume." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj2SmB8JVv3P0zkz8VBGo8V1_dNKsBKEpbSAnfk6H6Of2BT6ZtQlQISQnCfVDcrz_MA3ls0Er9Wy9HYe3lrZ77yImDfN0egYPOkvpqSbMqNy_CtqMjmFGB8bcdERyvMUtUN4Xa526LdIfAH7q2hAbQLjb5bOJ2bYJgMowG0Ntl04Y9kmVylSqz06tpJkET2JaAJ7LGe8oUMR-8f77HV4N_BbS1Yf-sheo_zRwV2_N-HllvPzXajBYKSQ">
+<div class="absolute inset-0 bg-gradient-to-t from-[#0B2A4A]/90 via-[#0B2A4A]/25 to-transparent"></div>
+<div class="absolute top-3 left-3 flex items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-md bg-white text-[#003260] font-bold text-[11px] shadow-sm tracking-wide">FEB 12–14</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#2E9E5B] text-white font-bold text-[10px] tracking-wide shadow-sm animate-pulse">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+<span>Happening now</span>
+</span>
+</div>
+<div class="absolute bottom-3 left-3 right-3">
+<div class="flex items-center gap-1 text-white/80 text-[11px] font-semibold mb-0.5">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>Amadeo, Cavite • Coffee Capital</span>
+</div>
+<h3 class="text-base font-bold text-white leading-snug">Pahimis Coffee Festival</h3>
+</div>
+</div>
+<div class="p-3.5 space-y-2">
+<p class="text-xs text-[#424750] leading-relaxed">
+                A colorful thanksgiving coffee culture celebration honoring upland farmers with kapeng barako harvest dances, barista brewing competitions, street parades, and free-flowing Cavite Liberica &amp; Robusta coffee.
+              </p>
+<div class="flex items-center gap-2 pt-1 text-xs text-[#6B7280]">
+<span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#F89C48]">coffee</span> Liberica Tasting
+                </span>
+<span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#2E9E5B]">nature_people</span> Street Dancing
+                </span>
+</div>
+</div>
+</div>
+<!-- 2. Regada Water Festival -->
+<div class="bg-[#F4F6FA] rounded-xl overflow-hidden shadow-sm border border-[#E5E7EB] flex flex-col">
+<div class="relative h-44 w-full">
+<img class="w-full h-full object-cover" data-alt="Joyful Regada Water Festival crowd dancing in Cavite City streets being showered by high-pressure refreshing water jets under clear summer sky during St John the Baptist fiesta." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQbpwW6faKKNpehNza4WVsVyBSgPcmQeExys0Rx_C9pMyhubSGsbXq8OQo581BJI6qCyW0IbQZgpRoSRAb35ieVE120OcSdF6z2yD4Xrx5qAcqBFgHLW7cbk6-MyAilSSm3eRogXm7c1x26iJ6mI5wxkIN_YaptbeiNPa3_k0m7_6rtgD7D0V_2FHU4qaGzM-ohRZXacfUu2XVVxtnes5D4puOhjsVXIVMfYKmi9WMWJ8utpWvTpfKzA">
+<div class="absolute inset-0 bg-gradient-to-t from-[#0B2A4A]/90 via-[#0B2A4A]/25 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="px-2.5 py-1 rounded-md bg-white text-[#003260] font-bold text-[11px] shadow-sm tracking-wide">JUNE 22–24</span>
+</div>
+<div class="absolute bottom-3 left-3 right-3">
+<div class="flex items-center gap-1 text-white/80 text-[11px] font-semibold mb-0.5">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>Cavite City</span>
+</div>
+<h3 class="text-base font-bold text-white leading-snug">Regada Water Festival</h3>
+</div>
+</div>
+<div class="p-3.5 space-y-2">
+<p class="text-xs text-[#424750] leading-relaxed">
+                Cavite City's exuberant patron feast dedicated to Saint John the Baptist. Spans three kilometers of joyous community water dousing, energetic coastal brass music, fire truck rigs, and street dancing.
+              </p>
+<div class="flex items-center gap-2 pt-1 text-xs text-[#6B7280]">
+<span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-blue-500">water_drop</span> Water Revelry
+                </span>
+<span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#fc8127]">celebration</span> Coastal Fiesta
+                </span>
+</div>
+</div>
+</div>
+<!-- 3. Kalayaan Festival -->
+<div class="bg-[#F4F6FA] rounded-xl overflow-hidden shadow-sm border border-[#E5E7EB] flex flex-col">
+<div class="relative h-44 w-full">
+<img class="w-full h-full object-cover" data-alt="National flag raising ceremony and theatrical historical reenactment at the historic Emilio Aguinaldo Shrine balcony in Kawit Cavite with marching brass bands." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkpg3nmUtQkH1mGpfBWZR27gUWZjMsyAzUSaBZyJhfI-RlfmPW57gKvOyTqd3vvtQ_j2YjymNO3PW1ES7eJ_VDwmO2pte-B2lZAuj1BoPMixpzM5JXkhQguRhXbhQ0CR7QEBgxEpXfBygflblZru1oT-y9QjXNbCZCblTw92TIyhe5kNJzuwXEHo33XNBLf7ie91p4cXbRcg4194YvMWOCCBPrgYI4jw8ghP8Y5M1Bp_CTKeyaPiGZCQ">
+<div class="absolute inset-0 bg-gradient-to-t from-[#0B2A4A]/90 via-[#0B2A4A]/25 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="px-2.5 py-1 rounded-md bg-white text-[#003260] font-bold text-[11px] shadow-sm tracking-wide">JUNE 12</span>
+</div>
+<div class="absolute bottom-3 left-3 right-3">
+<div class="flex items-center gap-1 text-white/80 text-[11px] font-semibold mb-0.5">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>Kawit, Cavite</span>
+</div>
+<h3 class="text-base font-bold text-white leading-snug">Kalayaan Festival</h3>
+</div>
+</div>
+<div class="p-3.5 space-y-2">
+<p class="text-xs text-[#424750] leading-relaxed">
+                National commemoration marking the 1898 Philippine Declaration of Independence at the historic Emilio Aguinaldo Shrine balcony with formal flag-raising, live theatrical battle reenactments, symphonic bands, and civic parades.
+              </p>
+<div class="flex items-center gap-2 pt-1 text-xs text-[#6B7280]">
+<span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#004987]">flag</span> Independence Reenactment
+                </span>
+<span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#994700]">music_note</span> Brass Bands
+                </span>
+</div>
+</div>
+</div>
+<!-- 4. Mardicas Dance Festival -->
+<div class="bg-[#F4F6FA] rounded-xl p-3.5 shadow-sm border border-[#E5E7EB] space-y-2">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1 text-[#6B7280] text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>Maragondon, Cavite</span>
+</div>
+<h4 class="text-sm font-bold text-[#003260] mt-0.5">Mardicas Dance Festival</h4>
+</div>
+<span class="px-2.5 py-1 rounded-md bg-[#d4e3ff] text-[#003260] font-bold text-[11px] whitespace-nowrap">DEC 8</span>
+</div>
+<p class="text-xs text-[#424750] leading-relaxed">
+              Rare martial and indigenous warrior dance honoring devotional roots to the Santo Niño. Features ornate battle costumes, clashing ceremonial swords, indigenous rhythms, and ancestral Ternateño heritage.
+            </p>
+<div class="flex items-center gap-2 pt-1 text-xs text-[#6B7280]">
+<span class="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#fc8127]">sports_kabaddi</span> Warrior Dance
+              </span>
+<span class="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#00542a]">history_edu</span> Santo Niño Devotion
+              </span>
+</div>
+</div>
+<!-- 5. Valenciana Festival -->
+<div class="bg-[#F4F6FA] rounded-xl p-3.5 shadow-sm border border-[#E5E7EB] space-y-2">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1 text-[#6B7280] text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>General Trias, Cavite</span>
+</div>
+<h4 class="text-sm font-bold text-[#003260] mt-0.5">Valenciana Festival</h4>
+</div>
+<span class="px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 font-bold text-[11px] whitespace-nowrap">DEC 12</span>
+</div>
+<p class="text-xs text-[#424750] leading-relaxed">
+              Gastronomic cook-off and anniversary festival honoring General Trias' celebrated coconut-infused Arroz Valenciana paella, prepared in giant street-side kawalis for community sharing and culinary contests.
+            </p>
+<div class="flex items-center gap-2 pt-1 text-xs text-[#6B7280]">
+<span class="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#fc8127]">restaurant</span> Giant Pan Paella
+              </span>
+<span class="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-[#E5E7EB]">
+<span class="material-symbols-outlined text-[13px] text-[#003260]">storefront</span> Culinary Cook-off
+              </span>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 2: ABOUT CAVITE VIEW (Active by default) -->
+<!-- ============================================== -->
+<div class="block px-4 pt-4 pb-12 space-y-6" id="view-about">
+<!-- Hero Narrative Banner -->
+<div class="relative overflow-hidden rounded-xl bg-[#0B2A4A] text-white p-5 shadow-lg">
+<div class="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-[#F89C48]/15 blur-2xl pointer-events-none"></div>
+<div class="flex items-center gap-1 mb-1 text-[#F89C48] text-[11px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[15px]">auto_stories</span>
+<span>Historic Heartland</span>
+</div>
+<h2 class="text-xl font-extrabold text-white mb-2 leading-tight">
+            Land of the Brave &amp; Historic Horizons
+          </h2>
+<p class="text-xs text-white/85 leading-relaxed">
+            Welcome to Cavite—the undisputed Cradle of Philippine Independence. From mist-capped volcanic ridges in Tagaytay down to the sunlit historic coves along Manila Bay, journey across a landscape of valor, authentic flavors, and scenic gateways.
+          </p>
+<div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-center">
+<div>
+<span class="block text-lg font-extrabold text-[#F89C48]">1898</span>
+<span class="text-[10px] uppercase font-medium text-white/70">Independence</span>
+</div>
+<div>
+<span class="block text-lg font-extrabold text-white">23</span>
+<span class="text-[10px] uppercase font-medium text-white/70">Municipalities</span>
+</div>
+<div>
+<span class="block text-lg font-extrabold text-[#ffb68b]">3</span>
+<span class="text-[10px] uppercase font-medium text-white/70">Expressways</span>
+</div>
+</div>
+</div>
+<!-- 3 EDITORIAL SECTIONS -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-base font-bold text-[#0B2A4A]">Province Highlights</h3>
+<span class="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Essence of Cavite</span>
+</div>
+<!-- Section 1: Historical and Topographical Riches -->
+<div class="bg-[#F4F6FA] rounded-xl overflow-hidden shadow-sm border border-[#E5E7EB]">
+<div class="relative h-44 w-full">
+<img class="w-full h-full object-cover" data-alt="Panoramic scenic landscape of Tagaytay ridge looking over Taal Volcano lake surrounded by lush green foliage and rolling hills under golden morning sun with deep navy sky tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR28PYGl1lh8C7Opoj-SDjee7D1lNT8oOKDi_F0BHCExAxwiKI4Oo0O57-Y8Shzc7Rd8b27TUtRdVRa6_ZtCGe35THHsxdL2e6Ebtx_GtUYaG2A2juR8xlqOoDderGHxelODbp5hOLoG8dt_e107itLSMZlLnQTxEyxjKoXeWHy6EF2AhVzWpQM6NTCqE-wwy-jenqOp024l1eMahVRlRZ3PeWx5LrbVYz90nHTXRG5uMjOyBvTUMglg">
+<div class="absolute inset-0 bg-gradient-to-t from-[#0B2A4A]/80 via-transparent to-transparent flex items-end p-3">
+<span class="px-2 py-0.5 rounded-full bg-[#004987] text-white text-[10px] font-bold">Heritage &amp; Landscape</span>
+</div>
+</div>
+<div class="p-4 space-y-2">
+<h4 class="text-sm font-bold text-[#003260]">Historical and Topographical Riches</h4>
+<p class="text-xs text-[#424750] leading-relaxed">
+                From the historic cradle of the <strong>Aguinaldo Shrine</strong> in Kawit to the temperate volcanic cliffs of the <strong>Tagaytay Ridge</strong>, and the island bastion of <strong>Corregidor</strong> guarding Manila Bay, Cavite is an interwoven tapestry of freedom, maritime history, and breathtaking geography.
+              </p>
+</div>
+</div>
+<!-- Section 2: Culinary Delights -->
+<div class="bg-[#F4F6FA] rounded-xl overflow-hidden shadow-sm border border-[#E5E7EB]">
+<div class="relative h-44 w-full">
+<img class="w-full h-full object-cover" data-alt="Traditional Filipino dining spread featuring steaming Tagaytay beef bulalo in a clay pot, wrapped Cavite City tamales with rich peanut sauce, and GenTri Valenciana rice on banana leaves, bathed in warm natural light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7y9cSCUqrHwvVYQegB_VeMus696WRcJrNHwkRP_1EJb1bkOfjSmSRybT9m7u6aS3ibk2halpHlaO1feMJKI_ADvXeuqRCZgNiGmn48nohJdAFtdF9UD7Dax-pYKjMpLGfLn9L9ygjoY4EeTwYO01F9UZBUtIXnObQ_84X5e5Xe9nYSq1IOtqOXs7U8pSiuWqLdI8zqerNREI1iDh7SsalT2jNjq3MQYj_3I4I5tESdrDz32xcRsjaXA">
+<div class="absolute inset-0 bg-gradient-to-t from-[#0B2A4A]/80 via-transparent to-transparent flex items-end p-3">
+<span class="px-2 py-0.5 rounded-full bg-[#fc8127] text-white text-[10px] font-bold">Gastronomy</span>
+</div>
+</div>
+<div class="p-4 space-y-2">
+<h4 class="text-sm font-bold text-[#003260]">Culinary Delights</h4>
+<p class="text-xs text-[#424750] leading-relaxed">
+                Cavite’s distinct culinary map pairs robust coastal flavors with hearty upland cuisine:
+              </p>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="p-2.5 bg-white rounded-lg border border-[#E5E7EB]">
+<span class="text-xs font-bold text-[#994700] block">Kapeng Barako</span>
+<span class="text-[11px] text-[#6B7280]">Amadeo's fragrant Liberica roast.</span>
+</div>
+<div class="p-2.5 bg-white rounded-lg border border-[#E5E7EB]">
+<span class="text-xs font-bold text-[#994700] block">Pancit Puso</span>
+<span class="text-[11px] text-[#6B7280]">Cavite City heirloom banana-blossom noodles.</span>
+</div>
+<div class="p-2.5 bg-white rounded-lg border border-[#E5E7EB]">
+<span class="text-xs font-bold text-[#994700] block">Arroz Valenciana</span>
+<span class="text-[11px] text-[#6B7280]">GenTri rich coconut saffron paella.</span>
+</div>
+<div class="p-2.5 bg-white rounded-lg border border-[#E5E7EB]">
+<span class="text-xs font-bold text-[#994700] block">Tagaytay Bulalo</span>
+<span class="text-[11px] text-[#6B7280]">Simmered beef shank in piping marrow broth.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Cultural Immersions -->
+<div class="bg-[#F4F6FA] rounded-xl p-4 shadow-sm border border-[#E5E7EB] space-y-2">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-full bg-[#8df9ac]/30 flex items-center justify-center text-[#003a1b]">
+<span class="material-symbols-outlined text-[18px]">theater_comedy</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-[#003260]">Cultural Immersions</h4>
+<span class="text-[11px] text-[#6B7280]">Chabacano traditions, brasswork &amp; weaving</span>
+</div>
+</div>
+<p class="text-xs text-[#424750] leading-relaxed">
+              Immerse yourself in living Spanish-Creole <strong>Chabacano</strong> linguistic traditions in Cavite City, traditional artisanal bamboo craftwork, ancestral brasswork, and the kinetic devotion of the Karakol street dancing tradition.
+            </p>
+</div>
+</div>
+<!-- INTERACTIVE EXPRESSWAY MAP -->
+<div class="space-y-3 pt-2">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="text-base font-bold text-[#0B2A4A]">Expressway &amp; Province Map</h3>
+<p class="text-xs text-[#6B7280]">Tap route cards below to spotlight arterial expressways</p>
+</div>
+<span class="text-[10px] font-bold text-[#fc8127] bg-[#fc8127]/10 px-2.5 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">touch_app</span> Interactive
+            </span>
+</div>
+<div class="relative w-full rounded-2xl overflow-hidden bg-[#0B2A4A] shadow-md p-4 flex flex-col items-center">
+<!-- Compass -->
+<div class="absolute top-3 right-3 text-white/30 flex flex-col items-center pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">navigation</span>
+<span class="text-[8px] font-bold tracking-widest uppercase">N</span>
+</div>
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+<!-- SVG Vector Map -->
+<svg class="w-full h-72 max-w-sm" fill="none" viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg">
+<!-- Manila Bay Coast -->
+<path d="M 30,20 Q 80,60 110,130 T 70,220" fill="none" stroke="#1e4e79" stroke-dasharray="3 3" stroke-width="2"></path>
+<text fill="#7ba3cc" font-size="9" font-weight="600" letter-spacing="1" x="35" y="80">MANILA BAY</text>
+<!-- Cavite Boundary Silhouette -->
+<path d="M 95,20 C 130,22 170,30 200,45 C 230,65 240,110 230,150 C 225,180 270,220 260,280 C 250,330 210,360 170,370 C 120,380 90,340 70,300 C 60,250 80,210 75,170 C 70,120 75,60 95,20 Z" fill="#0e3760" stroke="#255585" stroke-width="1.5"></path>
+<!-- Expressways -->
+<!-- CAVITEX -->
+<path class="transition-all duration-300 filter drop-shadow-[0_0_6px_#3b82f6]" d="M 175,15 L 140,40 L 115,85 L 105,120" id="route-cavitex" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.5"></path>
+<!-- C5 Link -->
+<path class="transition-all duration-300 filter drop-shadow-[0_0_5px_#06b6d4]" d="M 215,20 L 175,32 L 140,40" id="route-c5" stroke="#06b6d4" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<!-- CALAX -->
+<path class="transition-all duration-300 filter drop-shadow-[0_0_6px_#f59e0b]" d="M 245,210 Q 210,215 190,240 T 150,210 L 125,150 L 105,120" id="route-calax" stroke="#f59e0b" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.5"></path>
+<!-- Pins & Labels -->
+<!-- Kawit -->
+<g class="cursor-pointer" onclick="showMapToast('Kawit: Emilio Aguinaldo Shrine &amp; Freedom Park')">
+<circle cx="105" cy="118" fill="#003260" r="6" stroke="#ffffff" stroke-width="1.5"></circle>
+<circle cx="105" cy="118" fill="#a4c8ff" r="2.5"></circle>
+<text fill="#ffffff" font-size="9.5" font-weight="700" x="72" y="114">Kawit</text>
+</g>
+<!-- Bacoor -->
+<g class="cursor-pointer" onclick="showMapToast('Bacoor: Coastal Dining &amp; Gateway Hub')">
+<circle cx="138" cy="78" fill="#fc8127" r="5.5" stroke="#ffffff" stroke-width="1.5"></circle>
+<circle cx="138" cy="78" fill="#ffffff" r="2"></circle>
+<text fill="#ffffff" font-size="9" font-weight="600" x="148" y="81">Bacoor</text>
+</g>
+<!-- Gen Trias -->
+<g class="cursor-pointer" onclick="showMapToast('General Trias: Home of Arroz Valenciana')">
+<circle cx="120" cy="165" fill="#2E9E5B" r="5.5" stroke="#ffffff" stroke-width="1.5"></circle>
+<circle cx="120" cy="165" fill="#ffffff" r="2"></circle>
+<text fill="#c3eed5" font-size="8.5" font-weight="600" x="58" y="168">Gen. Trias</text>
+</g>
+<!-- Tagaytay -->
+<g class="cursor-pointer" onclick="showMapToast('Tagaytay: Scenic Ridge, Taal View &amp; Bulalo')">
+<circle cx="152" cy="335" fill="#fc8127" r="7.5" stroke="#ffffff" stroke-width="2"></circle>
+<circle cx="152" cy="335" fill="#003260" r="3"></circle>
+<text fill="#F89C48" font-size="11" font-weight="700" x="168" y="339">Tagaytay</text>
+</g>
+</svg>
+<!-- Map Toast Feedback -->
+<div class="w-full text-center py-1.5 px-3 bg-white/95 rounded-lg text-[#003260] text-xs font-semibold mt-2 transition-all duration-300 shadow-sm flex items-center justify-center gap-1.5" id="map-toast">
+<span class="material-symbols-outlined text-[14px] text-[#fc8127]">info</span>
+<span id="map-toast-text">Tap expressway cards below or town pins on map</span>
+</div>
+</div>
+</div>
+<!-- EXPRESSWAY CARDS -->
+<div class="space-y-2.5">
+<h3 class="text-sm font-bold text-[#0B2A4A] uppercase tracking-wider">Expressway Gateways</h3>
+<!-- 1. CAVITEX -->
+<div class="bg-[#F4F6FA] rounded-xl p-3.5 border border-[#E5E7EB] cursor-pointer transition-all active:scale-[0.98]" id="card-cavitex" onclick="highlightExpressway('cavitex')">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">directions_car</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-[#003260]">CAVITEX</h4>
+<span class="text-[11px] font-semibold text-blue-600">Manila to Kawit</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-[#d4e3ff] text-[#003260] text-[10px] font-bold">14 km</span>
+</div>
+<p class="text-xs text-[#424750] mt-2 leading-relaxed">
+              Coastal expressway connecting Roxas Blvd / Parañaque directly into Bacoor and Kawit Interchange, bypassing heavy city congestion.
+            </p>
+</div>
+<!-- 2. CAVITEX C5 Link -->
+<div class="bg-[#F4F6FA] rounded-xl p-3.5 border border-[#E5E7EB] cursor-pointer transition-all active:scale-[0.98]" id="card-c5" onclick="highlightExpressway('c5')">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">alt_route</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-[#003260]">CAVITEX C5 Link</h4>
+<span class="text-[11px] font-semibold text-cyan-700">Taguig to Las Piñas</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-900 text-[10px] font-bold">7.7 km</span>
+</div>
+<p class="text-xs text-[#424750] mt-2 leading-relaxed">
+              Strategic urban flyover linking eastern metro hubs (Taguig / BGC) directly to the coastal expressway corridor.
+            </p>
+</div>
+<!-- 3. CALAX -->
+<div class="bg-[#F4F6FA] rounded-xl p-3.5 border border-[#E5E7EB] cursor-pointer transition-all active:scale-[0.98]" id="card-calax" onclick="highlightExpressway('calax')">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">speed</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-[#003260]">CALAX</h4>
+<span class="text-[11px] font-semibold text-amber-600">Kawit to Mamplasan</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-[#ffdbc8] text-[#321200] text-[10px] font-bold">45 km</span>
+</div>
+<p class="text-xs text-[#424750] mt-2 leading-relaxed">
+              High-speed modern 4-lane arterial expressway traversing Silang East, Santa Rosa, and leading straight into scenic Tagaytay.
+            </p>
+</div>
+</div>
+<!-- QUICK FESTIVAL REFERENCE SCHEDULE -->
+<div class="bg-[#F4F6FA] rounded-xl p-4 border border-[#E5E7EB] space-y-3">
+<div class="flex items-center justify-between">
+<h4 class="text-sm font-bold text-[#003260]">Quick Festival Calendar</h4>
+<button class="text-xs font-bold text-[#004987] hover:underline flex items-center gap-0.5" onclick="showEventsTab()">
+<span>View all</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+<div class="space-y-2 text-xs">
+<div class="flex items-center justify-between py-1 border-b border-[#E5E7EB]">
+<span class="font-semibold text-[#1B2A49]">Pahimis Coffee Festival (Amadeo)</span>
+<span class="text-[#fc8127] font-bold">Feb 12–14</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-[#E5E7EB]">
+<span class="font-semibold text-[#1B2A49]">Kalayaan Festival (Kawit)</span>
+<span class="text-[#004987] font-bold">June 12</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-[#E5E7EB]">
+<span class="font-semibold text-[#1B2A49]">Regada Water Festival (Cavite City)</span>
+<span class="text-[#004987] font-bold">June 22–24</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-semibold text-[#1B2A49]">Valenciana Festival (General Trias)</span>
+<span class="text-[#994700] font-bold">Dec 12</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- 5. BOTTOM TAB BAR (5 Tabs: Explore, Passport, Scan, Discover [ACTIVE in #004987], Account) -->
+<nav class="flex-shrink-0 z-30 pb-safe bg-white shadow-[0_-2px_16px_rgba(27,42,73,0.08)] border-t border-[#E5E7EB]">
+<div class="relative flex items-center justify-between px-2 h-16">
+<!-- 1. Explore -->
+<a class="flex flex-col items-center justify-center flex-1 min-w-[48px] h-12 text-[#6B7280] hover:text-[#004987] transition-colors" data-path="explore-cavite" href="{{DATA:SCREEN:SCREEN_24}}">
+<span class="material-symbols-outlined text-[22px]">explore</span>
+<span class="text-[10px] font-medium tracking-tight mt-0.5">Explore</span>
+</a>
+<!-- 2. Passport -->
+<a class="flex flex-col items-center justify-center flex-1 min-w-[48px] h-12 text-[#6B7280] hover:text-[#004987] transition-colors" data-path="digital-passport" href="{{DATA:SCREEN:SCREEN_22}}">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+<span class="text-[10px] font-medium tracking-tight mt-0.5">Passport</span>
+</a>
+<!-- 3. Scan (Center raised circular orange button) -->
+<div class="relative flex flex-col items-center justify-center flex-1 min-w-[56px]">
+<a class="absolute -top-5 w-13 h-13 p-3 rounded-full bg-[#fc8127] text-white flex items-center justify-center shadow-[0_4px_14px_rgba(252,129,39,0.45)] active:scale-95 transition-transform" data-path="qr-scanner" href="{{DATA:SCREEN:SCREEN_20}}">
+<span class="material-symbols-outlined text-[26px]">qr_code_scanner</span>
+</a>
+<span class="text-[10px] font-medium tracking-tight text-[#6B7280] mt-7">Scan</span>
+</div>
+<!-- 4. Discover (ACTIVE in #004987 navy) -->
+<a aria-current="page" class="flex flex-col items-center justify-center flex-1 min-w-[48px] h-12 text-[#004987] font-semibold transition-colors" data-path="discover-events" href="#">
+<span class="material-symbols-outlined text-[22px]">local_activity</span>
+<span class="text-[10px] font-bold tracking-tight mt-0.5">Discover</span>
+</a>
+<!-- 5. Account -->
+<a class="flex flex-col items-center justify-center flex-1 min-w-[48px] h-12 text-[#6B7280] hover:text-[#004987] transition-colors" data-path="tourist-account" href="{{DATA:SCREEN:SCREEN_4}}">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-[10px] font-medium tracking-tight mt-0.5">Account</span>
+</a>
+</div>
+</nav>
+</div>
+<!-- FOOLPROOF JAVASCRIPT TOGGLE HANDLERS -->
+<script>
+    function showEventsTab() {
+      var viewEvents = document.getElementById('view-events');
+      var viewAbout = document.getElementById('view-about');
+      var btnEvents = document.getElementById('tab-btn-events');
+      var btnAbout = document.getElementById('tab-btn-about');
+      var main = document.getElementById('scroll-main');
+      if (viewEvents && viewAbout) {
+        viewEvents.classList.remove('hidden');
+        viewEvents.classList.add('block');
+        viewAbout.classList.add('hidden');
+        viewAbout.classList.remove('block');
+      }
+      if (btnEvents && btnAbout) {
+        btnEvents.className = 'flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-[#004987] text-white shadow-sm';
+        btnAbout.className = 'flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-[#6B7280]';
+      }
+      if (main) main.scrollTop = 0;
+    }
+
+    function showAboutTab() {
+      var viewEvents = document.getElementById('view-events');
+      var viewAbout = document.getElementById('view-about');
+      var btnEvents = document.getElementById('tab-btn-events');
+      var btnAbout = document.getElementById('tab-btn-about');
+      var main = document.getElementById('scroll-main');
+      if (viewEvents && viewAbout) {
+        viewAbout.classList.remove('hidden');
+        viewAbout.classList.add('block');
+        viewEvents.classList.add('hidden');
+        viewEvents.classList.remove('block');
+      }
+      if (btnEvents && btnAbout) {
+        btnAbout.className = 'flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-[#004987] text-white shadow-sm';
+        btnEvents.className = 'flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-[#6B7280]';
+      }
+      if (main) main.scrollTop = 0;
+    }
+
+    function showMapToast(message) {
+      var toast = document.getElementById('map-toast');
+      var toastText = document.getElementById('map-toast-text');
+      if (toast && toastText) {
+        toastText.textContent = message;
+        toast.classList.add('bg-blue-50', 'ring-1', 'ring-[#004987]');
+        setTimeout(function() {
+          toast.classList.remove('bg-blue-50', 'ring-1', 'ring-[#004987]');
+        }, 2600);
+      }
+    }
+
+    function highlightExpressway(type) {
+      var routeCavitex = document.getElementById('route-cavitex');
+      var routeC5 = document.getElementById('route-c5');
+      var routeCalax = document.getElementById('route-calax');
+
+      var cardCavitex = document.getElementById('card-cavitex');
+      var cardC5 = document.getElementById('card-c5');
+      var cardCalax = document.getElementById('card-calax');
+
+      if (!routeCavitex || !routeC5 || !routeCalax) return;
+
+      // Reset
+      [routeCavitex, routeC5, routeCalax].forEach(function(r) {
+        r.setAttribute('stroke-width', '4');
+        r.style.opacity = '0.35';
+      });
+
+      [cardCavitex, cardC5, cardCalax].forEach(function(c) {
+        if (c) c.classList.remove('ring-2', 'ring-[#004987]', 'bg-blue-50');
+      });
+
+      if (type === 'cavitex') {
+        routeCavitex.style.opacity = '1';
+        routeCavitex.setAttribute('stroke-width', '7.5');
+        if (cardCavitex) cardCavitex.classList.add('ring-2', 'ring-[#004987]', 'bg-blue-50');
+        showMapToast('CAVITEX: 14 km coastal link from Manila to Kawit');
+      } else if (type === 'c5') {
+        routeC5.style.opacity = '1';
+        routeC5.setAttribute('stroke-width', '7');
+        if (cardC5) cardC5.classList.add('ring-2', 'ring-[#004987]', 'bg-blue-50');
+        showMapToast('CAVITEX C5 Link: 7.7 km eastern bypass to Las Piñas');
+      } else if (type === 'calax') {
+        routeCalax.style.opacity = '1';
+        routeCalax.setAttribute('stroke-width', '7.5');
+        if (cardCalax) cardCalax.classList.add('ring-2', 'ring-[#004987]', 'bg-blue-50');
+        showMapToast('CALAX: 45 km arterial expressway from Kawit to Mamplasan / Tagaytay');
+      }
+    }
+  </script>
+</body></html>

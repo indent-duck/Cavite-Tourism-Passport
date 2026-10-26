@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_blank" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-variant": "#d9e2ff", "error-container": "#ffdad6", "surface-dim": "#ccdaff", "tertiary-container": "#00542a", "secondary": "#994700", "on-secondary-fixed": "#321200", "secondary-fixed": "#ffdbc8", "on-tertiary": "#ffffff", "surface-container-lowest": "#ffffff", "passport-foil": "#F89C48", "on-error": "#ffffff", "passport-leather": "#0B2A4A", "outline-variant": "#c2c6d2", "on-secondary-container": "#602a00", "on-tertiary-fixed": "#00210d", "surface-container-high": "#e1e8ff", "primary-fixed": "#d4e3ff", "surface-tint": "#28609f", "inverse-on-surface": "#edf0ff", "error": "#ba1a1a", "status-error": "#D64545", "surface-bright": "#faf9ff", "inverse-primary": "#a4c8ff", "on-primary-fixed": "#001c3a", "background-canvas": "#FFFFFF", "on-background": "#0a1b39", "tertiary-fixed": "#8df9ac", "on-primary-container": "#89baff", "on-primary-fixed-variant": "#004784", "border-divider": "#E5E7EB", "primary-container": "#004987", "on-surface": "#0a1b39", "secondary-fixed-dim": "#ffb68b", "on-primary": "#ffffff", "tertiary-fixed-dim": "#71dc92", "background": "#faf9ff", "tertiary": "#003a1b", "inverse-surface": "#21304f", "surface-container": "#e9edff", "outline": "#727781", "surface": "#faf9ff", "primary-fixed-dim": "#a4c8ff", "primary": "#003260", "on-surface-variant": "#424750", "on-error-container": "#93000a", "surface-container-highest": "#d9e2ff", "surface-container-low": "#f1f3ff", "on-tertiary-container": "#61cc84", "on-secondary-fixed-variant": "#753400", "text-secondary": "#6B7280", "surface-card": "#F4F6FA", "on-tertiary-fixed-variant": "#005229", "secondary-container": "#fc8127", "on-secondary": "#ffffff" }, borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }, spacing: { "space-lg": "1.5rem", "space-md": "1rem", "gutter": "1rem", "gutter-sm": "0.75rem", "space-sm": "0.5rem", "margin-lg": "1.5rem", "margin": "1rem", "space-xs": "0.25rem", "space-xl": "2rem" }, fontFamily: { "display-lg-mobile": ["Inter"], "label-md": ["Inter"], "body-sm": ["Inter"], "body-md": ["Inter"], "headline-sm": ["Inter"], "display-lg": ["Inter"], "label-sm": ["Inter"], "label-lg": ["Inter"], "headline-lg": ["Inter"], "title-md": ["Inter"], "headline-md": ["Inter"], "body-lg": ["Inter"] }, fontSize: { "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "700" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "display-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }], "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "700" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700" }], "title-md": ["16px", { lineHeight: "22px", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-passport-leather font-body-md text-body-md text-on-surface min-h-screen flex flex-col justify-end relative overflow-x-hidden"><div class="fixed inset-0 z-0 bg-passport-leather flex flex-col items-center justify-start pt-safe px-margin"><div class="w-full flex items-center justify-between h-14"><button aria-label="Close Scanner" class="w-11 h-11 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[22px]">close</span></button><div class="flex items-center gap-space-xs"><button aria-label="Flashlight" class="w-11 h-11 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors"><span class="material-symbols-outlined text-[20px]">flash_on</span></button></div></div><div class="mt-8 flex flex-col items-center"><div class="w-60 h-60 rounded-3xl border-2 border-dashed border-passport-foil/70 relative flex items-center justify-center bg-transparent"><div class="absolute w-6 h-6 border-t-4 border-l-4 border-secondary-container -top-1 -left-1 rounded-tl-lg"></div><div class="absolute w-6 h-6 border-t-4 border-r-4 border-secondary-container -top-1 -right-1 rounded-tr-lg"></div><div class="absolute w-6 h-6 border-b-4 border-l-4 border-secondary-container -bottom-1 -left-1 rounded-bl-lg"></div><div class="absolute w-6 h-6 border-b-4 border-r-4 border-secondary-container -bottom-1 -right-1 rounded-br-lg"></div><span class="material-symbols-outlined text-passport-foil/50 text-[48px]">filter_center_focus</span></div><p class="font-body-sm text-body-sm text-white/80 mt-space-md text-center max-w-[240px]">Align QR code inside the frame to verify location stamp</p></div></div><div class="fixed inset-0 z-10 bg-passport-leather/60 backdrop-blur-[2px] pointer-events-none"></div><main class="relative z-20 w-full bg-background-canvas rounded-t-[24px] shadow-[0px_8px_24px_rgba(11,42,74,0.35)] pb-safe transition-transform duration-300"><div class="flex flex-col w-full px-margin pb-space-lg pt-space-sm">
+<!-- Drag Handle -->
+<div class="flex justify-center items-center w-full py-space-xs mb-space-md">
+<div class="w-10 h-1.5 rounded-full bg-outline-variant/60"></div>
+</div>
+<!-- Header & Alert Icon Area -->
+<div class="flex flex-col items-center text-center">
+<!-- Tactile Error Badge -->
+<div class="relative flex items-center justify-center w-16 h-16 rounded-full bg-error-container shadow-sm mb-space-md">
+<div class="absolute inset-0 rounded-full bg-status-error/10 animate-ping"></div>
+<span class="material-symbols-outlined text-status-error text-[34px] relative z-10" style="font-variation-settings: 'FILL' 1;">
+        warning
+      </span>
+</div>
+<!-- Title and Subtitle -->
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mb-space-xs">
+      Invalid QR Code
+    </h2>
+<p class="font-body-md text-body-md text-text-secondary max-w-[310px] leading-relaxed">
+      This QR code is not recognized as a registered Cavite Tourism partner establishment.
+    </p>
+</div>
+<!-- Scanning Guidance & Helpful Tips Card -->
+<div class="mt-space-lg bg-surface-card rounded-xl p-space-md shadow-sm">
+<div class="flex items-center gap-space-xs mb-space-sm text-primary">
+<span class="material-symbols-outlined text-[18px]">lightbulb</span>
+<h3 class="font-title-md text-title-md text-on-surface">
+        Troubleshooting Tips
+      </h3>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Tip 1 -->
+<div class="flex items-start gap-space-sm">
+<div class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-fixed text-primary shrink-0 mt-0.5">
+<span class="font-label-sm text-label-sm">1</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+          Make sure you are scanning the official <span class="font-label-md text-label-md text-on-surface">Cavite Tourism Passport</span> standee or counter plaque.
+        </p>
+</div>
+<!-- Tip 2 -->
+<div class="flex items-start gap-space-sm">
+<div class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-fixed text-primary shrink-0 mt-0.5">
+<span class="font-label-sm text-label-sm">2</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+          Ensure adequate lighting and hold your camera steady within the viewfinder frame.
+        </p>
+</div>
+<!-- Tip 3 -->
+<div class="flex items-start gap-space-sm">
+<div class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-fixed text-primary shrink-0 mt-0.5">
+<span class="font-label-sm text-label-sm">3</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+          Maintain a distance of 15–30 cm from the code to prevent motion blur or glare.
+        </p>
+</div>
+</div>
+</div>
+<!-- Decorative Context Visual -->
+<div class="mt-space-md p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">verified</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Official Seal Partner</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Look for the Gold Provincial seal</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-passport-foil text-[24px]">verified_user</span>
+</div>
+<!-- Action Buttons -->
+<div class="mt-space-lg flex flex-col gap-space-sm">
+<!-- Primary CTA: Try Again -->
+<button class="w-full h-12 bg-secondary-container text-on-secondary font-label-lg text-label-lg rounded-full flex items-center justify-center gap-space-xs shadow-md active:scale-[0.98] transition-transform duration-150" id="retry-scan-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+<span>Try Again</span>
+</button>
+<!-- Secondary CTA: Cancel -->
+<button class="w-full h-12 bg-transparent text-primary-container font-label-lg text-label-lg rounded-full flex items-center justify-center hover:bg-surface-card transition-colors duration-150" id="cancel-scan-btn" onclick="history.back()" type="button">
+      Cancel
+    </button>
+</div>
+</div>
+<script>
+  (function() {
+    const retryBtn = document.getElementById('retry-scan-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function() {
+        const mainSheet = document.querySelector('main');
+        if (mainSheet) {
+          mainSheet.classList.add('translate-y-full');
+          setTimeout(() => {
+            mainSheet.classList.remove('translate-y-full');
+          }, 1200);
+        }
+      });
+    }
+  })();
+</script></main></body></html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_stack" name="shell-type">
+<title>Settings &amp; Help - Cavite Tourism Passport</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-fixed": "#321200",
+            "tertiary-fixed-dim": "#71dc92",
+            "secondary-fixed-dim": "#ffb68b",
+            "surface-container-low": "#f1f3ff",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#8df9ac",
+            "surface-container-lowest": "#ffffff",
+            "inverse-surface": "#21304f",
+            "surface-dim": "#ccdaff",
+            "passport-leather": "#0B2A4A",
+            "background": "#faf9ff",
+            "on-primary-container": "#89baff",
+            "on-tertiary": "#ffffff",
+            "surface-card": "#F4F6FA",
+            "error": "#ba1a1a",
+            "secondary-container": "#fc8127",
+            "surface-variant": "#d9e2ff",
+            "status-error": "#D64545",
+            "inverse-primary": "#a4c8ff",
+            "on-primary-fixed": "#001c3a",
+            "on-surface": "#0a1b39",
+            "tertiary-container": "#00542a",
+            "surface-container-high": "#e1e8ff",
+            "passport-foil": "#F89C48",
+            "on-surface-variant": "#424750",
+            "primary": "#003260",
+            "primary-fixed": "#d4e3ff",
+            "on-primary": "#ffffff",
+            "surface-tint": "#28609f",
+            "on-tertiary-fixed": "#00210d",
+            "text-secondary": "#6B7280",
+            "secondary": "#994700",
+            "on-background": "#0a1b39",
+            "surface-bright": "#faf9ff",
+            "secondary-fixed": "#ffdbc8",
+            "on-error": "#ffffff",
+            "on-secondary-container": "#602a00",
+            "primary-fixed-dim": "#a4c8ff",
+            "on-primary-fixed-variant": "#004784",
+            "inverse-on-surface": "#edf0ff",
+            "tertiary": "#003a1b",
+            "surface": "#faf9ff",
+            "on-tertiary-fixed-variant": "#005229",
+            "outline": "#727781",
+            "on-error-container": "#93000a",
+            "primary-container": "#004987",
+            "border-divider": "#E5E7EB",
+            "on-tertiary-container": "#61cc84",
+            "surface-container-highest": "#d9e2ff",
+            "outline-variant": "#c2c6d2",
+            "background-canvas": "#FFFFFF",
+            "surface-container": "#e9edff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#753400"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            body: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .pb-safe {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+    }
+    .pt-safe {
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+    }
+  </style>
+</head>
+<body class="bg-[#F8FAFD] text-on-surface antialiased min-h-screen flex justify-center">
+<!-- Mobile Android Container (390px bounded) -->
+<div class="w-full max-w-[390px] min-h-screen flex flex-col bg-[#F8FAFD] relative shadow-2xl">
+<!-- Top App Bar: only back button on the left and title, no profile/avatar button on the right -->
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-border-divider/70 px-4 py-3 flex items-center">
+<div class="flex items-center gap-2">
+<button aria-label="Back to Account" class="w-10 h-10 -ml-1.5 rounded-full flex items-center justify-center text-primary active:bg-surface-container-high transition-colors" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-[19px] font-bold text-primary tracking-tight">Settings &amp; Help</h1>
+</div>
+</header>
+<!-- Main Content Container with full scrollability and pb-12 -->
+<main class="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-6 pb-12">
+<!-- 1. Notifications & Device Services -->
+<section class="flex flex-col gap-3">
+<div class="flex items-center gap-2 px-1">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">tune</span>
+<h2 class="text-[15px] font-bold text-primary uppercase tracking-wider">Device &amp; Alerts</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,40,80,0.04)] border border-border-divider flex flex-col gap-4">
+<!-- Push Notifications Toggle -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-start gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-primary-fixed/60 flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-[15px] font-semibold text-on-surface leading-snug">Push Notifications</span>
+<p class="text-[12px] text-text-secondary leading-normal mt-0.5">
+                  Get alerts for new stamp locations, events, and promo deadlines.
+                </p>
+</div>
+</div>
+<!-- Active Switch Button -->
+<button aria-checked="true" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full bg-primary-container p-0.5 transition-colors duration-200 ease-in-out self-start mt-1" id="notif-toggle" role="switch" type="button">
+<span class="sr-only">Enable notifications</span>
+<span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" id="notif-knob"></span>
+</button>
+</div>
+<div class="h-px bg-border-divider w-full"></div>
+<!-- Location Services Status -->
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-tertiary-fixed/40 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-[14px] font-semibold text-on-surface">Location Services</span>
+<span class="text-[12px] text-text-secondary">Used for geo-verifying site stamps</span>
+</div>
+</div>
+<!-- Green Active Badge -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wide flex-shrink-0">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Active
+            </span>
+</div>
+</div>
+</section>
+<!-- 2. FAQs and Help (Expandable Accordions) -->
+<section class="flex flex-col gap-3">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">quiz</span>
+<h2 class="text-[15px] font-bold text-primary uppercase tracking-wider">FAQs &amp; Help</h2>
+</div>
+<span class="text-[11px] font-medium text-text-secondary bg-surface-container px-2 py-0.5 rounded-md">Tap to read</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- FAQ 1 (Expanded by default) -->
+<div class="bg-surface-container-lowest rounded-2xl border border-border-divider overflow-hidden shadow-[0_2px_8px_rgba(0,40,80,0.03)] transition-all">
+<button aria-expanded="true" class="faq-toggle w-full p-4 flex items-center justify-between gap-3 text-left active:bg-surface-container-low transition-colors" type="button">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-primary-fixed/40 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[17px]">qr_code_scanner</span>
+</div>
+<span class="text-[14px] font-semibold text-on-surface">How do I collect stamps with the QR scanner?</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 rotate-180 faq-arrow transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-content px-4 pb-4 pt-0">
+<div class="bg-[#F4F7FC] rounded-xl p-3 text-[13px] text-on-surface-variant leading-relaxed border border-[#E3EAF4]">
+                Point camera at the official partner QR at the site counter/entrance while location is enabled. The app validates the stamp coordinates and securely logs your digital passport stamp badge immediately.
+              </div>
+</div>
+</div>
+<!-- FAQ 2 -->
+<div class="bg-surface-container-lowest rounded-2xl border border-border-divider overflow-hidden shadow-[0_2px_8px_rgba(0,40,80,0.03)] transition-all">
+<button aria-expanded="false" class="faq-toggle w-full p-4 flex items-center justify-between gap-3 text-left active:bg-surface-container-low transition-colors" type="button">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-secondary-fixed/50 flex items-center justify-center flex-shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[17px]">redeem</span>
+</div>
+<span class="text-[14px] font-semibold text-on-surface">How do points and rewards redemption work?</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 faq-arrow transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-content hidden px-4 pb-4 pt-0">
+<div class="bg-[#F4F7FC] rounded-xl p-3 text-[13px] text-on-surface-variant leading-relaxed border border-[#E3EAF4]">
+                Collect category stamps to unlock exclusive provincial souvenir kits and vouchers at the Cavite Tourism Office located in the Provincial Capitol, Trece Martires City, or at designated heritage events.
+              </div>
+</div>
+</div>
+<!-- FAQ 3 -->
+<div class="bg-surface-container-lowest rounded-2xl border border-border-divider overflow-hidden shadow-[0_2px_8px_rgba(0,40,80,0.03)] transition-all">
+<button aria-expanded="false" class="faq-toggle w-full p-4 flex items-center justify-between gap-3 text-left active:bg-surface-container-low transition-colors" type="button">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-surface-variant/60 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[17px]">sync</span>
+</div>
+<span class="text-[14px] font-semibold text-on-surface">Can I scan a site QR code more than once?</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 faq-arrow transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-content hidden px-4 pb-4 pt-0">
+<div class="bg-[#F4F7FC] rounded-xl p-3 text-[13px] text-on-surface-variant leading-relaxed border border-[#E3EAF4]">
+                Each site QR grants points once per active promotional season. Returning visits can earn celebratory patron badge increments during special festival weekends and cultural holidays.
+              </div>
+</div>
+</div>
+<!-- FAQ 4 -->
+<div class="bg-surface-container-lowest rounded-2xl border border-border-divider overflow-hidden shadow-[0_2px_8px_rgba(0,40,80,0.03)] transition-all">
+<button aria-expanded="false" class="faq-toggle w-full p-4 flex items-center justify-between gap-3 text-left active:bg-surface-container-low transition-colors" type="button">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-7 h-7 rounded-lg bg-tertiary-fixed/40 flex items-center justify-center flex-shrink-0 text-tertiary-container">
+<span class="material-symbols-outlined text-[17px]">gps_fixed</span>
+</div>
+<span class="text-[14px] font-semibold text-on-surface leading-snug">What should I do if the scanner cannot verify my location?</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 faq-arrow transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-content hidden px-4 pb-4 pt-0">
+<div class="bg-[#F4F7FC] rounded-xl p-3 text-[13px] text-on-surface-variant leading-relaxed border border-[#E3EAF4]">
+                Ensure GPS is set to High Accuracy and camera permissions are granted. If you are indoors or in mountain areas with weak GPS, step outside near the entrance checkpoint or connect to the venue's Wi-Fi network.
+              </div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Official Provincial Tourism Links -->
+<section class="flex flex-col gap-3">
+<div class="flex items-center gap-2 px-1">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+<h2 class="text-[15px] font-bold text-primary uppercase tracking-wider">Official Tourism Links</h2>
+</div>
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Biyaheng South -->
+<a class="group bg-surface-container-lowest rounded-2xl p-3.5 border border-border-divider shadow-[0_2px_8px_rgba(0,40,80,0.03)] flex items-center justify-between active:scale-[0.99] transition-transform" href="https://example.com/biyaheng-south" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-amber-500/10 text-secondary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">explore</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-[14px] font-semibold text-on-surface group-hover:text-primary transition-colors">Biyaheng South</span>
+<span class="material-symbols-outlined text-passport-foil text-[15px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="text-[12px] text-text-secondary truncate">Official South Luzon Tourism guide</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-primary text-[18px]">open_in_new</span>
+</div>
+</a>
+<!-- Cavite Provincial Tourism Office -->
+<a class="group bg-surface-container-lowest rounded-2xl p-3.5 border border-border-divider shadow-[0_2px_8px_rgba(0,40,80,0.03)] flex items-center justify-between active:scale-[0.99] transition-transform" href="https://example.com/cavite-tourism" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-primary-fixed/60 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">assured_workload</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-[14px] font-semibold text-on-surface group-hover:text-primary transition-colors">Cavite Provincial Tourism</span>
+<span class="material-symbols-outlined text-primary text-[15px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="text-[12px] text-text-secondary truncate">Cavite Provincial Capitol, Trece Martires</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-primary text-[18px]">open_in_new</span>
+</div>
+</a>
+<!-- DOT IV-A -->
+<a class="group bg-surface-container-lowest rounded-2xl p-3.5 border border-border-divider shadow-[0_2px_8px_rgba(0,40,80,0.03)] flex items-center justify-between active:scale-[0.99] transition-transform" href="https://example.com/dot-region4a" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-tertiary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">travel_explore</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-[14px] font-semibold text-on-surface group-hover:text-primary transition-colors">DOT IV-A</span>
+<span class="text-[12px] text-text-secondary truncate">Department of Tourism CALABARZON</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-primary text-[18px]">open_in_new</span>
+</div>
+</a>
+<!-- DILG IV-A -->
+<a class="group bg-surface-container-lowest rounded-2xl p-3.5 border border-border-divider shadow-[0_2px_8px_rgba(0,40,80,0.03)] flex items-center justify-between active:scale-[0.99] transition-transform" href="https://example.com/dilg-region4a" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-blue-500/10 text-primary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">shield</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-[14px] font-semibold text-on-surface group-hover:text-primary transition-colors">DILG IV-A</span>
+<span class="text-[12px] text-text-secondary truncate">Dept. of the Interior &amp; Local Government</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-primary text-[18px]">open_in_new</span>
+</div>
+</a>
+</div>
+</section>
+<!-- 4. App Info & Version -->
+<footer class="pt-4 flex flex-col items-center text-center gap-3 border-t border-border-divider">
+<div class="w-12 h-12 rounded-2xl bg-passport-leather flex items-center justify-center shadow-md border-2 border-passport-foil/50">
+<span class="material-symbols-outlined text-passport-foil text-[26px]">military_tech</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<p class="text-[14px] font-bold text-primary tracking-tight">Cavite Tourism Passport</p>
+<p class="text-[12px] font-medium text-text-secondary">v1.4.0 (Official Provincial Android Build)</p>
+</div>
+<a class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-high hover:bg-surface-variant text-primary text-[13px] font-semibold active:scale-95 transition-all" href="mailto:tourism@cavite.gov.ph">
+<span class="material-symbols-outlined text-[17px]">support_agent</span>
+<span class="">Contact Tourism Helpdesk</span>
+</a>
+<div class="flex items-center gap-2 text-[11px] text-text-secondary mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+<span class="">Official Digital System • Province of Cavite</span>
+</div>
+</footer>
+</main>
+</div>
+<script>
+    // Interactive Accordions
+    document.querySelectorAll('.faq-toggle').forEach(button => {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        const content = button.nextElementSibling;
+        const arrow = button.querySelector('.faq-arrow');
+
+        if (expanded) {
+          button.setAttribute('aria-expanded', 'false');
+          content.classList.add('hidden');
+          arrow.classList.remove('rotate-180');
+        } else {
+          button.setAttribute('aria-expanded', 'true');
+          content.classList.remove('hidden');
+          arrow.classList.add('rotate-180');
+        }
+      });
+    });
+
+    // Push Notifications Toggle
+    const toggleBtn = document.getElementById('notif-toggle');
+    const knob = document.getElementById('notif-knob');
+    let isNotifActive = true;
+
+    if (toggleBtn && knob) {
+      toggleBtn.addEventListener('click', () => {
+        isNotifActive = !isNotifActive;
+        toggleBtn.setAttribute('aria-checked', isNotifActive.toString());
+        if (isNotifActive) {
+          toggleBtn.classList.remove('bg-outline-variant');
+          toggleBtn.classList.add('bg-primary-container');
+          knob.classList.remove('translate-x-0');
+          knob.classList.add('translate-x-5');
+        } else {
+          toggleBtn.classList.remove('bg-primary-container');
+          toggleBtn.classList.add('bg-outline-variant');
+          knob.classList.remove('translate-x-5');
+          knob.classList.add('translate-x-0');
+        }
+      });
+    }
+  </script>
+</body></html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html><html class="" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_stack" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-container": "#602a00", "surface-container-low": "#f1f3ff", "secondary-fixed": "#ffdbc8", "inverse-on-surface": "#edf0ff", "on-secondary-fixed": "#321200", "on-background": "#0a1b39", "on-primary-fixed": "#001c3a", "inverse-surface": "#21304f", "on-secondary": "#ffffff", "tertiary-fixed": "#8df9ac", "background": "#faf9ff", "error-container": "#ffdad6", "surface-variant": "#d9e2ff", "secondary-container": "#fc8127", "outline-variant": "#c2c6d2", "on-tertiary-fixed-variant": "#005229", "text-secondary": "#6B7280", "passport-foil": "#F89C48", "surface-dim": "#ccdaff", "on-tertiary-fixed": "#00210d", "border-divider": "#E5E7EB", "tertiary": "#003a1b", "on-error-container": "#93000a", "on-secondary-fixed-variant": "#753400", "on-surface-variant": "#424750", "secondary-fixed-dim": "#ffb68b", "primary-fixed-dim": "#a4c8ff", "secondary": "#994700", "status-error": "#D64545", "primary-container": "#004987", "outline": "#727781", "surface-tint": "#28609f", "on-primary-container": "#89baff", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "primary": "#003260", "error": "#ba1a1a", "on-error": "#ffffff", "tertiary-container": "#00542a", "passport-leather": "#0B2A4A", "primary-fixed": "#d4e3ff", "surface-bright": "#faf9ff", "surface-container": "#e9edff", "surface-container-high": "#e1e8ff", "surface": "#faf9ff", "surface-card": "#F4F6FA", "inverse-primary": "#a4c8ff", "background-canvas": "#FFFFFF", "on-tertiary-container": "#61cc84", "on-surface": "#0a1b39", "surface-container-highest": "#d9e2ff", "tertiary-fixed-dim": "#71dc92", "on-tertiary": "#ffffff", "on-primary-fixed-variant": "#004784" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter-sm": "0.75rem", "space-xs": "0.25rem", "margin": "1rem", "margin-lg": "1.5rem", "space-md": "1rem", "gutter": "1rem", "space-sm": "0.5rem", "space-xl": "2rem", "space-lg": "1.5rem" }, fontFamily: { "label-lg": ["Inter"], "label-sm": ["Inter"], "display-lg-mobile": ["Inter"], "body-lg": ["Inter"], "label-md": ["Inter"], "headline-sm": ["Inter"], "headline-md": ["Inter"], "body-md": ["Inter"], "body-sm": ["Inter"], "headline-lg": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"] }, fontSize: { "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "700" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700" }], "title-md": ["16px", { lineHeight: "22px", fontWeight: "600" }], "display-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }] } } } };</script><style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #faf9ff;
+  }
+  body {
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+</style></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased h-screen max-h-screen overflow-hidden flex flex-col"><header class="shrink-0 z-30 pt-safe bg-surface border-b border-[#E5E7EB] shadow-[0_1px_4px_rgba(27,42,73,0.04)]"><div class="h-14 px-3 flex items-center justify-between"><div class="flex items-center gap-2 min-w-0"><button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/40 active:scale-95 transition-all" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-primary tracking-tight truncate">Site Information</h1></div></div></header><main class="flex-1 min-h-0 overflow-y-auto p-4 pb-24 bg-surface" style="-webkit-overflow-scrolling: touch;"><div class="flex flex-col w-full">
+<!-- Photo Gallery Showcase -->
+<div class="relative w-full rounded-2xl overflow-hidden bg-surface-container shadow-md">
+<div class="relative w-full aspect-[4/3] overflow-hidden" id="gallery-container">
+<!-- Main Photo -->
+<img alt="Aguinaldo Shrine in Kawit, Cavite" class="w-full h-full object-cover transition-transform duration-300 ease-out" id="main-gallery-image" src="https://lh3.googleusercontent.com/aida/AEtjO1VSKz4ochTqzuByAOmKCFf7H4ElTkshDp8gdPgWUoruMPDEWpepg0ncxh72bLtkEgMrhpGxmmoZcKODGgh_4AFgUx-Ht9a55waxixPqw6NLQ0Sx1HgEW0Xo5ZLbNiJFGAFmzk8wrUyAHNR7EE1VUg8sD1EnyDUXmFLE6QA1-xLy83Ktw4bLQWKJbhGvS8vt8qp4e3XvnPy3tF6aD8EyRXa3x1qS4vvGRSwQE4ar6diR6gQcEDyidQQlbgY6">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-black/20 pointer-events-none"></div>
+<!-- Stamp Collected Badge Overlay -->
+<div class="absolute top-3 right-3 flex items-center gap-1.5 bg-[#2E9E5B] text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-md text-label-md tracking-wide">Stamp Collected</span>
+</div>
+<!-- Photo Counter Pill -->
+<div class="absolute bottom-3 right-3 flex items-center gap-1 bg-inverse-surface/80 text-inverse-on-surface px-2.5 py-1 rounded-full text-label-sm font-label-sm backdrop-blur-md">
+<span class="material-symbols-outlined text-[14px]">photo_camera</span>
+<span class="" id="photo-index-label">1 / 4</span>
+</div>
+<!-- Navigation Arrows -->
+<button aria-label="Previous photo" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-surface-container-lowest/85 text-on-surface flex items-center justify-center shadow hover:bg-surface transition-all active:scale-95" onclick="prevImage()">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button aria-label="Next photo" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-surface-container-lowest/85 text-on-surface flex items-center justify-center shadow hover:bg-surface transition-all active:scale-95" onclick="nextImage()">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+<!-- Gallery Thumbnail Rail -->
+<div class="flex items-center gap-2 p-2.5 bg-surface-card overflow-x-auto">
+<button class="thumb-btn relative flex-shrink-0 w-14 h-11 rounded-lg overflow-hidden shadow-sm outline outline-2 outline-primary-container" onclick="selectPhoto(0)">
+<img alt="Aguinaldo Shrine Facade" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VSKz4ochTqzuByAOmKCFf7H4ElTkshDp8gdPgWUoruMPDEWpepg0ncxh72bLtkEgMrhpGxmmoZcKODGgh_4AFgUx-Ht9a55waxixPqw6NLQ0Sx1HgEW0Xo5ZLbNiJFGAFmzk8wrUyAHNR7EE1VUg8sD1EnyDUXmFLE6QA1-xLy83Ktw4bLQWKJbhGvS8vt8qp4e3XvnPy3tF6aD8EyRXa3x1qS4vvGRSwQE4ar6diR6gQcEDyidQQlbgY6">
+</button>
+<button class="thumb-btn relative flex-shrink-0 w-14 h-11 rounded-lg overflow-hidden opacity-70 hover:opacity-100 transition-opacity" onclick="selectPhoto(1)">
+<img alt="Independence Balcony" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBO24MlvPAwi9x3HRM4n3UyAHs2DxATGz7tSa3KGhdbp64CXN8q5bTEvCArQsQxIsPCcfLXedgqgdhRfisCQbXQyByMZ5u75gbPD2m0DG9LIY1jrf2fNR_tcb0ogfPmCDROGhA3dnzzLBn10_ClXPMuTY_ToREJxzEmKwOyxvkLam64ILqHayJWaBH0uwovz10O3dJ1fYu8zzkGZZCypbuhQ9ub5DYAWGsZuVTflSkrD0MH5osPvrlfQ">
+</button>
+<button class="thumb-btn relative flex-shrink-0 w-14 h-11 rounded-lg overflow-hidden opacity-70 hover:opacity-100 transition-opacity" onclick="selectPhoto(2)">
+<img alt="Grand Dining Hall" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFXo4u4s8yqb9-fYXlgb5F8yzPXTjrgGc5Ceejh2vT8wQ69TuDfgBEQp3P-sQjf8KqFktQ2ecoivYoxku6h4e5Y3Iw2oAft5iZ1sEPVbhl5yih1wJw4HotwDAvrov4vdLXEtIBtIueY4mGXOWd1hQFtnSG8sH6A6eL26349dRtc589N5SXSJFnUBtRS_OxYtAY9iIqlZx_sFd1Pw1k33cai6rygssxDz2T3Ap5cTpOk9B6p5WowKEjoA">
+</button>
+<button class="thumb-btn relative flex-shrink-0 w-14 h-11 rounded-lg overflow-hidden opacity-70 hover:opacity-100 transition-opacity" onclick="selectPhoto(3)">
+<img alt="Memorial Gardens" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvb8l4MI1T5eLT53dqLLRwJI7yvuUxnBGylQkSSMYpZG2k2mHx2ePTuNt1ItNUlrAZqyCRNPv_nJNz3NBZ7Z2cBj33GPfc627uNJj6sC5HkliPRWD4GC1Fv5dBAgasGqn7iqV1v6wxZUjkCiX-C9Ar1AqtjUO7DgCEzXljaIEx2jBT6PVNFBSJQgR64SFD9sqGpZug73Zk3r2yDzwfwfIIf_eRzI_B706a0CagvAOW_6MrpZf0kaoUMw">
+</button>
+</div>
+</div>
+<!-- Header Info & Category Tags -->
+<div class="mt-4 flex flex-col gap-1.5">
+<div class="flex items-center justify-between gap-2 flex-wrap">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md">
+          Heritage
+        </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">stars</span>
+          +50 pts
+        </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">history_edu</span>
+<span class="">National Shrine</span>
+</div>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">
+      Aguinaldo Shrine
+    </h2>
+<div class="flex items-start gap-1.5 text-text-secondary mt-0.5">
+<span class="material-symbols-outlined text-[18px] text-primary-container shrink-0 mt-0.5">location_on</span>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        Tirona Hwy, Kawit, Cavite
+      </p>
+</div>
+</div>
+<!-- Physical Stamp Showcase Plaque -->
+<div class="mt-4 p-3.5 rounded-2xl bg-surface-container-low flex items-center justify-between gap-3 shadow-sm border border-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">approval</span>
+</div>
+<div class="min-w-0">
+<p class="font-title-md text-title-md text-primary leading-tight">Digital Stamp Acquired</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Added to your Kawit Heritage Trail page</p>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+</div>
+<!-- Description Section -->
+<div class="mt-5 flex flex-col gap-2">
+<h3 class="font-title-md text-title-md text-primary">About the Shrine</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed text-justify">
+      The Emilio Aguinaldo Shrine is the ancestral residence of the first Philippine President, General Emilio Aguinaldo. It is the historic sanctuary where the Declaration of Philippine Independence was unfurled from the front window on June 12, 1898. The sprawling estate features ingenious secret passageways, antique furniture, ancestral bedrooms, and patriotic emblems intricately carved into indigenous hardwood, enveloped by manicured memorial gardens.
+    </p>
+</div>
+<!-- Operating Hours & Practical Information -->
+<div class="mt-5 rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col gap-3 border border-surface-container/60">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div class="flex-1">
+<p class="font-title-md text-title-md text-primary">Operating Hours</p>
+<p class="font-body-md text-body-md text-on-surface font-medium mt-0.5">
+          Tuesday to Sunday: 8:00 AM – 4:00 PM
+        </p>
+<p class="font-body-sm text-body-sm text-error mt-0.5 font-medium">
+          Closed on Mondays
+        </p>
+</div>
+</div>
+</div>
+<!-- Quick Highlights and Tips Bento Grid -->
+<div class="mt-4 grid grid-cols-2 gap-3">
+<!-- Card 1 -->
+<div class="rounded-2xl bg-surface-card p-3.5 shadow-sm flex flex-col gap-1.5 border border-surface-container/60">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+<span class="font-label-md text-label-md text-primary mt-1">Admission</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Free admission (donations appreciated)</p>
+</div>
+<!-- Card 2 -->
+<div class="rounded-2xl bg-surface-card p-3.5 shadow-sm flex flex-col gap-1.5 border border-surface-container/60">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">record_voice_over</span>
+</div>
+<span class="font-label-md text-label-md text-primary mt-1">Guided Tours</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Docent tours available at main lobby</p>
+</div>
+<!-- Card 3 -->
+<div class="rounded-2xl bg-surface-card p-3.5 shadow-sm flex flex-col gap-1.5 border border-surface-container/60">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">checkroom</span>
+</div>
+<span class="font-label-md text-label-md text-primary mt-1">Dress Code</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Respectful casual attire is recommended</p>
+</div>
+<!-- Card 4 -->
+<div class="rounded-2xl bg-surface-card p-3.5 shadow-sm flex flex-col gap-1.5 border border-surface-container/60">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">local_parking</span>
+</div>
+<span class="font-label-md text-label-md text-primary mt-1">Parking Area</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">On-site visitor parking alongside park</p>
+</div>
+</div>
+<!-- Location Map Preview & Maps Action Button -->
+<div class="mt-5 rounded-2xl bg-surface-card p-3.5 shadow-sm flex flex-col gap-3 border border-surface-container/60">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">map</span>
+<h3 class="font-title-md text-title-md text-primary">Location Map</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Kawit, Cavite</span>
+</div>
+<!-- Mini Map Static Placeholder Frame -->
+<div class="relative w-full h-36 rounded-xl overflow-hidden bg-surface-container flex items-center justify-center shadow-inner" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDFM3n20ESsDj5xfNzem2oYdw-JTdHSP_p1eoQZrxqjKzcvX5ih8LHMo-VGvWRE8bgouPv92NMjo-4n2ZIeMn1-fmRTDpwwWXof2oFq45ra_NTJYH1EmNOHEDcesqohDDy2S8RtQoKmnIYxMZKylUvCjUODHy27XZcXfq7KZqMVAawZ0YYWKKk0nEthR0jDkVBekN91ao99vhRjVBmnhlLcIGdkVvr4h3ueHsIjIq3Rmv4-ETSXAeJHBg'); background-size: cover; background-position: center;">
+<div class="absolute inset-0 bg-primary/10"></div>
+<!-- Center Pin Target Marker -->
+<div class="relative flex flex-col items-center">
+<div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-lg animate-bounce">
+<span class="material-symbols-outlined text-[20px] text-white" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="w-3 h-1 bg-black/25 rounded-full blur-[1px] mt-0.5"></div>
+</div>
+<!-- Quick coordinate chip -->
+<div class="absolute bottom-2 left-2 bg-surface/90 backdrop-blur-md px-2 py-0.5 rounded-full text-label-sm font-label-sm text-on-surface-variant shadow-sm">
+        14.4447° N, 120.9048° E
+      </div>
+</div>
+<!-- Open in Maps Primary CTA -->
+<a class="w-full h-12 bg-primary-container text-on-primary rounded-full font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-md hover:bg-primary transition-all active:scale-[0.98] mt-1" href="https://maps.google.com/?q=Aguinaldo+Shrine+Kawit+Cavite" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[20px]">navigation</span>
+<span class="">Open in Maps</span>
+</a>
+</div>
+</div>
+<script>
+  (function () {
+    const images = [
+      "https://lh3.googleusercontent.com/aida/AEtjO1VSKz4ochTqzuByAOmKCFf7H4ElTkshDp8gdPgWUoruMPDEWpepg0ncxh72bLtkEgMrhpGxmmoZcKODGgh_4AFgUx-Ht9a55waxixPqw6NLQ0Sx1HgEW0Xo5ZLbNiJFGAFmzk8wrUyAHNR7EE1VUg8sD1EnyDUXmFLE6QA1-xLy83Ktw4bLQWKJbhGvS8vt8qp4e3XvnPy3tF6aD8EyRXa3x1qS4vvGRSwQE4ar6diR6gQcEDyidQQlbgY6",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCBO24MlvPAwi9x3HRM4n3UyAHs2DxATGz7tSa3KGhdbp64CXN8q5bTEvCArQsQxIsPCcfLXedgqgdhRfisCQbXQyByMZ5u75gbPD2m0DG9LIY1jrf2fNR_tcb0ogfPmCDROGhA3dnzzLBn10_ClXPMuTY_ToREJxzEmKwOyxvkLam64ILqHayJWaBH0uwovz10O3dJ1fYu8zzkGZZCypbuhQ9ub5DYAWGsZuVTflSkrD0MH5osPvrlfQ",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAFXo4u4s8yqb9-fYXlgb5F8yzPXTjrgGc5Ceejh2vT8wQ69TuDfgBEQp3P-sQjf8KqFktQ2ecoivYoxku6h4e5Y3Iw2oAft5iZ1sEPVbhl5yih1wJw4HotwDAvrov4vdLXEtIBtIueY4mGXOWd1hQFtnSG8sH6A6eL26349dRtc589N5SXSJFnUBtRS_OxYtAY9iIqlZx_sFd1Pw1k33cai6rygssxDz2T3Ap5cTpOk9B6p5WowKEjoA",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAvb8l4MI1T5eLT53dqLLRwJI7yvuUxnBGylQkSSMYpZG2k2mHx2ePTuNt1ItNUlrAZqyCRNPv_nJNz3NBZ7Z2cBj33GPfc627uNJj6sC5HkliPRWD4GC1Fv5dBAgasGqn7iqV1v6wxZUjkCiX-C9Ar1AqtjUO7DgCEzXljaIEx2jBT6PVNFBSJQgR64SFD9sqGpZug73Zk3r2yDzwfwfIIf_eRzI_B706a0CagvAOW_6MrpZf0kaoUMw"
+    ];
+
+    let currentIndex = 0;
+    const mainImg = document.getElementById("main-gallery-image");
+    const label = document.getElementById("photo-index-label");
+    const thumbBtns = document.querySelectorAll(".thumb-btn");
+
+    function updateGallery(index) {
+      currentIndex = (index + images.length) % images.length;
+      if (mainImg) {
+        mainImg.src = images[currentIndex];
+      }
+      if (label) {
+        label.textContent = `${currentIndex + 1} / ${images.length}`;
+      }
+      thumbBtns.forEach((btn, i) => {
+        if (i === currentIndex) {
+          btn.classList.remove("opacity-70");
+          btn.classList.add("outline", "outline-2", "outline-primary-container", "opacity-100");
+        } else {
+          btn.classList.add("opacity-70");
+          btn.classList.remove("outline", "outline-2", "outline-primary-container", "opacity-100");
+        }
+      });
+    }
+
+    window.nextImage = function () {
+      updateGallery(currentIndex + 1);
+    };
+
+    window.prevImage = function () {
+      updateGallery(currentIndex - 1);
+    };
+
+    window.selectPhoto = function (index) {
+      updateGallery(index);
+    };
+  })();
+</script></main></body></html>

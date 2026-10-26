@@ -1,0 +1,320 @@
+<!DOCTYPE html><html class="h-auto bg-background-canvas" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<title>Explore Cavite - Tourism Passport</title>
+<!-- Material Symbols & Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-fixed": "#321200",
+            "tertiary-fixed-dim": "#71dc92",
+            "secondary-fixed-dim": "#ffb68b",
+            "surface-container-low": "#f1f3ff",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#8df9ac",
+            "surface-container-lowest": "#ffffff",
+            "inverse-surface": "#21304f",
+            "surface-dim": "#ccdaff",
+            "passport-leather": "#0B2A4A",
+            "background": "#faf9ff",
+            "on-primary-container": "#89baff",
+            "on-tertiary": "#ffffff",
+            "surface-card": "#F4F6FA",
+            "error": "#ba1a1a",
+            "secondary-container": "#fc8127",
+            "surface-variant": "#d9e2ff",
+            "status-error": "#D64545",
+            "inverse-primary": "#a4c8ff",
+            "on-primary-fixed": "#001c3a",
+            "on-surface": "#0a1b39",
+            "tertiary-container": "#00542a",
+            "surface-container-high": "#e1e8ff",
+            "passport-foil": "#F89C48",
+            "on-surface-variant": "#424750",
+            "primary": "#003260",
+            "primary-fixed": "#d4e3ff",
+            "on-primary": "#ffffff",
+            "surface-tint": "#28609f",
+            "on-tertiary-fixed": "#00210d",
+            "text-secondary": "#6B7280",
+            "secondary": "#994700",
+            "on-background": "#0a1b39",
+            "surface-bright": "#faf9ff",
+            "secondary-fixed": "#ffdbc8",
+            "on-error": "#ffffff",
+            "on-secondary-container": "#602a00",
+            "primary-fixed-dim": "#a4c8ff",
+            "on-primary-fixed-variant": "#004784",
+            "inverse-on-surface": "#edf0ff",
+            "tertiary": "#003a1b",
+            "surface": "#faf9ff",
+            "on-tertiary-fixed-variant": "#005229",
+            "outline": "#727781",
+            "on-error-container": "#93000a",
+            "primary-container": "#004987",
+            "border-divider": "#E5E7EB",
+            "on-tertiary-container": "#61cc84",
+            "surface-container-highest": "#d9e2ff",
+            "outline-variant": "#c2c6d2",
+            "background-canvas": "#FFFFFF",
+            "surface-container": "#e9edff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#753400"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="flex flex-col font-sans text-on-surface bg-background-canvas max-w-[430px] min-h-screen mx-auto shadow-2xl relative select-none">
+<!-- TOP HEADER -->
+<header class="w-full bg-white border-b border-[#E5E7EB]">
+<!-- Android Status Bar Mock -->
+<div class="flex items-center justify-between px-5 pt-3 pb-1 text-[#1B2A49] font-semibold text-xs tracking-tight bg-white">
+<span class="text-sm font-bold">9:41</span>
+<div class="flex items-center gap-1.5 opacity-90 text-[#1B2A49]">
+<span class="material-symbols-outlined text-[16px]">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[16px]">wifi</span>
+<span class="material-symbols-outlined text-[17px]">battery_full</span>
+</div>
+</div>
+<!-- User Header Row -->
+<div class="bg-white px-5 py-3 flex items-start justify-between">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-[#1B2A49] leading-snug">Juan Dela Cruz</span>
+<div class="inline-flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-[#F47B20] text-[15px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-sm font-bold text-[#F47B20] tracking-tight">450 pts</span>
+</div>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F6FA] border border-[#E5E7EB] text-[11px] font-semibold text-[#1B2A49] shadow-sm max-w-[190px] leading-tight">
+<span class="w-2 h-2 rounded-full bg-[#2E9E5B] shrink-0"></span>
+<span>Promo: Jan 1 - Mar 31, 2027</span>
+</div>
+</div>
+<!-- Segmented Toggle: Sites / Itineraries -->
+<div class="px-5 pb-3 pt-1 bg-white">
+<div class="grid grid-cols-2 p-1 rounded-xl bg-[#F4F6FA] border border-border-divider/70 shadow-inner" id="viewToggleGroup" role="tablist">
+<button class="flex items-center justify-center gap-1.5 py-2 rounded-lg text-text-secondary hover:text-on-surface font-semibold text-xs transition-all" id="tabSites" onclick="switchMainTab('sites')" type="button">
+<span class="material-symbols-outlined text-[17px]">location_on</span>
+<span>Sites</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white text-[#003260] font-bold text-xs shadow-sm transition-all border border-[#E5E7EB]" id="tabItineraries" onclick="switchMainTab('itineraries')" type="button">
+<span class="material-symbols-outlined text-[17px]">route</span>
+<span>Itineraries</span>
+</button>
+</div>
+</div>
+</header>
+<!-- MAIN CONTENT (Unclipped Full View) -->
+<main class="w-full px-5 py-4 space-y-4" id="mainContent">
+<!-- ==================== ITINERARIES VIEW ==================== -->
+<section class="space-y-4" id="itinerariesView">
+<div class="flex items-center justify-between pb-0.5 px-0.5">
+<h2 class="text-xs font-bold uppercase tracking-wider text-text-secondary">Curated Stamp Circuits</h2>
+<span class="text-xs font-semibold text-primary">4 itineraries</span>
+</div>
+<!-- Card 1: Day Tour A -->
+<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
+<div class="relative w-full h-44 overflow-hidden">
+<img alt="Scenic Cavite Day Tour Route" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlqpe9afwvmipsP84206BvEkinG-mVZhpqSXfWNw2KMgK0xvcFQuPThT27mN8NsfkLhpTRFQYueMLe8nxGOzdEAE8tmi75O9xJUH664xWODDIb5Au-wd_MvXhQ_i734eG5DRl7iOQ_1Z4oxwzWamfpCTg483m0ss6FZZuOx4N2GU5EjM4hTgAUX683BLcUu03PbxzmjROncRVvFrQDjVh7AHyiLCTQ_9qnP-LXD705ASeUXyYTlSBeeg">
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 flex items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-[#fc8127] text-white text-[10px] font-bold shadow">
+  Day tour
+</span>
+<span class="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-primary text-[10px] font-bold shadow-sm">
+  4 stops
+</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h3 class="font-bold text-sm text-primary leading-snug">Day Tour A: Heritage &amp; Flavors</h3>
+<p class="text-xs text-text-secondary mt-1 leading-relaxed">Kawit historic trails, traditional tablea cafes, and scenic Tagaytay ridge dining.</p>
+</div>
+<span class="text-xs font-bold text-[#fc8127] shrink-0 mt-0.5">+350 pts</span>
+</div>
+<!-- Progress Bar -->
+<div class="space-y-1.5 pt-0.5">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-[#00542a] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+2 of 4 stops stamped
+</span>
+<span class="text-text-secondary font-semibold">50%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#e9edff] overflow-hidden">
+<div class="h-full bg-[#00542a] rounded-full" style="width: 50%;"></div>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 2: Day Tour B -->
+<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
+<div class="relative w-full h-44 overflow-hidden">
+<img alt="Amadeo Cavite coffee and farm trail" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDnukrEZS9nDH36Mr9f4hOcQeFDoLOJJ970wdp66vkxx746upDdwg1JEHmm1xhUSSVwbrIzin4FgiGX8FnxN_G_4Ky-19SI664l9QBpEyjzAQHfH6YUDBIRHquIftqROQC_iNZmEs8j4QFEsNQPpbxstP8-SAekjHxHwARPyNikfnnlOMLkGYg_ih0x4DYDGDb7hDBAR1PYoyGSayp01FFrAeJWYkE9r_l09G2X4erq8A5UCyDqjDi-g">
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 flex items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-[#fc8127] text-white text-[10px] font-bold shadow">
+  Day tour
+</span>
+<span class="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-primary text-[10px] font-bold shadow-sm">
+  3 stops
+</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h3 class="font-bold text-sm text-primary leading-snug">Day Tour B: Agro-Coffee Trail</h3>
+<p class="text-xs text-text-secondary mt-1 leading-relaxed">Discover Amadeo's artisanal roasters, bee farms, and organic farm-to-table lunch.</p>
+</div>
+<span class="text-xs font-bold text-[#fc8127] shrink-0 mt-0.5">+280 pts</span>
+</div>
+<!-- Progress Bar -->
+<div class="space-y-1.5 pt-0.5">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-text-secondary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">pending</span>
+0 of 3 stops stamped
+</span>
+<span class="text-text-secondary font-semibold">0%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#e9edff] overflow-hidden">
+<div class="h-full bg-[#00542a] rounded-full" style="width: 0%;"></div>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 3: Overnight Tour A -->
+<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
+<div class="relative w-full h-44 overflow-hidden">
+<img alt="Ridge and glamping in Alfonso Cavite" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQyZJadH03N8-pm9Gp5BFe2RhPRX2OstLhQ2BDZmkQBCEmQYW0X2_6RRE0SjWxh-huVJJq0I6_4XJ1SoiWoYxfQ6jC8PBRBtu1JVsG-en2bfTzfItMLSMr1AtiTYG3KfzepxC3ljO-7Rlt7AHuYQkAAZ-5nifoSHsZ2AWqJbP-nLoUzsQOiX8VAbKMBZpg9map8Wkf7JDcKg9oCQ98N40NkWvFTgkcEZ32Vy5NaMZ4QpwFTLjediXgYg">
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 flex items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-primary text-white text-[10px] font-bold shadow">
+  Overnight
+</span>
+<span class="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-primary text-[10px] font-bold shadow-sm">
+  6 stops
+</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h3 class="font-bold text-sm text-primary leading-snug">Overnight Tour A: Ridge &amp; Valley Escape</h3>
+<p class="text-xs text-text-secondary mt-1 leading-relaxed">Two-day scenic getaway with lakeside staycation, dining hotspots, and sunrise meditation.</p>
+</div>
+<span class="text-xs font-bold text-[#fc8127] shrink-0 mt-0.5">+500 pts</span>
+</div>
+<!-- Progress Bar -->
+<div class="space-y-1.5 pt-0.5">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-[#00542a] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+3 of 6 stops stamped
+</span>
+<span class="text-text-secondary font-semibold">50%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#e9edff] overflow-hidden">
+<div class="h-full bg-[#00542a] rounded-full" style="width: 50%;"></div>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 4: Overnight Tour B -->
+<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
+<div class="relative w-full h-44 overflow-hidden">
+<img alt="Corregidor and Coastal Forts in Cavite" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvalMhVyIqnu3X3ogsHqQsCcRM8wccdyo1h3QKZRLmkfZApAUw9kl0jFIHB6ievHuSUP_yxchypw8TfdK2V1Hf3bT0faV1XiG-ABi9hL_0ESb1BwaMviUjSs_MekxEOrn7UysYevLIizs9BxldVmNxDu--sxiTJIRE3u54-sVU87R8M_0NrnYUGD1Gvq0b8RsxtLDGPYmwDYQWuTR1SmihArhoJsuXEQaQeTRwo4d__AcqRTrYjN1vVg">
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 flex items-center gap-1.5">
+<span class="px-2.5 py-1 rounded-full bg-primary text-white text-[10px] font-bold shadow">
+  Overnight
+</span>
+<span class="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-primary text-[10px] font-bold shadow-sm">
+  5 stops
+</span>
+</div>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h3 class="font-bold text-sm text-primary leading-snug">Overnight Tour B: Coastal Heritage &amp; Forts</h3>
+<p class="text-xs text-text-secondary mt-1 leading-relaxed">Historical coastal fortifications, seaside fresh seafood banquet, and heritage lighthouse trek.</p>
+</div>
+<span class="text-xs font-bold text-[#fc8127] shrink-0 mt-0.5">+450 pts</span>
+</div>
+<!-- Progress Bar -->
+<div class="space-y-1.5 pt-0.5">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-[#00542a] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+1 of 5 stops stamped
+</span>
+<span class="text-text-secondary font-semibold">20%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#e9edff] overflow-hidden">
+<div class="h-full bg-[#00542a] rounded-full" style="width: 20%;"></div>
+</div>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- BOTTOM NAVIGATION BAR (100% Identical to SCREEN_76) -->
+<footer class="w-full bg-white border-t border-[#E5E7EB] mt-auto">
+<div class="relative flex items-center justify-between h-16 px-2">
+<!-- 1. Explore (Active Navy) -->
+<a aria-current="page" class="flex flex-col items-center justify-center flex-1 h-full text-[#003260] font-bold" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="text-[11px] tracking-tight mt-0.5 font-bold">Explore</span>
+</a>
+<!-- 2. Passport -->
+<a class="flex flex-col items-center justify-center flex-1 h-full text-on-surface-variant hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_22}}">
+<span class="material-symbols-outlined text-[24px]">menu_book</span>
+<span class="text-[11px] font-medium tracking-tight mt-0.5">Passport</span>
+</a>
+<!-- 3. Raised Circular Orange Scan Button -->
+<div class="relative flex flex-col items-center justify-center flex-1 h-full">
+<a class="absolute -top-5 w-14 h-14 rounded-full bg-[#fc8127] text-white flex items-center justify-center shadow-[0_6px_18px_rgba(252,129,39,0.45)] active:scale-95 transition-transform border-[3px] border-white" href="{{DATA:SCREEN:SCREEN_20}}">
+<span class="material-symbols-outlined text-[28px]">qr_code_scanner</span>
+</a>
+<span class="text-[11px] font-medium tracking-tight text-on-surface-variant mt-7">Scan</span>
+</div>
+<!-- 4. Discover -->
+<a class="flex flex-col items-center justify-center flex-1 h-full text-on-surface-variant hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_18}}">
+<span class="material-symbols-outlined text-[24px]">local_activity</span>
+<span class="text-[11px] font-medium tracking-tight mt-0.5">Discover</span>
+</a>
+<!-- 5. Account -->
+<a class="flex flex-col items-center justify-center flex-1 h-full text-on-surface-variant hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_4}}">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="text-[11px] font-medium tracking-tight mt-0.5">Account</span>
+</a>
+</div>
+<!-- Android 3-Button Nav Bar Mock -->
+<div class="flex items-center justify-around h-6 pb-1.5 px-14 text-on-surface-variant/40 bg-white">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+<span class="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
+<span class="material-symbols-outlined text-[14px]">crop_square</span>
+</div>
+</footer>
+</body></html>
