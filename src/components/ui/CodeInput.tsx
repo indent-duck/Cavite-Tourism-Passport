@@ -1,14 +1,11 @@
 import { colors, spacing, typography } from '@/theme';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  NativeSyntheticEvent,
-  TextInput as RNTextInput,
-  StyleSheet,
-  Text,
-  View,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
-
-type TextInputKeyPressEvent = NativeSyntheticEvent<{ key: string }>;
 
 export interface CodeInputProps {
   value: string;
@@ -22,13 +19,20 @@ export interface CodeInputProps {
  * CodeInput Component
  * 
  * A 6-digit verification code input with individual boxes.
- * Auto-advances to next box on digit entry and auto-backspaces on delete.
+ * Uses the single-input pattern for reliable Android keyboard behavior.
+ * 
+ * **Architecture:**
+ * - ONE TextInput that overlays the entire component (invisible, opacity: 0)
+ * - The TextInput receives all touch events and keyboard interactions
+ * - Six visual boxes that display individual digits underneath
+ * - The overlay pattern ensures keyboard reliably reopens on tap
+ * - The focused box is determined by value.length
  * 
  * **Visual Specifications:**
  * - 6 boxes in horizontal row with 8px gap
  * - Each box: 54px height, 12px border radius, surface background
  * - Filled box: headlineLarge digit in primary color
- * - Focused box: lighter background with blinking cursor
+ * - Focused box: lighter background with custom cursor
  * - Empty box: 8px dot indicator (outline-variant at 60% opacity)
  * 
  * **Validates:** Requirements 6-digit verification code input
@@ -40,116 +44,83 @@ export function CodeInput({
   error,
   testID,
 }: CodeInputProps) {
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const inputRefs = useRef<any[]>(Array(length).fill(null));
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Auto-focus first box on mount
+  // Auto-focus on mount
   useEffect(() => {
     const timer = setTimeout(() => {
-      inputRefs.current[0]?.focus();
+      inputRef.current?.focus();
     }, 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // Split value into array of digits
+  // Split value into array of digits for display
   const digits = value.padEnd(length, ' ').split('').slice(0, length);
+  
+  // Focused box is the next empty box (determined by value.length)
+  const focusedIndex = isFocused ? value.length : -1;
 
-  const handleChangeText = (text: string, index: number) => {
-    // Only allow single digit
-    if (text.length > 1) {
-      text = text.slice(-1);
-    }
-
-    // Only allow numbers
-    if (text && !/^\d$/.test(text)) {
-      return;
-    }
-
-    // Build new code string
-    const newDigits = [...digits];
-    newDigits[index] = text || ' ';
-    const newCode = newDigits.join('').trim();
-    
-    onChangeText(newCode);
-
-    // Auto-advance to next box if digit entered
-    if (text && index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (
-    e: TextInputKeyPressEvent,
-    index: number
-  ) => {
-    // Handle backspace on empty box - move to previous box
-    if (e.nativeEvent.key === 'Backspace' && !digits[index].trim()) {
-      if (index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    }
-  };
-
-  const handleFocus = (index: number) => {
-    setFocusedIndex(index);
-  };
-
-  const handleBlur = () => {
-    setFocusedIndex(null);
+  const handleChangeText = (text: string) => {
+    // Filter to digits only, limit to length
+    const filtered = text.replace(/[^\d]/g, '').slice(0, length);
+    onChangeText(filtered);
   };
 
   return (
     <View style={styles.container} testID={testID}>
-      <View style={styles.boxesContainer}>
-        {digits.map((digit, index) => {
-          const isFilled = digit.trim().length > 0;
-          const isFocused = focusedIndex === index;
-          const isEmpty = !isFilled;
+      <View style={styles.inputWrapper}>
+        {/* Visual boxes - rendered first so TextInput overlays them */}
+        <View style={styles.boxesContainer} pointerEvents="box-none">
+          {digits.map((digit, index) => {
+            const isFilled = digit.trim().length > 0;
+            const isBoxFocused = focusedIndex === index;
 
-          return (
-            <View
-              key={index}
-              style={[
-                styles.box,
-                isFocused && styles.boxFocused,
-                error && styles.boxError,
-              ]}
-            >
-              <RNTextInput
-                ref={(ref) => {
-                  inputRefs.current[index] = ref;
-                }}
-                style={styles.input}
-                value={isFilled ? digit : ''}
-                onChangeText={(text) => handleChangeText(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                onFocus={() => handleFocus(index)}
-                onBlur={handleBlur}
-                keyboardType="number-pad"
-                maxLength={1}
-                selectTextOnFocus
-                testID={testID ? `${testID}-box-${index}` : undefined}
-              />
-              
-              {/* Show digit if filled */}
-              {isFilled && (
-                <Text style={styles.digit} pointerEvents="none">
-                  {digit}
-                </Text>
-              )}
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.box,
+                  isBoxFocused && styles.boxFocused,
+                  error && styles.boxError,
+                ]}
+              >
+                {/* Show digit text if filled */}
+                {isFilled && (
+                  <Text style={styles.digit}>{digit}</Text>
+                )}
 
-              {/* Show dot indicator if empty and not focused */}
-              {isEmpty && !isFocused && (
-                <View style={styles.emptyIndicator} pointerEvents="none" />
-              )}
+                {/* Show dot indicator if empty and not focused */}
+                {!isFilled && !isBoxFocused && (
+                  <View style={styles.emptyIndicator} />
+                )}
 
-              {/* Show cursor if focused */}
-              {isFocused && (
-                <View style={styles.cursor} pointerEvents="none" />
-              )}
-            </View>
-          );
-        })}
+                {/* Show cursor if focused on this box */}
+                {isBoxFocused && (
+                  <View style={styles.cursor} />
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Invisible overlay input - receives all touch events */}
+        <TextInput
+          ref={inputRef}
+          value={value}
+          onChangeText={handleChangeText}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          keyboardType="number-pad"
+          maxLength={length}
+          style={styles.hiddenInput}
+          autoComplete="one-time-code"
+          textContentType="oneTimeCode"
+          showSoftInputOnFocus={true}
+          blurOnSubmit={false}
+          caretHidden={true}
+          testID={testID ? `${testID}-input` : undefined}
+        />
       </View>
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -161,12 +132,30 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
+    // Height removed - let container grow to accommodate error message
+  },
+  inputWrapper: {
+    height: 54, // Fixed height for boxes + overlay input only
+    width: '100%',
+    alignItems: 'center',
+    position: 'relative',
   },
   boxesContainer: {
     flexDirection: 'row',
     gap: spacing.sm, // 8px
     maxWidth: 340,
     paddingHorizontal: spacing.xs, // 4px
+  },
+  hiddenInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0, // Fill the inputWrapper height
+    opacity: 0, // Completely invisible
+    color: 'transparent',
+    fontSize: 1,
+    textAlign: 'center',
   },
   box: {
     flex: 1,
@@ -175,7 +164,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
   boxFocused: {
     backgroundColor: '#FAFBFC', // Lighter than surface (#F4F6FA)
@@ -183,13 +171,6 @@ const styles = StyleSheet.create({
   boxError: {
     borderWidth: 1,
     borderColor: colors.error,
-  },
-  input: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    opacity: 0, // Hide the actual input, show custom rendering
-    padding: 0,
   },
   digit: {
     ...typography.headlineLarge,

@@ -1,4 +1,4 @@
-# Implementation Plan: Auth
+﻿# Implementation Plan: Auth
 
 ## Overview
 
@@ -114,7 +114,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Use ScreenContainer with scrollable prop
   - Get email from router params
   - Use `useAuth.signUp` function
-  - Layout: back button, step badge "Step 3 of 3" with dot indicator, progress bar (100% fill), badge "FINAL STEP" with shield icon, headline "Your personal details" (displayLargeMobile), description, form with 4 TextInputs (Full Name with badge icon and "As shown on valid ID" hint, Residential Address with location_on icon and "Cavite Local" hint, Password with lock icon and visibility toggle, Confirm Password with lock_reset icon and visibility toggle), municipality chips below address (Imus, Bacoor, Dasmariñas, Tagaytay, Kawit - optional, keep if in design), PasswordCriteria component below Password field, "Passport Ready To Issue" preview card (optional), "Create account" Button (primary, full width, check_circle filled icon), trust seal footer with shield icon and data privacy text
+  - Layout: back button, step badge "Step 3 of 3" with dot indicator, progress bar (100% fill), badge "FINAL STEP" with shield icon, headline "Your personal details" (displayLargeMobile), description, form with 4 TextInputs (Full Name with badge icon and "As shown on valid ID" hint, Residential Address with location_on icon and "Cavite Local" hint, Password with lock icon and visibility toggle, Confirm Password with lock_reset icon and visibility toggle), municipality chips below address (Imus, Bacoor, DasmariÃ±as, Tagaytay, Kawit - optional, keep if in design), PasswordCriteria component below Password field, "Passport Ready To Issue" preview card (optional), "Create account" Button (primary, full width, check_circle filled icon), trust seal footer with shield icon and data privacy text
   - Validate: name required, address required, password min 8 chars and meets criteria, confirm password matches password
   - Municipality chips: clicking a chip sets the address field value (optional feature)
   - On "Create account" success, navigate to `/(tabs)/explore` with `router.replace` to clear auth stack
@@ -183,16 +183,83 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Verify all components follow project conventions (named exports for components, default exports only for route files)
   - _Requirements: Code quality standards met_
 
-- [ ] 16. Test all auth flows on physical Android phone
+- [x] 16. Test all auth flows on physical Android phone
   - Start dev server with `npx expo start --dev-client`
   - Open app on phone over Wi-Fi
   - Test login flow: valid credentials navigate to Explore, password "wrong" shows error, "Forgot password?" and "Sign up" links work, loading state shows, keyboard handling works
-  - Test sign up flow: step 1 email validation and terms checkbox work, step 2 code "123456" succeeds and countdown works (60 → 0), "Resend code" appears after 60s, "Edit email" returns to step 1, step 3 all validations work, password criteria checklist updates live, "Create account" succeeds and navigates to Explore, back button works at each step
+  - Test sign up flow: step 1 email validation and terms checkbox work, step 2 code "123456" succeeds and countdown works (60 â†’ 0), "Resend code" appears after 60s, "Edit email" returns to step 1, step 3 all validations work, password criteria checklist updates live, "Create account" succeeds and navigates to Explore, back button works at each step
   - Test forgot password flow: step 1 email entry works, step 2 code "123456" succeeds and countdown works, step 3 password criteria checklist updates, "Reset Password & Log in" navigates to success screen, success screen "Log in" button returns to login, back button works at each step
   - Verify Android back button and gesture work on every screen
   - Verify keyboard never covers input fields or buttons (KeyboardAvoidingView working)
   - _Requirements: All auth flows functional on target platform_
 
+- [x] 16.1. Fix CodeInput cursor/typing indicator visual bug
+  - Open `src/components/ui/CodeInput.tsx`
+  - Issue: typing indicator appears inside the number box and pushes the number upward
+  - Root cause: cursor position or text input alignment issue when focused
+  - Fix: adjust TextInput styling to prevent cursor from displacing the digit
+  - Possible solutions: set `caretHidden={true}` and show custom cursor, or adjust paddingVertical/height to accommodate cursor without shifting content
+  - Test on physical Android phone: typing "123456" should not lift the last digit
+  - _Requirements: Verification code input visual correctness_
+
+- [ ] 16.2. Fix keyboard covering input fields on Sign Up Step 3
+  - Open `src/app/(auth)/signup/details.tsx`
+  - Issue: keyboard covers input fields and "Create account" button
+  - Fix: ensure ScreenContainer's KeyboardAvoidingView is properly configured
+  - Verify `behavior` prop is set to "padding" for Android
+  - Verify `keyboardVerticalOffset` accounts for status bar and header if present
+  - Alternative: wrap form in ScrollView with `keyboardShouldPersistTaps="handled"` and adjust contentContainerStyle paddingBottom
+  - Test on physical Android phone: tap each field, keyboard should never cover the active field or the button
+  - _Requirements: Keyboard never covers input fields or buttons_
+
+- [ ] 16.3. Fix keyboard covering password criteria checklist on Forgot Password Step 3
+  - Open `src/app/(auth)/forgot/new-password.tsx`
+  - Issue: keyboard covers the password criteria checklist when typing
+  - Fix: ensure ScreenContainer's KeyboardAvoidingView is properly configured, same approach as 16.2
+  - Verify the criteria checklist is visible above keyboard when password fields are focused
+  - May need to adjust ScrollView contentContainerStyle paddingBottom or KeyboardAvoidingView keyboardVerticalOffset
+  - Test on physical Android phone: tap password field, criteria checklist should remain visible or scroll into view above keyboard
+  - _Requirements: Password criteria checklist remains visible during password entry_
+
+- [ ] 16.4. Fix success screen back button navigation
+  - Open `src/app/(auth)/forgot/success.tsx`
+  - Issue: Android back button returns to New Password screen instead of Login screen
+  - Expected: back button should return to Login screen (success is terminal state)
+  - Fix: use `router.replace('/login')` instead of `router.push` when navigating to success screen from new-password screen, OR handle back button press in success screen to navigate to login
+  - Alternative: in success.tsx, use `useFocusEffect` or `useEffect` with `BackHandler` to intercept back button and navigate to login
+  - Test on physical Android phone: from success screen, tap back button or back gesture, should navigate to Login
+  - _Requirements: Success screen is terminal state, back navigates to login_
+- [ ] 16.5. Fix navigation stack piling between Login and Sign Up screens
+  - Issue: navigating between Login and Sign Up using "Sign up" and "Log in" links creates a navigation stack
+  - Expected behavior: back button/gesture from Login or Sign Up should exit the app, not return to the other screen
+  - Root cause: using `router.push()` creates navigation history stack
+  - Fix option 1: use `router.replace()` instead of `router.push()` when navigating between Login and Sign Up
+  - Fix option 2: use `Redirect` component with `href` prop instead of Link with push navigation
+  - Apply fix to:
+    - `src/app/(auth)/login.tsx`: "Sign up" link should replace, not push
+    - `src/app/(auth)/signup/email.tsx`: "Log in" link should replace, not push
+  - Test on physical Android phone: from Login tap "Sign up", from Sign Up tap back button → should exit app. From Sign Up tap "Log in", from Login tap back button → should exit app
+  - _Requirements: Login and Sign Up are sibling entry points, not parent-child_
+
+- [ ] 16.6. Fix navigation stack piling between Login and Forgot Password screens
+  - Issue: same as 16.5 but between Login and Forgot Password flows
+  - Expected behavior: back button from Forgot Password Step 1 should return to Login, but subsequent back from Login should exit app (not cycle back to Forgot Password)
+  - Apply same fix as 16.5:
+    - `src/app/(auth)/login.tsx`: "Forgot password?" link should use push (correct, it's a sub-flow)
+    - `src/app/(auth)/forgot/email.tsx`: "Log in" link should replace, not push
+    - `src/app/(auth)/forgot/verify.tsx`: if "Log in" link exists, use replace
+    - `src/app/(auth)/forgot/new-password.tsx`: "Cancel and return to sign in" link should replace
+  - Test on physical Android phone: Login → Forgot Password → "Log in" link → back button should exit app. Forgot Password Step 1 → back button should return to Login
+  - _Requirements: Forgot Password is a sub-flow of Login, but cross-links should replace_
+
+- [ ] 16.7. Fix Sign Up Step 1 Continue button validation
+  - Open `src/app/(auth)/signup/email.tsx`
+  - Issue: Continue button is enabled when checkbox is ticked even if email field is empty
+  - Expected: Continue button should be enabled only when BOTH email is valid AND checkbox is ticked
+  - Fix: update button `disabled` prop to check `!isEmailValid || !termsAccepted` where `isEmailValid` is `EMAIL_REGEX.test(email) && email.length > 0`
+  - Ensure email validation runs on every keystroke or on blur
+  - Test on physical Android phone: tick checkbox with empty email → button disabled. Enter invalid email and tick checkbox → button disabled. Enter valid email and tick checkbox → button enabled
+  - _Requirements: Form validation requires all fields to be valid_
 - [ ] 17. Document design differences
   - Create `.kiro/specs/auth/DIFFERENCES.md`
   - List every visual element from design images that was omitted or simplified
@@ -222,6 +289,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
 - Use `@/` import alias for `src/` imports
 - Testing must be on physical Android phone (no emulators per tech rules)
 - DIFFERENCES.md lists all omissions, simplifications, and decisions for design review
+- Bugfix tasks 16.1-16.7 address issues found during physical device testing: CodeInput visual bug, keyboard covering fields, success screen back button, navigation stack piling between auth screens, and Continue button validation on signup step 1
 
 ## Task Dependency Graph
 
@@ -258,8 +326,23 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
     },
     {
       "id": 7,
-      "tasks": ["16", "17"]
+      "tasks": ["16"]
+    },
+    {
+      "id": 8,
+      "tasks": ["16.1", "16.2", "16.3", "16.4", "16.5", "16.6", "16.7"]
+    },
+    {
+      "id": 9,
+      "tasks": ["17"]
     }
   ]
 }
 ```
+
+
+
+
+
+
+

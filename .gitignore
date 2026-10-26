@@ -43,6 +43,7 @@ example
 /android
 
 # design folders
+/design/issues
 
 # Environment Variables
 *.env
