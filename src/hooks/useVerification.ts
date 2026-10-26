@@ -1,98 +1,85 @@
-import { sendVerificationCode, verifyCode as apiVerifyCode } from '@/data/api';
+import { sendVerificationCode, verifyCode as verifyCodeApi } from '@/data/api';
 import { RESEND_CODE_TIMEOUT } from '@/lib/constants';
 import { useCallback, useEffect, useState } from 'react';
 
-/**
- * Hook for email verification code management
- * 
- * Provides code verification, resend functionality, and countdown timer.
- * Mock rule: code "123456" succeeds, all others fail.
- * 
- * Validates: Requirements 1.2.10 (Verification Hook)
- */
-export function useVerification() {
+interface UseVerificationReturn {
+  verifyCode: (email: string, code: string) => Promise<boolean>;
+  resendCode: (email: string) => Promise<void>;
+  loading: boolean;
+  error: string | null;
+  countdown: number;
+  canResend: boolean;
+}
+
+export function useVerification(): UseVerificationReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(RESEND_CODE_TIMEOUT);
-  const [isCountdownActive, setIsCountdownActive] = useState(true);
 
   // Countdown timer effect
   useEffect(() => {
-    if (!isCountdownActive || countdown === 0) {
+    if (countdown <= 0) {
       return;
     }
 
-    const timer = setInterval(() => {
+    const intervalId = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          setIsCountdownActive(false);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [countdown, isCountdownActive]);
+    // Clean up interval on unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [countdown]);
 
-  // Verify the code
-  const verifyCode = useCallback(async (email: string, code: string) => {
+  const verifyCode = useCallback(async (email: string, code: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
 
     try {
-      const isValid = await apiVerifyCode(email, code);
-      
-      if (!isValid) {
-        throw new Error('Invalid verification code');
-      }
-
-      return true;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Verification failed. Please try again.';
-      setError(errorMessage);
-      throw error;
-    } finally {
+      const result = await verifyCodeApi(email, code);
       setLoading(false);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Verification failed. Please try again.';
+      setError(errorMessage);
+      setLoading(false);
+      return false;
     }
   }, []);
 
-  // Resend the verification code
-  const resendCode = useCallback(async (email: string) => {
+  const resendCode = useCallback(async (email: string): Promise<void> => {
     setLoading(true);
     setError(null);
 
     try {
       await sendVerificationCode(email);
-      
-      // Reset countdown
-      setCountdown(RESEND_CODE_TIMEOUT);
-      setIsCountdownActive(true);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to resend code. Please try again.';
+      setCountdown(RESEND_CODE_TIMEOUT); // Reset countdown
+      setLoading(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Failed to resend code. Please try again.';
       setError(errorMessage);
-      throw error;
-    } finally {
       setLoading(false);
     }
   }, []);
 
-  // Start countdown (call this when entering the verification screen)
-  const startCountdown = useCallback(() => {
-    setCountdown(RESEND_CODE_TIMEOUT);
-    setIsCountdownActive(true);
-  }, []);
-
-  // Can resend when countdown reaches 0
   const canResend = countdown === 0;
 
   return {
     verifyCode,
     resendCode,
-    startCountdown,
-    countdown,
-    canResend,
     loading,
     error,
+    countdown,
+    canResend,
   };
 }

@@ -17,7 +17,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Add `EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/`
   - _Requirements: Foundation, validation rules_
 
-- [ ] 2. Create useAuth hook
+- [x] 2. Create useAuth hook
   - Create `src/hooks/useAuth.ts`
   - Wrap `signIn(email, password)` from `@/data/api` with loading and error state
   - Wrap `signUp(email, name, address, password)` with loading and error state
@@ -28,7 +28,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Navigation is handled by screens, not the hook
   - _Requirements: Auth API abstraction with UI state_
 
-- [ ] 3. Create useVerification hook
+- [x] 3. Create useVerification hook
   - Create `src/hooks/useVerification.ts`
   - Wrap `verifyCode(email, code)` from `@/data/api` with loading and error state
   - Implement countdown timer starting at `RESEND_CODE_TIMEOUT` (60 seconds)
@@ -38,7 +38,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Export `{ verifyCode, resendCode, loading, error, countdown, canResend }` where `canResend = countdown === 0`
   - _Requirements: Code verification with timer and resend_
 
-- [ ] 4. Create CodeInput component
+- [x] 4. Create CodeInput component
   - Create `src/components/ui/CodeInput.tsx`
   - Accept props: `value: string`, `onChangeText: (code: string) => void`, `length?: number` (default 6), `error?: string`
   - Render 6 individual boxes in a horizontal row with 8px gap
@@ -54,7 +54,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Display error message below boxes if error prop provided
   - _Requirements: 6-digit verification code input_
 
-- [ ] 5. Create PasswordCriteria component
+- [x] 5. Create PasswordCriteria component
   - Create `src/components/ui/PasswordCriteria.tsx`
   - Accept props: `password: string`, `style?: StyleProp<ViewStyle>`
   - Display 4 criteria as a vertical list with checkmarks that update live as user types
