@@ -212,7 +212,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Test on physical Android phone: tap each field, keyboard should never cover the active field or the button
   - _Requirements: Keyboard never covers input fields or buttons_
 
-- [ ] 16.3. Fix keyboard covering password criteria checklist on Forgot Password Step 3
+- [x] 16.3. Fix keyboard covering password criteria checklist on Forgot Password Step 3
   - Open `src/app/(auth)/forgot/new-password.tsx`
   - Issue: keyboard covers the password criteria checklist when typing
   - Fix: ensure ScreenContainer's KeyboardAvoidingView is properly configured, same approach as 16.2

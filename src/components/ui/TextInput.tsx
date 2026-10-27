@@ -1,11 +1,11 @@
 import { colors, radii, spacing, typography } from '@/theme';
 import { useState } from 'react';
 import {
-  KeyboardTypeOptions,
-  TextInput as RNTextInput,
-  StyleSheet,
-  Text,
-  View,
+    KeyboardTypeOptions,
+    TextInput as RNTextInput,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 export interface TextInputProps {
@@ -21,6 +21,7 @@ export interface TextInputProps {
   multiline?: boolean;
   numberOfLines?: number;
   testID?: string;
+  onFocus?: () => void;
 }
 
 /**
@@ -51,8 +52,15 @@ export function TextInput({
   multiline = false,
   numberOfLines = 1,
   testID,
+  onFocus,
 }: TextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+
+  // Handle focus with both internal and external handlers
+  const handleFocus = () => {
+    setIsFocused(true);
+    onFocus?.();
+  };
 
   // Determine border style based on state
   const getBorderStyle = () => {
@@ -101,7 +109,7 @@ export function TextInput({
           editable={editable}
           multiline={multiline}
           numberOfLines={multiline ? numberOfLines : 1}
-          onFocus={() => setIsFocused(true)}
+          onFocus={handleFocus}
           onBlur={() => setIsFocused(false)}
           testID={testID ? `${testID}-input` : undefined}
         />

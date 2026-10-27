@@ -75,6 +75,11 @@ export interface ScreenContainerProps {
    * Test identifier for automated testing
    */
   testID?: string;
+
+  /**
+   * Ref to the ScrollView for programmatic scrolling
+   */
+  scrollViewRef?: React.RefObject<any>;
 }
 
 export function ScreenContainer({
@@ -87,6 +92,7 @@ export function ScreenContainer({
   withTabBarPadding = false,
   edges = ['top', 'left', 'right'],
   testID,
+  scrollViewRef,
 }: ScreenContainerProps) {
   const insets = useSafeAreaInsets();
 
@@ -114,6 +120,7 @@ export function ScreenContainer({
 
       {scrollable ? (
         <ScrollView
+          ref={scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollViewContent,

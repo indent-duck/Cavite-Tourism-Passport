@@ -11,8 +11,9 @@ import {
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+    Keyboard,
     Pressable,
     TextInput as RNTextInput,
     ScrollView,
@@ -45,6 +46,44 @@ export default function SignupDetailsScreen() {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const { signUp } = useAuth();
+
+  // Refs for scroll-to-input behavior
+  const scrollViewRef = useRef<any>(null);
+  const [inputLayouts, setInputLayouts] = useState<Record<string, number>>({});
+
+  // Listen to keyboard events and scroll when keyboard appears
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        // Small delay to ensure keyboard is fully shown
+        setTimeout(() => {
+          // Scroll to make room for keyboard
+          scrollViewRef.current?.scrollTo({
+            y: 100,
+            animated: true,
+          });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
+
+  // Helper to scroll to an input based on stored layout
+  const scrollToInput = (inputKey: string, extraOffset = 100) => {
+    const yPosition = inputLayouts[inputKey];
+    if (yPosition !== undefined && scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(0, yPosition - extraOffset),
+          animated: true,
+        });
+      }, 100);
+    }
+  };
 
   // Municipalities for quick selection
   const municipalities = ['Imus', 'Bacoor', 'Dasmariñas', 'Tagaytay', 'Kawit'];
@@ -114,7 +153,7 @@ export default function SignupDetailsScreen() {
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']} contentContainerStyle={styles.scrollContent}>
+    <ScreenContainer scrollable edges={['top', 'left', 'right']} contentContainerStyle={styles.scrollContent} scrollViewRef={scrollViewRef}>
       <View style={styles.container}>
         {/* Top Bar - Back Button and Step Indicator */}
         <View style={styles.topBar}>
@@ -150,7 +189,15 @@ export default function SignupDetailsScreen() {
         {/* Form */}
         <View style={styles.form}>
           {/* Full Name */}
-          <View style={styles.fieldContainer}>
+          <View
+            style={styles.fieldContainer}
+            onLayout={(event) => {
+              setInputLayouts((prev) => ({
+                ...prev,
+                name: event.nativeEvent.layout.y,
+              }));
+            }}
+          >
             <View style={styles.labelRow}>
               <Text style={styles.label}>Full Name</Text>
               <Text style={styles.labelHint}>As shown on valid ID</Text>
@@ -169,6 +216,7 @@ export default function SignupDetailsScreen() {
                   setName(text);
                   setNameError('');
                 }}
+                onFocus={() => scrollToInput('name', 50)}
                 placeholder="e.g. Juan Dela Cruz"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
@@ -178,7 +226,15 @@ export default function SignupDetailsScreen() {
           </View>
 
           {/* Residential Address */}
-          <View style={styles.fieldContainer}>
+          <View
+            style={styles.fieldContainer}
+            onLayout={(event) => {
+              setInputLayouts((prev) => ({
+                ...prev,
+                address: event.nativeEvent.layout.y,
+              }));
+            }}
+          >
             <View style={styles.labelRow}>
               <Text style={styles.label}>Residential Address</Text>
               <Text style={styles.labelHintAccent}>Cavite Local</Text>
@@ -197,6 +253,7 @@ export default function SignupDetailsScreen() {
                   setAddress(text);
                   setAddressError('');
                 }}
+                onFocus={() => scrollToInput('address', 50)}
                 placeholder="Barangay, City or Municipality"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
@@ -234,7 +291,15 @@ export default function SignupDetailsScreen() {
           </View>
 
           {/* Password */}
-          <View style={styles.fieldContainer}>
+          <View
+            style={styles.fieldContainer}
+            onLayout={(event) => {
+              setInputLayouts((prev) => ({
+                ...prev,
+                password: event.nativeEvent.layout.y,
+              }));
+            }}
+          >
             <View style={styles.labelRow}>
               <Text style={styles.label}>Password</Text>
               {password && validatePassword(password) && (
@@ -262,6 +327,7 @@ export default function SignupDetailsScreen() {
                   setPassword(text);
                   setPasswordError('');
                 }}
+                onFocus={() => scrollToInput('password', 150)}
                 placeholder="Create secure password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showPassword}
@@ -283,7 +349,15 @@ export default function SignupDetailsScreen() {
           </View>
 
           {/* Confirm Password */}
-          <View style={styles.fieldContainer}>
+          <View
+            style={styles.fieldContainer}
+            onLayout={(event) => {
+              setInputLayouts((prev) => ({
+                ...prev,
+                confirmPassword: event.nativeEvent.layout.y,
+              }));
+            }}
+          >
             <Text style={styles.label}>Confirm Password</Text>
             <View style={styles.inputContainer}>
               <Ionicons
@@ -299,6 +373,7 @@ export default function SignupDetailsScreen() {
                   setConfirmPassword(text);
                   setConfirmPasswordError('');
                 }}
+                onFocus={() => scrollToInput('confirmPassword', 200)}
                 placeholder="Re-enter your password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showConfirmPassword}
