@@ -127,6 +127,18 @@
         "chatSessionId": "sess_ce23b9f5-75be-4cb8-bfb4-42a25c41ff57",
         "timestamp": 1793101443473
       }
+    ],
+    "16.6. Fix navigation stack piling between Login and Forgot Password screens": [
+      {
+        "executionId": "750b12f7-c6d4-4941-932d-40b6412714d0",
+        "chatSessionId": "sess_cbf4193a-2437-46e6-bffc-16b1e889f136",
+        "timestamp": 1793103708274
+      },
+      {
+        "executionId": "750b12f7-c6d4-4941-932d-40b6412714d0",
+        "chatSessionId": "sess_cbf4193a-2437-46e6-bffc-16b1e889f136",
+        "timestamp": 1793103819958
+      }
     ]
   }
 }

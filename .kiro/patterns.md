@@ -171,8 +171,93 @@ Use `router.replace()` consistently for ALL navigation between Login and Sign Up
 
 **Related Issues:**
 - Task 16.5: Fix navigation stack piling between Login and Sign Up screens
-- Task 16.6: Similar fix may be needed between Login and Forgot Password screens
+
+---
+
+## Navigation Stack Piling Between Parent Screen and Sub-Flow
+
+**Problem:**
+- Navigating from a parent screen (Login) to a sub-flow (Forgot Password) and back creates navigation stack issues
+- When using cross-flow links to return from sub-flow to parent, the stack accumulates: `[Login, Forgot, Login]`
+- Android back button from Login incorrectly returns to the Forgot Password screen
+- Using `router.replace()` or `router.navigate()` from sub-flow to parent doesn't properly unwind the stack
+
+**Root Cause:**
+The sub-flow screens need to **go back** to the existing parent screen, not create a new instance of it. Methods like `router.replace()` and `router.navigate()` don't prevent duplicate screens when returning to a parent that's already in the stack.
+
+**Solution:**
+Use `router.back()` for shallow sub-flows (1 step deep) and `router.dismissAll()` + `router.replace()` for deep sub-flows (multiple steps deep).
+
+**Implementation:**
+
+1. **Parent Screen - Link to sub-flow (correct - no change needed):**
+```typescript
+// Login screen - "Forgot password?" link
+<Pressable onPress={() => router.push('/forgot/email')}>
+  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+</Pressable>
+```
+*Use `router.push()` because this IS a parent-child relationship - the sub-flow should be able to go back.*
+
+2. **Sub-Flow Step 1 - Return to parent link:**
+```typescript
+// Forgot Password Email screen - "Log in" link
+<Pressable onPress={() => router.back()}>
+  <Text style={styles.loginLink}>Log in</Text>
+</Pressable>
+```
+*Use `router.back()` to pop back to the existing parent screen (1 screen back).*
+
+3. **Sub-Flow Step 3 (Deep) - Cancel and return to parent:**
+```typescript
+// Forgot Password New Password screen - "Cancel and return to sign in" link
+const handleCancel = () => {
+  router.dismissAll();
+  router.replace('/login');
+};
+```
+*Use `router.dismissAll()` to clear all sub-flow screens, then `router.replace()` to show the parent.*
+
+**Why This Works:**
+- `router.back()` pops the current screen and returns to the screen underneath (the existing parent)
+- `router.dismissAll()` clears the entire navigation stack, preventing any sub-flow screens from remaining
+- `router.replace()` after dismissAll ensures a clean slate with just the parent screen
+- This prevents duplicate parent screens in the stack
+
+**Navigation Flow Examples:**
+
+*Shallow sub-flow (1 step):*
+```
+Login → push → Forgot Email → back() → Login (same instance) → back → exit app ✓
+```
+
+*Deep sub-flow (3 steps):*
+```
+Login → push → Forgot Email → push → Forgot Verify → push → Forgot New Password
+       → dismissAll() + replace('/login') → Login (clean stack) → back → exit app ✓
+```
+
+**Key Points:**
+- **Sub-flow entry:** Parent → Sub-flow should use `router.push()` (parent-child relationship)
+- **Sub-flow exit (shallow):** Use `router.back()` to return to existing parent
+- **Sub-flow exit (deep):** Use `router.dismissAll()` + `router.replace()` to clear all sub-flow screens
+- **DO NOT use `router.replace()` alone** - it replaces the current screen but can leave intermediate screens in the stack
+- **DO NOT use `router.navigate()` alone** - it may not properly unwind to an existing parent screen
+- The distinction is: sibling screens (Login ↔ Sign Up) use replace; parent-child (Login → Forgot) uses push/back
+
+**Applies To:**
+- Login → Forgot Password navigation
+- Any parent screen with a multi-step sub-flow
+- Flows where "Cancel" or "Return" should cleanly exit back to the parent
+
+**Files Modified:**
+- `src/app/(auth)/forgot/email.tsx`: "Remember your password? Log in" link uses `router.back()`
+- `src/app/(auth)/forgot/new-password.tsx`: "Cancel and return to sign in" uses `router.dismissAll()` + `router.replace('/login')`
+
+**Related Issues:**
+- Task 16.6: Fix navigation stack piling between Login and Forgot Password screens
 
 ---
 
 ## [Future patterns will be added here as they're discovered]
+

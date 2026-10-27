@@ -130,7 +130,9 @@ export default function ForgotNewPasswordScreen() {
   };
 
   const handleCancel = () => {
-    router.push('/login');
+    // Dismiss all forgot password screens and return to login
+    router.dismissAll();
+    router.replace('/login');
   };
 
   return (

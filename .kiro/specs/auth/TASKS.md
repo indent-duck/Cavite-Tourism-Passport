@@ -241,7 +241,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Test on physical Android phone: from Login tap "Sign up", from Sign Up tap back button → should exit app. From Sign Up tap "Log in", from Login tap back button → should exit app
   - _Requirements: Login and Sign Up are sibling entry points, not parent-child_
 
-- [ ] 16.6. Fix navigation stack piling between Login and Forgot Password screens
+- [x] 16.6. Fix navigation stack piling between Login and Forgot Password screens
   - Issue: same as 16.5 but between Login and Forgot Password flows
   - Expected behavior: back button from Forgot Password Step 1 should return to Login, but subsequent back from Login should exit app (not cycle back to Forgot Password)
   - Apply same fix as 16.5:

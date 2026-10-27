@@ -168,7 +168,7 @@ export default function ForgotEmailScreen() {
         {/* Login Link */}
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Remember your password? </Text>
-          <Pressable onPress={() => router.push('/login')}>
+          <Pressable onPress={() => router.back()}>
             <Text style={styles.loginLink}>Log in</Text>
           </Pressable>
         </View>
