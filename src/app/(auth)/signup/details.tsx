@@ -47,43 +47,32 @@ export default function SignupDetailsScreen() {
 
   const { signUp } = useAuth();
 
-  // Refs for scroll-to-input behavior
+  // Ref for programmatic scrolling
   const scrollViewRef = useRef<any>(null);
-  const [inputLayouts, setInputLayouts] = useState<Record<string, number>>({});
+  const [isPasswordFieldFocused, setIsPasswordFieldFocused] = useState(false);
 
-  // Listen to keyboard events and scroll when keyboard appears
+  // Listen to keyboard events and scroll when keyboard appears (only for password fields)
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => {
-        // Small delay to ensure keyboard is fully shown
-        setTimeout(() => {
-          // Scroll to make room for keyboard
-          scrollViewRef.current?.scrollTo({
-            y: 100,
-            animated: true,
-          });
-        }, 100);
+        if (isPasswordFieldFocused) {
+          // Small delay to ensure keyboard is fully shown
+          setTimeout(() => {
+            // Scroll to make room for keyboard, password criteria, and button
+            scrollViewRef.current?.scrollTo({
+              y: 350,
+              animated: true,
+            });
+          }, 100);
+        }
       }
     );
 
     return () => {
       keyboardDidShowListener.remove();
     };
-  }, []);
-
-  // Helper to scroll to an input based on stored layout
-  const scrollToInput = (inputKey: string, extraOffset = 100) => {
-    const yPosition = inputLayouts[inputKey];
-    if (yPosition !== undefined && scrollViewRef.current) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          y: Math.max(0, yPosition - extraOffset),
-          animated: true,
-        });
-      }, 100);
-    }
-  };
+  }, [isPasswordFieldFocused]);
 
   // Municipalities for quick selection
   const municipalities = ['Imus', 'Bacoor', 'Dasmariñas', 'Tagaytay', 'Kawit'];
@@ -189,15 +178,7 @@ export default function SignupDetailsScreen() {
         {/* Form */}
         <View style={styles.form}>
           {/* Full Name */}
-          <View
-            style={styles.fieldContainer}
-            onLayout={(event) => {
-              setInputLayouts((prev) => ({
-                ...prev,
-                name: event.nativeEvent.layout.y,
-              }));
-            }}
-          >
+          <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Full Name</Text>
               <Text style={styles.labelHint}>As shown on valid ID</Text>
@@ -216,7 +197,6 @@ export default function SignupDetailsScreen() {
                   setName(text);
                   setNameError('');
                 }}
-                onFocus={() => scrollToInput('name', 50)}
                 placeholder="e.g. Juan Dela Cruz"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
@@ -226,15 +206,7 @@ export default function SignupDetailsScreen() {
           </View>
 
           {/* Residential Address */}
-          <View
-            style={styles.fieldContainer}
-            onLayout={(event) => {
-              setInputLayouts((prev) => ({
-                ...prev,
-                address: event.nativeEvent.layout.y,
-              }));
-            }}
-          >
+          <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Residential Address</Text>
               <Text style={styles.labelHintAccent}>Cavite Local</Text>
@@ -253,7 +225,6 @@ export default function SignupDetailsScreen() {
                   setAddress(text);
                   setAddressError('');
                 }}
-                onFocus={() => scrollToInput('address', 50)}
                 placeholder="Barangay, City or Municipality"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
@@ -291,15 +262,7 @@ export default function SignupDetailsScreen() {
           </View>
 
           {/* Password */}
-          <View
-            style={styles.fieldContainer}
-            onLayout={(event) => {
-              setInputLayouts((prev) => ({
-                ...prev,
-                password: event.nativeEvent.layout.y,
-              }));
-            }}
-          >
+          <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Password</Text>
               {password && validatePassword(password) && (
@@ -327,7 +290,8 @@ export default function SignupDetailsScreen() {
                   setPassword(text);
                   setPasswordError('');
                 }}
-                onFocus={() => scrollToInput('password', 150)}
+                onFocus={() => setIsPasswordFieldFocused(true)}
+                onBlur={() => setIsPasswordFieldFocused(false)}
                 placeholder="Create secure password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showPassword}
@@ -349,15 +313,7 @@ export default function SignupDetailsScreen() {
           </View>
 
           {/* Confirm Password */}
-          <View
-            style={styles.fieldContainer}
-            onLayout={(event) => {
-              setInputLayouts((prev) => ({
-                ...prev,
-                confirmPassword: event.nativeEvent.layout.y,
-              }));
-            }}
-          >
+          <View style={styles.fieldContainer}>
             <Text style={styles.label}>Confirm Password</Text>
             <View style={styles.inputContainer}>
               <Ionicons
@@ -373,7 +329,8 @@ export default function SignupDetailsScreen() {
                   setConfirmPassword(text);
                   setConfirmPasswordError('');
                 }}
-                onFocus={() => scrollToInput('confirmPassword', 200)}
+                onFocus={() => setIsPasswordFieldFocused(true)}
+                onBlur={() => setIsPasswordFieldFocused(false)}
                 placeholder="Re-enter your password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showConfirmPassword}
@@ -394,12 +351,10 @@ export default function SignupDetailsScreen() {
             {confirmPasswordError && <Text style={styles.errorText}>{confirmPasswordError}</Text>}
           </View>
 
-          {/* Password Criteria */}
-          {password && (
-            <View style={styles.criteriaContainer}>
-              <PasswordCriteria password={password} />
-            </View>
-          )}
+          {/* Password Criteria - Always visible */}
+          <View style={styles.criteriaContainer}>
+            <PasswordCriteria password={password} />
+          </View>
 
           {/* Passport Preview Card */}
           <View style={styles.previewCard}>
@@ -448,7 +403,7 @@ export default function SignupDetailsScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: spacing.xxl * 6, // Significant padding to allow scrolling above keyboard
+    paddingBottom: spacing.xxl * 4, // Bottom padding for natural scrolling
   },
   container: {
     flex: 1,
