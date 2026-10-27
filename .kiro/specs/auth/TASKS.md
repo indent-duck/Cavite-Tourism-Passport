@@ -202,7 +202,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Test on physical Android phone: typing "123456" should not lift the last digit
   - _Requirements: Verification code input visual correctness_
 
-- [ ] 16.2. Fix keyboard covering input fields on Sign Up Step 3
+- [x] 16.2. Fix keyboard covering input fields on Sign Up Step 3
   - Open `src/app/(auth)/signup/details.tsx`
   - Issue: keyboard covers input fields and "Create account" button
   - Fix: ensure ScreenContainer's KeyboardAvoidingView is properly configured
@@ -260,6 +260,18 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Ensure email validation runs on every keystroke or on blur
   - Test on physical Android phone: tick checkbox with empty email → button disabled. Enter invalid email and tick checkbox → button disabled. Enter valid email and tick checkbox → button enabled
   - _Requirements: Form validation requires all fields to be valid_
+
+- [ ] 16.8. Fix keyboard covering Verify button on verification screens
+  - Open `src/app/(auth)/signup/verify.tsx` and `src/app/(auth)/forgot/verify.tsx`
+  - Issue: keyboard covers the "Verify" button when CodeInput is focused
+  - Root cause: ScreenContainer's KeyboardAvoidingView or ScrollView not properly configured for these screens
+  - Fix: ensure ScreenContainer has proper keyboard handling
+    - Verify `scrollable` prop is set to true
+    - Check if ScrollView `contentContainerStyle` needs additional `paddingBottom` to account for keyboard
+    - Alternative: wrap the button in a KeyboardAvoidingView with `behavior="padding"` and appropriate offset
+  - Test on physical Android phone: tap CodeInput boxes, keyboard should open but "Verify" button should remain visible above the keyboard or be scrollable into view
+  - _Requirements: Keyboard never covers action buttons_
+
 - [ ] 17. Document design differences
   - Create `.kiro/specs/auth/DIFFERENCES.md`
   - List every visual element from design images that was omitted or simplified
@@ -289,7 +301,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
 - Use `@/` import alias for `src/` imports
 - Testing must be on physical Android phone (no emulators per tech rules)
 - DIFFERENCES.md lists all omissions, simplifications, and decisions for design review
-- Bugfix tasks 16.1-16.7 address issues found during physical device testing: CodeInput visual bug, keyboard covering fields, success screen back button, navigation stack piling between auth screens, and Continue button validation on signup step 1
+- Bugfix tasks 16.1-16.8 address issues found during physical device testing: CodeInput visual bug, keyboard covering fields, success screen back button, navigation stack piling between auth screens, Continue button validation on signup step 1, and keyboard covering Verify button on verification screens
 
 ## Task Dependency Graph
 
@@ -330,7 +342,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
     },
     {
       "id": 8,
-      "tasks": ["16.1", "16.2", "16.3", "16.4", "16.5", "16.6", "16.7"]
+      "tasks": ["16.1", "16.2", "16.3", "16.4", "16.5", "16.6", "16.7", "16.8"]
     },
     {
       "id": 9,

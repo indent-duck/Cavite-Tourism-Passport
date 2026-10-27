@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.lee1plus1.CaviteTourismPassport"
+      "package": "com.lee1plus1.CaviteTourismPassport",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "server",

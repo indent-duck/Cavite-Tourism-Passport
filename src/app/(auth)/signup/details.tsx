@@ -18,7 +18,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from 'react-native';
 
 /**
@@ -114,7 +114,7 @@ export default function SignupDetailsScreen() {
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']}>
+    <ScreenContainer scrollable edges={['top', 'left', 'right']} contentContainerStyle={styles.scrollContent}>
       <View style={styles.container}>
         {/* Top Bar - Back Button and Step Indicator */}
         <View style={styles.topBar}>
@@ -372,6 +372,9 @@ export default function SignupDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: spacing.xxl * 6, // Significant padding to allow scrolling above keyboard
+  },
   container: {
     flex: 1,
     paddingTop: spacing.sm,

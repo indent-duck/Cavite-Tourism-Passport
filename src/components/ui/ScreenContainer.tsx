@@ -1,19 +1,19 @@
+import { TAB_BAR_HEIGHT } from '@/lib/constants';
+import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    type StyleProp,
+    type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, type Edge, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@/theme';
-import { TAB_BAR_HEIGHT } from '@/lib/constants';
+import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 /**
  * ScreenContainer Component
@@ -136,7 +136,8 @@ export function ScreenContainer({
     <SafeAreaView style={styles.container} edges={edges} testID={testID}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'android' ? 'height' : 'padding'}
+        behavior={Platform.OS === 'android' ? undefined : 'padding'}
+        keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}
       >
         {content}
       </KeyboardAvoidingView>

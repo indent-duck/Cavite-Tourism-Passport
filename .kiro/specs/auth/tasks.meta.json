@@ -103,6 +103,18 @@
         "chatSessionId": "sess_0174e654-27ef-42f2-9d6e-70fb78781f3c",
         "timestamp": 1792986379552
       }
+    ],
+    "16.2. Fix keyboard covering input fields on Sign Up Step 3": [
+      {
+        "executionId": "24ef45f7-6da6-4e3c-ad2f-19ae49887fcf",
+        "chatSessionId": "sess_a9d780b9-439e-4154-b20c-bbb266b575ea",
+        "timestamp": 1793060739189
+      },
+      {
+        "executionId": "24ef45f7-6da6-4e3c-ad2f-19ae49887fcf",
+        "chatSessionId": "sess_a9d780b9-439e-4154-b20c-bbb266b575ea",
+        "timestamp": 1793061028462
+      }
     ]
   }
 }
