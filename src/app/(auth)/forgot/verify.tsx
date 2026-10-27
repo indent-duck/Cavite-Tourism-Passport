@@ -5,8 +5,8 @@ import { useVerification } from '@/hooks/useVerification';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Forgot Password - Step 2: Code Verification
@@ -22,6 +22,30 @@ export default function ForgotVerifyScreen() {
   const [verificationError, setVerificationError] = useState('');
 
   const { verifyCode, resendCode, loading, error, countdown, canResend } = useVerification();
+
+  // Ref for scroll-to-input behavior
+  const scrollViewRef = useRef<any>(null);
+
+  // Listen to keyboard events and scroll when keyboard appears
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        // Small delay to ensure keyboard is fully shown
+        setTimeout(() => {
+          // Scroll to make room for keyboard and button
+          scrollViewRef.current?.scrollTo({
+            y: 200,
+            animated: true,
+          });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   const handleVerify = async () => {
     setVerificationError('');
@@ -68,7 +92,7 @@ export default function ForgotVerifyScreen() {
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']}>
+    <ScreenContainer scrollable edges={['top', 'left', 'right']} contentContainerStyle={styles.scrollContent} scrollViewRef={scrollViewRef}>
       <View style={styles.container}>
         {/* Top Bar - Back Button and Step Indicator */}
         <View style={styles.topBar}>
@@ -180,6 +204,9 @@ export default function ForgotVerifyScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: spacing.xxl * 6, // Significant padding to allow scrolling above keyboard
+  },
   container: {
     flex: 1,
     paddingTop: spacing.sm,
