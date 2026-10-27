@@ -221,7 +221,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Test on physical Android phone: tap password field, criteria checklist should remain visible or scroll into view above keyboard
   - _Requirements: Password criteria checklist remains visible during password entry_
 
-- [ ] 16.4. Fix success screen back button navigation
+- [x] 16.4. Fix success screen back button navigation
   - Open `src/app/(auth)/forgot/success.tsx`
   - Issue: Android back button returns to New Password screen instead of Login screen
   - Expected: back button should return to Login screen (success is terminal state)

@@ -3,17 +3,31 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { BackHandler, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Forgot Password Success Screen
  * 
  * Terminal state after password reset showing success confirmation.
  * No back button - navigates to login with router.replace to clear stack.
+ * Android back button intercepted to navigate to login.
  * 
  * Validates: Requirements 1.8 (Forgot password success)
  */
 export default function ForgotSuccessScreen() {
+  // Intercept Android back button to navigate to login
+  useEffect(() => {
+    const onBackPress = () => {
+      router.replace('/login');
+      return true; // Prevent default back behavior
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => subscription.remove();
+  }, []);
+
   const handleLoginPress = () => {
     router.replace('/login');
   };
