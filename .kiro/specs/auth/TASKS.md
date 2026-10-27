@@ -229,7 +229,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Alternative: in success.tsx, use `useFocusEffect` or `useEffect` with `BackHandler` to intercept back button and navigate to login
   - Test on physical Android phone: from success screen, tap back button or back gesture, should navigate to Login
   - _Requirements: Success screen is terminal state, back navigates to login_
-- [ ] 16.5. Fix navigation stack piling between Login and Sign Up screens
+- [x] 16.5. Fix navigation stack piling between Login and Sign Up screens
   - Issue: navigating between Login and Sign Up using "Sign up" and "Log in" links creates a navigation stack
   - Expected behavior: back button/gesture from Login or Sign Up should exit the app, not return to the other screen
   - Root cause: using `router.push()` creates navigation history stack

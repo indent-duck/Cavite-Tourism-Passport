@@ -115,6 +115,18 @@
         "chatSessionId": "sess_a9d780b9-439e-4154-b20c-bbb266b575ea",
         "timestamp": 1793061028462
       }
+    ],
+    "16.5. Fix navigation stack piling between Login and Sign Up screens": [
+      {
+        "executionId": "07b30cff-941b-4302-87f7-80a5ddeb1e48",
+        "chatSessionId": "sess_ce23b9f5-75be-4cb8-bfb4-42a25c41ff57",
+        "timestamp": 1793101308060
+      },
+      {
+        "executionId": "07b30cff-941b-4302-87f7-80a5ddeb1e48",
+        "chatSessionId": "sess_ce23b9f5-75be-4cb8-bfb4-42a25c41ff57",
+        "timestamp": 1793101443473
+      }
     ]
   }
 }

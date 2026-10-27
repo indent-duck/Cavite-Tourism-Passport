@@ -58,7 +58,7 @@ export default function SignupEmailScreen() {
       <View style={styles.container}>
         {/* Top Bar - Back Button and Step Indicator */}
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={spacing.sm}>
+          <Pressable onPress={() => router.replace('/login')} style={styles.backButton} hitSlop={spacing.sm}>
             <Ionicons name="arrow-back" size={20} color={colors.text} />
           </Pressable>
           <View style={styles.stepBadge}>
@@ -163,7 +163,7 @@ export default function SignupEmailScreen() {
         {/* Login Link */}
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Already have an account? </Text>
-          <Pressable onPress={() => router.push('/login')}>
+          <Pressable onPress={() => router.replace('/login')}>
             <Text style={styles.loginLink}>Log in</Text>
           </Pressable>
         </View>
