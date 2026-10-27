@@ -19,6 +19,8 @@ export default function ForgotSuccessScreen() {
   // Intercept Android back button to navigate to login
   useEffect(() => {
     const onBackPress = () => {
+      // Dismiss all screens in the navigation stack before navigating to login
+      router.dismissAll();
       router.replace('/login');
       return true; // Prevent default back behavior
     };
@@ -29,6 +31,8 @@ export default function ForgotSuccessScreen() {
   }, []);
 
   const handleLoginPress = () => {
+    // Dismiss all screens in the navigation stack before navigating to login
+    router.dismissAll();
     router.replace('/login');
   };
 

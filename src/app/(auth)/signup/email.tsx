@@ -24,6 +24,9 @@ export default function SignupEmailScreen() {
 
   const { sendCode } = useAuth();
 
+  // Email validation runs on every keystroke
+  const isEmailValid = EMAIL_REGEX.test(email) && email.length > 0;
+
   const handleContinue = async () => {
     // Reset errors
     setEmailError('');
@@ -155,7 +158,7 @@ export default function SignupEmailScreen() {
             variant="primary"
             fullWidth
             loading={sendCode.loading}
-            disabled={!termsAccepted}
+            disabled={!isEmailValid || !termsAccepted}
             icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
           />
         </View>

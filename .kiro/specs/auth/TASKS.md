@@ -1,4 +1,4 @@
-﻿# Implementation Plan: Auth
+# Implementation Plan: Auth
 
 ## Overview
 
@@ -114,7 +114,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Use ScreenContainer with scrollable prop
   - Get email from router params
   - Use `useAuth.signUp` function
-  - Layout: back button, step badge "Step 3 of 3" with dot indicator, progress bar (100% fill), badge "FINAL STEP" with shield icon, headline "Your personal details" (displayLargeMobile), description, form with 4 TextInputs (Full Name with badge icon and "As shown on valid ID" hint, Residential Address with location_on icon and "Cavite Local" hint, Password with lock icon and visibility toggle, Confirm Password with lock_reset icon and visibility toggle), municipality chips below address (Imus, Bacoor, DasmariÃ±as, Tagaytay, Kawit - optional, keep if in design), PasswordCriteria component below Password field, "Passport Ready To Issue" preview card (optional), "Create account" Button (primary, full width, check_circle filled icon), trust seal footer with shield icon and data privacy text
+  - Layout: back button, step badge "Step 3 of 3" with dot indicator, progress bar (100% fill), badge "FINAL STEP" with shield icon, headline "Your personal details" (displayLargeMobile), description, form with 4 TextInputs (Full Name with badge icon and "As shown on valid ID" hint, Residential Address with location_on icon and "Cavite Local" hint, Password with lock icon and visibility toggle, Confirm Password with lock_reset icon and visibility toggle), municipality chips below address (Imus, Bacoor, Dasmariñas, Tagaytay, Kawit - optional, keep if in design), PasswordCriteria component below Password field, "Passport Ready To Issue" preview card (optional), "Create account" Button (primary, full width, check_circle filled icon), trust seal footer with shield icon and data privacy text
   - Validate: name required, address required, password min 8 chars and meets criteria, confirm password matches password
   - Municipality chips: clicking a chip sets the address field value (optional feature)
   - On "Create account" success, navigate to `/(tabs)/explore` with `router.replace` to clear auth stack
@@ -187,7 +187,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Start dev server with `npx expo start --dev-client`
   - Open app on phone over Wi-Fi
   - Test login flow: valid credentials navigate to Explore, password "wrong" shows error, "Forgot password?" and "Sign up" links work, loading state shows, keyboard handling works
-  - Test sign up flow: step 1 email validation and terms checkbox work, step 2 code "123456" succeeds and countdown works (60 â†’ 0), "Resend code" appears after 60s, "Edit email" returns to step 1, step 3 all validations work, password criteria checklist updates live, "Create account" succeeds and navigates to Explore, back button works at each step
+  - Test sign up flow: step 1 email validation and terms checkbox work, step 2 code "123456" succeeds and countdown works (60 → 0), "Resend code" appears after 60s, "Edit email" returns to step 1, step 3 all validations work, password criteria checklist updates live, "Create account" succeeds and navigates to Explore, back button works at each step
   - Test forgot password flow: step 1 email entry works, step 2 code "123456" succeeds and countdown works, step 3 password criteria checklist updates, "Reset Password & Log in" navigates to success screen, success screen "Log in" button returns to login, back button works at each step
   - Verify Android back button and gesture work on every screen
   - Verify keyboard never covers input fields or buttons (KeyboardAvoidingView working)
@@ -238,7 +238,7 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Apply fix to:
     - `src/app/(auth)/login.tsx`: "Sign up" link should replace, not push
     - `src/app/(auth)/signup/email.tsx`: "Log in" link should replace, not push
-  - Test on physical Android phone: from Login tap "Sign up", from Sign Up tap back button → should exit app. From Sign Up tap "Log in", from Login tap back button → should exit app
+  - Test on physical Android phone: from Login tap "Sign up", from Sign Up tap back button ? should exit app. From Sign Up tap "Log in", from Login tap back button ? should exit app
   - _Requirements: Login and Sign Up are sibling entry points, not parent-child_
 
 - [x] 16.6. Fix navigation stack piling between Login and Forgot Password screens
@@ -249,28 +249,28 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
     - `src/app/(auth)/forgot/email.tsx`: "Log in" link should replace, not push
     - `src/app/(auth)/forgot/verify.tsx`: if "Log in" link exists, use replace
     - `src/app/(auth)/forgot/new-password.tsx`: "Cancel and return to sign in" link should replace
-  - Test on physical Android phone: Login → Forgot Password → "Log in" link → back button should exit app. Forgot Password Step 1 → back button should return to Login
+  - Test on physical Android phone: Login ? Forgot Password ? "Log in" link ? back button should exit app. Forgot Password Step 1 ? back button should return to Login
   - _Requirements: Forgot Password is a sub-flow of Login, but cross-links should replace_
 
-- [ ] 16.7. Fix Sign Up Step 1 Continue button validation
+- [x] 16.7. Fix Sign Up Step 1 Continue button validation
   - Open `src/app/(auth)/signup/email.tsx`
   - Issue: Continue button is enabled when checkbox is ticked even if email field is empty
   - Expected: Continue button should be enabled only when BOTH email is valid AND checkbox is ticked
   - Fix: update button `disabled` prop to check `!isEmailValid || !termsAccepted` where `isEmailValid` is `EMAIL_REGEX.test(email) && email.length > 0`
   - Ensure email validation runs on every keystroke or on blur
-  - Test on physical Android phone: tick checkbox with empty email → button disabled. Enter invalid email and tick checkbox → button disabled. Enter valid email and tick checkbox → button enabled
+  - Test on physical Android phone: tick checkbox with empty email ? button disabled. Enter invalid email and tick checkbox ? button disabled. Enter valid email and tick checkbox ? button enabled
   - _Requirements: Form validation requires all fields to be valid_
-
-- [ ] 16.8. Fix keyboard covering Verify button on verification screens
-  - Open `src/app/(auth)/signup/verify.tsx` and `src/app/(auth)/forgot/verify.tsx`
-  - Issue: keyboard covers the "Verify" button when CodeInput is focused
-  - Root cause: ScreenContainer's KeyboardAvoidingView or ScrollView not properly configured for these screens
-  - Fix: ensure ScreenContainer has proper keyboard handling
-    - Verify `scrollable` prop is set to true
-    - Check if ScrollView `contentContainerStyle` needs additional `paddingBottom` to account for keyboard
-    - Alternative: wrap the button in a KeyboardAvoidingView with `behavior="padding"` and appropriate offset
-  - Test on physical Android phone: tap CodeInput boxes, keyboard should open but "Verify" button should remain visible above the keyboard or be scrollable into view
-  - _Requirements: Keyboard never covers action buttons_
+- [ ] 16.8. Fix complete navigation stack clearing after forgot password success
+  - Open `src/app/(auth)/forgot/success.tsx` and `src/app/(auth)/forgot/new-password.tsx`
+  - Issue: after completing forgot password flow and reaching login screen, back button returns to new-password screen (step 3) instead of exiting app
+  - Root cause: entire forgot password flow (email ? verify ? new-password) remains in navigation stack when navigating to success, then to login
+  - Fix approach: aggressive stack clearing using `router.dismissAll()` before `router.replace('/login')` in success screen
+  - Implementation steps:
+    1. In `success.tsx`, update the `handleLoginPress` function and BackHandler to call `router.dismissAll()` followed by `router.replace('/login')`
+    2. Optional: also update `new-password.tsx` to use `router.replace('/forgot/success')` instead of `router.push()` to prevent piling
+  - Expected behavior: Login ? Forgot Password flow ? Success ? Login, then back button should exit app (not return to any forgot password screen)
+  - Test on physical Android phone: complete forgot password flow, tap "Log in" from success screen, press back button ? should exit app, not return to new-password or any forgot password screen
+  - _Requirements: Success is terminal state, entire forgot password stack must be cleared_
 
 - [ ] 17. Document design differences
   - Create `.kiro/specs/auth/DIFFERENCES.md`

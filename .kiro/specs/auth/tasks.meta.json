@@ -139,6 +139,18 @@
         "chatSessionId": "sess_cbf4193a-2437-46e6-bffc-16b1e889f136",
         "timestamp": 1793103819958
       }
+    ],
+    "16.7. Fix Sign Up Step 1 Continue button validation": [
+      {
+        "executionId": "4a6cca97-ae5c-4341-a990-994eaf5363dc",
+        "chatSessionId": "sess_85cc861c-7ad6-44a5-8126-e463fdfd5447",
+        "timestamp": 1793104689865
+      },
+      {
+        "executionId": "4a6cca97-ae5c-4341-a990-994eaf5363dc",
+        "chatSessionId": "sess_85cc861c-7ad6-44a5-8126-e463fdfd5447",
+        "timestamp": 1793104789744
+      }
     ]
   }
 }

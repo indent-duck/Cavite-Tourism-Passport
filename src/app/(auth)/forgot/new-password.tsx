@@ -118,7 +118,8 @@ export default function ForgotNewPasswordScreen() {
     try {
       await resetPassword.fn(email, newPassword);
       // Navigate to success screen on successful password reset
-      router.push('/forgot/success');
+      // Use replace to prevent adding to navigation stack
+      router.replace('/forgot/success');
     } catch {
       // Error is already captured in the hook's state
       setNewPasswordError(resetPassword.error || 'Failed to reset password. Please try again.');
