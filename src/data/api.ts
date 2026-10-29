@@ -89,6 +89,50 @@ export async function resetPassword(
   // Mock: always succeeds after verifyCode was called
 }
 
+/**
+ * Send SMS verification code to contact number
+ * Mock: Always succeeds
+ */
+export async function sendContactCode(contactNumber: string): Promise<boolean> {
+  await randomDelay();
+  // Mock: always succeeds (simulates sending SMS code)
+  return true;
+}
+
+/**
+ * Verify SMS code for contact number
+ * Mock: Code "123456" succeeds, all others fail
+ * On success, updates currentMockUser with verified contact number
+ */
+export async function verifyContactCode(
+  contactNumber: string,
+  code: string,
+): Promise<boolean> {
+  await randomDelay();
+
+  if (code !== "123456") {
+    return false;
+  }
+
+  // Update mock user with verified contact number
+  currentMockUser.contactNumber = contactNumber;
+  currentMockUser.contactVerified = true;
+
+  return true;
+}
+
+/**
+ * Sign out the current user
+ * Mock: Resets user to initial state (clears contact number and verification status)
+ */
+export async function signOut(): Promise<void> {
+  await randomDelay();
+  
+  // Reset mock user to initial state (clear any session-specific modifications)
+  currentMockUser.contactNumber = undefined;
+  currentMockUser.contactVerified = false;
+}
+
 // ============================================================================
 // User Data
 // ============================================================================

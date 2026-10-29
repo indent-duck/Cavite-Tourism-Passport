@@ -7,6 +7,7 @@ export interface User {
   name: string;
   address: string;
   contactNumber?: string; // Added later in Account settings
+  contactVerified?: boolean;
   passportId: string; // Format: CVT-YYYY-NNNNNN
   points: number;
   createdAt: Date;

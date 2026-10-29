@@ -23,6 +23,8 @@ export const mockUser: User = {
   passportId: "CVT-2027-000123",
   points: 450,
   createdAt: new Date("2027-01-15"),
+  // contactNumber is undefined initially - added later in Account screen
+  contactVerified: false,
 };
 
 // Eligible user for testing (750 pts, stamps from all 4 categories)
@@ -34,6 +36,8 @@ const mockEligibleUser: User = {
   passportId: "CVT-2027-000123",
   points: 750,
   createdAt: new Date("2027-01-15"),
+  // contactNumber is undefined initially - added later in Account screen
+  contactVerified: false,
 };
 
 // Export the appropriate user based on flag

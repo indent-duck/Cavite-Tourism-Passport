@@ -1,4 +1,4 @@
-# Implementation Plan: Auth
+﻿# Implementation Plan: Auth
 
 ## Overview
 
@@ -260,17 +260,6 @@ Implement the complete authentication UI for the Cavite Tourism Passport app: lo
   - Ensure email validation runs on every keystroke or on blur
   - Test on physical Android phone: tick checkbox with empty email ? button disabled. Enter invalid email and tick checkbox ? button disabled. Enter valid email and tick checkbox ? button enabled
   - _Requirements: Form validation requires all fields to be valid_
-- [ ] 16.8. Fix complete navigation stack clearing after forgot password success
-  - Open `src/app/(auth)/forgot/success.tsx` and `src/app/(auth)/forgot/new-password.tsx`
-  - Issue: after completing forgot password flow and reaching login screen, back button returns to new-password screen (step 3) instead of exiting app
-  - Root cause: entire forgot password flow (email ? verify ? new-password) remains in navigation stack when navigating to success, then to login
-  - Fix approach: aggressive stack clearing using `router.dismissAll()` before `router.replace('/login')` in success screen
-  - Implementation steps:
-    1. In `success.tsx`, update the `handleLoginPress` function and BackHandler to call `router.dismissAll()` followed by `router.replace('/login')`
-    2. Optional: also update `new-password.tsx` to use `router.replace('/forgot/success')` instead of `router.push()` to prevent piling
-  - Expected behavior: Login ? Forgot Password flow ? Success ? Login, then back button should exit app (not return to any forgot password screen)
-  - Test on physical Android phone: complete forgot password flow, tap "Log in" from success screen, press back button ? should exit app, not return to new-password or any forgot password screen
-  - _Requirements: Success is terminal state, entire forgot password stack must be cleared_
 
 - [ ] 17. Document design differences
   - Create `.kiro/specs/auth/DIFFERENCES.md`
