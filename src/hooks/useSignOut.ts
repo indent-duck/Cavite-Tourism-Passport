@@ -27,14 +27,14 @@ export function useSignOut() {
       // Remove all queries from persisted cache
       await queryClient.removeQueries();
 
-      // Navigate to login screen with replace to prevent back navigation
-      router.replace('/(auth)/login');
+      // Navigate to root index which redirects to login, clearing navigation stack
+      router.replace('/');
     } catch (error) {
       console.error('Sign out error:', error);
       // Even if API call fails, still clear cache and navigate
       queryClient.clear();
       await queryClient.removeQueries();
-      router.replace('/(auth)/login');
+      router.replace('/');
     } finally {
       setIsLoading(false);
     }

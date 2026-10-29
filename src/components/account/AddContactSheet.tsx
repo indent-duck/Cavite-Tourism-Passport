@@ -397,14 +397,6 @@ const styles = StyleSheet.create({
     ...typography.titleMedium,
     color: colors.primary,
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   
   // Description styles
   description: {

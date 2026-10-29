@@ -82,8 +82,8 @@ export default function LoginScreen() {
 
     try {
       await signIn.fn(email, password);
-      // On success, navigate to Explore
-      router.push('/(tabs)/explore');
+      // On success, navigate to Explore and reset navigation stack
+      router.replace('/(tabs)/explore');
     } catch {
       // Error is already set by useAuth hook
       // Display in password field as it's the auth error

@@ -202,19 +202,14 @@ export default function AccountScreen() {
           <View style={[styles.detailRow, styles.contactRow]}>
             <View style={styles.detailLeft}>
               <Ionicons name="phone-portrait-outline" size={18} color={`${colors.primary}B3`} />
-              <View>
-                <Text style={styles.detailLabel}>Contact Number</Text>
-                <Text style={[styles.detailValue, styles.contactValue]}>
-                  {user.contactNumber || '+63 •••••••••'}
-                </Text>
-              </View>
+              <Text style={styles.detailLabel}>Contact Number</Text>
             </View>
-            {user.contactVerified ? (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color="#047857" />
-                <Text style={styles.verifiedText}>Verified</Text>
-              </View>
-            ) : (
+            <Text style={[styles.detailValue, styles.contactValue]}>
+              {user.contactNumber || '+63 •••••••••'}
+            </Text>
+          </View>
+          {!user.contactVerified && (
+            <View style={styles.contactButtonRow}>
               <Pressable
                 style={styles.addContactButton}
                 onPress={() => setContactSheetVisible(true)}
@@ -222,8 +217,16 @@ export default function AccountScreen() {
                 <Ionicons name="add" size={14} color={colors.background} />
                 <Text style={styles.addContactText}>Add Contact Number</Text>
               </Pressable>
-            )}
-          </View>
+            </View>
+          )}
+          {user.contactVerified && (
+            <View style={styles.contactButtonRow}>
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={14} color="#047857" />
+                <Text style={styles.verifiedText}>Verified</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Navigation Links Section */}
@@ -481,10 +484,16 @@ const styles = StyleSheet.create({
     borderTopColor: `${colors.border}80`,
     paddingTop: spacing.sm,
   },
+  contactButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingTop: spacing.xs,
+    paddingRight: 0,
+  },
   contactValue: {
     fontSize: 14,
     fontWeight: '600',
-    marginTop: 2,
   },
   verifiedBadge: {
     flexDirection: 'row',
