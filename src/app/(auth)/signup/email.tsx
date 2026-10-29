@@ -6,8 +6,8 @@ import { EMAIL_REGEX } from '@/lib/constants';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Sign Up - Step 1: Email Entry
@@ -23,6 +23,37 @@ export default function SignupEmailScreen() {
   const [emailError, setEmailError] = useState('');
 
   const { sendCode } = useAuth();
+  const scrollViewRef = useRef<any>(null);
+
+  // Listen to keyboard events and scroll
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollTo({
+            y: 200,
+            animated: true,
+          });
+        }, 100);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Email validation runs on every keystroke
   const isEmailValid = EMAIL_REGEX.test(email) && email.length > 0;
@@ -57,7 +88,7 @@ export default function SignupEmailScreen() {
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']}>
+    <ScreenContainer scrollable edges={['top', 'left', 'right']} scrollViewRef={scrollViewRef} contentContainerStyle={{ paddingBottom: spacing.xxl * 6 }}>
       <View style={styles.container}>
         {/* Top Bar - Back Button and Step Indicator */}
         <View style={styles.topBar}>

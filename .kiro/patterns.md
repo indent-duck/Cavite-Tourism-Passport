@@ -12,7 +12,70 @@ This file documents common issues encountered in this project and their solution
 - Native 'pan' mode (softwareKeyboardLayoutMode) is insufficient for ScrollView-based forms
 
 **Solution:**
-Implement manual scroll-to-input behavior using refs and the Keyboard API.
+Implement manual scroll-to-input behavior using refs and the Keyboard API. There are two approaches: per-input tracking with `onLayout`, or global keyboard listener with fixed scroll position.
+
+**Approach A: Global Keyboard Listener (Simpler, Recommended for most forms)**
+
+Use this when you want all inputs to trigger the same scroll behavior.
+
+**Implementation Steps:**
+
+1. **Import required modules:**
+```typescript
+import { useEffect, useRef } from 'react';
+import { Keyboard } from 'react-native';
+```
+
+2. **Create ref:**
+```typescript
+const scrollViewRef = useRef<any>(null);
+```
+
+3. **Add keyboard listeners:**
+```typescript
+useEffect(() => {
+  const keyboardDidShowListener = Keyboard.addListener(
+    'keyboardDidShow',
+    () => {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: 200, // Adjust based on your form height
+          animated: true,
+        });
+      }, 100);
+    }
+  );
+
+  const keyboardDidHideListener = Keyboard.addListener(
+    'keyboardDidHide',
+    () => {
+      // Optional: Scroll back to top when keyboard closes
+      scrollViewRef.current?.scrollTo({
+        y: 0,
+        animated: true,
+      });
+    }
+  );
+
+  return () => {
+    keyboardDidShowListener.remove();
+    keyboardDidHideListener.remove();
+  };
+}, []);
+```
+
+4. **Pass ref to ScreenContainer:**
+```typescript
+<ScreenContainer scrollViewRef={scrollViewRef} contentContainerStyle={{ paddingBottom: spacing.xxl * 6 }}>
+```
+
+**Approach B: Per-Input Tracking (More precise, for complex forms)**
+
+Use this when different inputs need different scroll positions.
+
+**Approach B: Per-Input Tracking (More precise, for complex forms)**
+
+Use this when different inputs need different scroll positions.
 
 **Implementation Steps:**
 
@@ -28,25 +91,7 @@ const scrollViewRef = useRef<any>(null);
 const [inputLayouts, setInputLayouts] = useState<Record<string, number>>({});
 ```
 
-3. **Add keyboard listener (optional, for global scroll):**
-```typescript
-useEffect(() => {
-  const keyboardDidShowListener = Keyboard.addListener(
-    'keyboardDidShow',
-    () => {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          y: 100,
-          animated: true,
-        });
-      }, 100);
-    }
-  );
-  return () => keyboardDidShowListener.remove();
-}, []);
-```
-
-4. **Create scroll helper function:**
+3. **Create scroll helper function:**
 ```typescript
 const scrollToInput = (inputKey: string, extraOffset = 100) => {
   const yPosition = inputLayouts[inputKey];
@@ -61,7 +106,7 @@ const scrollToInput = (inputKey: string, extraOffset = 100) => {
 };
 ```
 
-5. **Track input positions with onLayout:**
+4. **Track input positions with onLayout:**
 ```typescript
 <View
   style={styles.fieldContainer}
@@ -79,33 +124,38 @@ const scrollToInput = (inputKey: string, extraOffset = 100) => {
 </View>
 ```
 
-6. **Pass ref to ScreenContainer:**
+5. **Pass ref to ScreenContainer:**
 - Update ScreenContainer interface: `scrollViewRef?: React.RefObject<any>`
 - Pass ref to ScrollView: `<ScrollView ref={scrollViewRef} ...>`
 - Use in screen: `<ScreenContainer scrollViewRef={scrollViewRef} ...>`
 
-7. **Adjust offsets based on content:**
+6. **Adjust offsets based on content:**
 - Small offset (50px): for fields near the top
 - Medium offset (100px): for mid-form fields
 - Large offset (150-200px): for fields that need to show content below them (e.g., password with criteria checklist)
 
-8. **Ensure sufficient bottom padding:**
+7. **Ensure sufficient bottom padding:**
 ```typescript
 contentContainerStyle={{ paddingBottom: spacing.xxl * 6 }} // ~192px
 ```
 
 **Key Points:**
+- **Approach A** is simpler and sufficient for most forms - use a fixed scroll position for all inputs
+- **Approach B** provides more control but requires tracking each input's position with onLayout
 - Use `useRef<any>(null)` to avoid TypeScript ref type conflicts with React Native's ScrollView types
 - The 100ms setTimeout allows keyboard animation to start before scrolling
-- Larger offsets for password fields ensure criteria checklists and buttons remain visible
+- The `keyboardDidHide` listener is optional - it auto-scrolls back to top when keyboard closes, but may interfere if user wants to tap buttons immediately after dismissing keyboard
+- Adjust the Y scroll value based on your form's content height (100-400px typically works)
 - This approach works reliably across all Android devices
 
 **Files Modified:**
-- Screen file (e.g., `signup/details.tsx`): Add refs, state, listeners, and onFocus handlers
+- Screen file (e.g., `login.tsx`): Add keyboard listeners with refs (Approach A)
+- Screen file (e.g., `signup/details.tsx`): Add refs, state, listeners, and onFocus handlers (Approach B)
 - `ScreenContainer.tsx`: Add optional `scrollViewRef` prop and pass to ScrollView
 
 **Related Issues:**
-- Task 16.2: Fix keyboard covering input fields on Sign Up Step 3
+- Task 16.1: Fix keyboard covering input fields on Login screen (uses Approach A)
+- Task 16.2: Fix keyboard covering input fields on Sign Up Step 3 (uses Approach B with password field focus tracking)
 - Task 16.3: Similar fix needed for Forgot Password Step 3
 
 ---

@@ -44,8 +44,20 @@ export default function LoginScreen() {
       }
     );
 
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        // Scroll back to top when keyboard closes
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      }
+    );
+
     return () => {
       keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
 

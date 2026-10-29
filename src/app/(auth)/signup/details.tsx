@@ -49,19 +49,32 @@ export default function SignupDetailsScreen() {
 
   // Ref for programmatic scrolling
   const scrollViewRef = useRef<any>(null);
-  const [isPasswordFieldFocused, setIsPasswordFieldFocused] = useState(false);
+  const [focusedField, setFocusedField] = useState<'name' | 'address' | 'password' | 'confirmPassword' | null>(null);
 
-  // Listen to keyboard events and scroll when keyboard appears (only for password fields)
+  // Listen to keyboard events and scroll based on focused field
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => {
-        if (isPasswordFieldFocused) {
+        if (focusedField) {
           // Small delay to ensure keyboard is fully shown
           setTimeout(() => {
-            // Scroll to make room for keyboard, password criteria, and button
+            let scrollY = 0;
+            
+            // Different scroll positions based on which field is focused
+            switch (focusedField) {
+              case 'name':
+              case 'address':
+                scrollY = 100; // Light scroll for top fields
+                break;
+              case 'password':
+              case 'confirmPassword':
+                scrollY = 350; // Larger scroll for password fields to show criteria
+                break;
+            }
+            
             scrollViewRef.current?.scrollTo({
-              y: 350,
+              y: scrollY,
               animated: true,
             });
           }, 100);
@@ -69,10 +82,22 @@ export default function SignupDetailsScreen() {
       }
     );
 
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        // Scroll back to top when keyboard closes
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      }
+    );
+
     return () => {
       keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
-  }, [isPasswordFieldFocused]);
+  }, [focusedField]);
 
   // Municipalities for quick selection
   const municipalities = ['Imus', 'Bacoor', 'Dasmariñas', 'Tagaytay', 'Kawit'];
@@ -197,6 +222,8 @@ export default function SignupDetailsScreen() {
                   setName(text);
                   setNameError('');
                 }}
+                onFocus={() => setFocusedField('name')}
+                onBlur={() => setFocusedField(null)}
                 placeholder="e.g. Juan Dela Cruz"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
@@ -225,6 +252,8 @@ export default function SignupDetailsScreen() {
                   setAddress(text);
                   setAddressError('');
                 }}
+                onFocus={() => setFocusedField('address')}
+                onBlur={() => setFocusedField(null)}
                 placeholder="Barangay, City or Municipality"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
@@ -290,8 +319,8 @@ export default function SignupDetailsScreen() {
                   setPassword(text);
                   setPasswordError('');
                 }}
-                onFocus={() => setIsPasswordFieldFocused(true)}
-                onBlur={() => setIsPasswordFieldFocused(false)}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
                 placeholder="Create secure password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showPassword}
@@ -329,8 +358,8 @@ export default function SignupDetailsScreen() {
                   setConfirmPassword(text);
                   setConfirmPasswordError('');
                 }}
-                onFocus={() => setIsPasswordFieldFocused(true)}
-                onBlur={() => setIsPasswordFieldFocused(false)}
+                onFocus={() => setFocusedField('confirmPassword')}
+                onBlur={() => setFocusedField(null)}
                 placeholder="Re-enter your password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry={!showConfirmPassword}

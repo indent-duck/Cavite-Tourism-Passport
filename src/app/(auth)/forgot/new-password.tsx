@@ -62,8 +62,20 @@ export default function ForgotNewPasswordScreen() {
       }
     );
 
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        // Scroll back to top when keyboard closes
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      }
+    );
+
     return () => {
       keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
 
@@ -268,7 +280,7 @@ export default function ForgotNewPasswordScreen() {
         {/* Reset Password Button */}
         <View style={styles.buttonContainer}>
           <Button
-            title="Reset Password & Log in"
+            title="Reset Password"
             onPress={handleResetPassword}
             variant="primary"
             fullWidth
@@ -280,12 +292,11 @@ export default function ForgotNewPasswordScreen() {
 
         {/* Cancel Link */}
         <View style={styles.cancelContainer}>
-          <Text style={styles.cancelText}>
-            Cancel and{' '}
-            <Pressable onPress={handleCancel} hitSlop={spacing.sm}>
-              <Text style={styles.cancelLink}>return to sign in</Text>
-            </Pressable>
-          </Text>
+          <Pressable onPress={handleCancel} hitSlop={spacing.sm}>
+            <Text style={styles.cancelText}>
+              Cancel and <Text style={styles.cancelLink}>return to sign in</Text>
+            </Text>
+          </Pressable>
         </View>
 
         {/* Trust Seal Footer */}
