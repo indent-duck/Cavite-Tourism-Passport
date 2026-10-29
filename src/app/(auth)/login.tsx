@@ -6,8 +6,8 @@ import { EMAIL_REGEX } from '@/lib/constants';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Login Screen
@@ -26,6 +26,28 @@ export default function LoginScreen() {
   const [passwordError, setPasswordError] = useState('');
 
   const { signIn } = useAuth();
+  const scrollViewRef = useRef<any>(null);
+
+  // Listen to keyboard events and scroll when keyboard appears
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        // Small delay to ensure keyboard is fully shown
+        setTimeout(() => {
+          // Scroll to make room for keyboard and button
+          scrollViewRef.current?.scrollTo({
+            y: 200,
+            animated: true,
+          });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   const handleLogin = async () => {
     // Reset errors
@@ -60,7 +82,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']}>
+    <ScreenContainer scrollable edges={['top', 'left', 'right']} scrollViewRef={scrollViewRef} contentContainerStyle={{ paddingBottom: spacing.xxl * 6 }}>
       <View style={styles.container}>
         {/* Heritage Seal */}
         <View style={styles.sealContainer}>
