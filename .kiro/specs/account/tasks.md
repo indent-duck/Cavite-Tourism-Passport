@@ -40,8 +40,8 @@ The Account feature displays the user's profile information, digital passport ID
     - Reset `currentMockUser` to initial state (clear contactNumber and contactVerified)
     - _Requirements: Mock API function for signing out_
 
-- [ ] 3. Create hooks for contact number and sign out
-  - [ ] 3.1 Create useContactVerification hook
+- [x] 3. Create hooks for contact number and sign out
+  - [x] 3.1 Create useContactVerification hook
     - Create `src/hooks/useContactVerification.ts`
     - Export `useContactVerification` hook that returns `{ sendCode, verifyCode, isLoading, error }`
     - `sendCode` calls `sendContactCode` from api.ts
@@ -50,7 +50,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Handle loading and error states
     - _Requirements: Hook for contact verification flow_
 
-  - [ ] 3.2 Create useSignOut hook
+  - [x] 3.2 Create useSignOut hook
     - Create `src/hooks/useSignOut.ts`
     - Export `useSignOut` hook that returns `{ signOut, isLoading }`
     - `signOut` calls `signOut` from api.ts, clears React Query cache (both in-memory and persisted), and navigates to `/(auth)/login` with `router.replace`
@@ -59,8 +59,8 @@ The Account feature displays the user's profile information, digital passport ID
     - Handle loading state
     - _Requirements: Hook for sign out with cache clearing_
 
-- [ ] 4. Create AddContactSheet component for bottom sheet flow
-  - [ ] 4.1 Create AddContactSheet component
+- [x] 4. Create AddContactSheet component for bottom sheet flow
+  - [x] 4.1 Create AddContactSheet component
     - Create `src/components/account/AddContactSheet.tsx`
     - Implement AddContactSheetProps interface: `{ visible, onDismiss, onSuccess }`
     - Use `@gorhom/bottom-sheet` BottomSheet component
@@ -94,8 +94,8 @@ The Account feature displays the user's profile information, digital passport ID
     - Use Ionicons for icons
     - _Requirements: Bottom sheet component for contact number verification flow_
 
-- [ ] 5. Implement Account screen
-  - [ ] 5.1 Create Account screen layout and header
+- [x] 5. Implement Account screen
+  - [x] 5.1 Create Account screen layout and header
     - Open `src/app/(tabs)/account.tsx`
     - Replace placeholder content
     - Use ScreenContainer with `scrollable={true}`, `withTabBarPadding={true}`, and `edges={['left', 'right']}`
@@ -103,7 +103,7 @@ The Account feature displays the user's profile information, digital passport ID
     - No promo chip on this screen (Header's rightSlot is undefined)
     - _Requirements: Account screen with proper layout_
 
-  - [ ] 5.2 Create Digital ID Card section
+  - [x] 5.2 Create Digital ID Card section
     - Create ID card component in the Account screen or as a separate component in `src/components/account/PassportIdCard.tsx`
     - Dark blue gradient background (from #0B2A4A via #003260 to #001f3f)
     - Decorative security pattern backdrop (subtle circles)
@@ -116,7 +116,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Copy button shows checkmark icon for 1.8 seconds after copying
     - _Requirements: Digital ID card matching the design_
 
-  - [ ] 5.3 Create Activity Stats cards section
+  - [x] 5.3 Create Activity Stats cards section
     - Three cards in a grid (3 columns, equal width):
       - Stamps card: icon, "Stamps" label, "5 / 20" count, progress bar (25%)
       - Points card: icon, "Credits" label, "450 pts" count, "+150 new" indicator with up arrow
@@ -126,7 +126,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Match design from account.png
     - _Requirements: Activity stats cards with live data_
 
-  - [ ] 5.4 Create Account Details section
+  - [x] 5.4 Create Account Details section
     - Card with white background, 16px radius, border, shadow
     - Header row: "ACCOUNT DETAILS" title (uppercase, bold, small text), "Edit" button
     - "Edit" button is non-functional for this spec (placeholder for future Edit Profile feature)
@@ -142,7 +142,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Use data from useCurrentUser hook
     - _Requirements: Account details section with contact number state_
 
-  - [ ] 5.5 Create Navigation Links section
+  - [x] 5.5 Create Navigation Links section
     - Card with white background, 16px radius, border, shadow
     - Three navigation rows:
       - Settings & Preferences: tune icon, title, subtitle "Push Notifications, Language & Help FAQs", chevron right
@@ -153,7 +153,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Use Pressable with press feedback
     - _Requirements: Navigation links section_
 
-  - [ ] 5.6 Create Log Out button
+  - [x] 5.6 Create Log Out button
     - Red outlined button at the bottom: "Log out" text with logout icon
     - White background, red border, red text
     - On press, call `signOut` from useSignOut hook (no confirmation dialog—account.png shows no confirmation)

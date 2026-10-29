@@ -100,7 +100,7 @@ export function ScreenContainer({
   const bottomPadding = withTabBarPadding ? TAB_BAR_HEIGHT + insets.bottom : 0;
 
   const content = (
-    <View style={[styles.content, { paddingBottom: bottomPadding }]}>
+    <View style={styles.content}>
       {showHeader && (
         <View style={styles.header}>
           {onBackPress && (
@@ -124,6 +124,7 @@ export function ScreenContainer({
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollViewContent,
+            { paddingBottom: bottomPadding || spacing.lg },
             contentContainerStyle,
           ]}
           showsVerticalScrollIndicator={false}
@@ -132,7 +133,7 @@ export function ScreenContainer({
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.staticContent, contentContainerStyle]}>
+        <View style={[styles.staticContent, { paddingBottom: bottomPadding }, contentContainerStyle]}>
           {children}
         </View>
       )}
