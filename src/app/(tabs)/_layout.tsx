@@ -138,8 +138,8 @@ export default function TabsLayout() {
 
   return (
     <>
-      {/* Header at the top of all tab screens */}
-      {user && (
+      {/* Header at the top of all tab screens except Account */}
+      {user && !pathname.includes('/account') && (
         <Header
           userName={user.name}
           points={user.points}

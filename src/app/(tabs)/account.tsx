@@ -100,11 +100,28 @@ export default function AccountScreen() {
   return (
     <ScreenContainer
       scrollable={true}
-      edges={['left', 'right']}
+      edges={['top', 'left', 'right']}
       withTabBarPadding={true}
       testID="account-screen"
     >
       <View style={styles.container}>
+        {/* Account Header */}
+        <View style={styles.accountHeader}>
+          <View style={styles.accountHeaderLeft}>
+            <View style={styles.avatarContainer}>
+              <Ionicons name="person" size={24} color={colors.primary} />
+            </View>
+            <View>
+              <Text style={styles.accountName}>{user.name}</Text>
+              <Text style={styles.accountSubtitle}>Active Passport ID</Text>
+            </View>
+          </View>
+          <View style={styles.accountHeaderRight}>
+            <Text style={styles.pointsLabel}>POINTS</Text>
+            <Text style={styles.accountPoints}>{user.points} pts</Text>
+          </View>
+        </View>
+
         {/* Digital ID Card */}
         <PassportIdCard
           userName={user.name}
@@ -339,6 +356,59 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Account Header
+  accountHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.base,
+    marginTop: spacing.sm,
+    backgroundColor: colors.background,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    borderColor: `${colors.border}99`,
+    ...shadows.card,
+  },
+  accountHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  accountHeaderRight: {
+    alignItems: 'flex-end',
+  },
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary,
+    lineHeight: 20,
+  },
+  accountSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  pointsLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  accountPoints: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.accent,
   },
 
   // Activity Stats Cards

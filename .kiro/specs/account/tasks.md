@@ -161,14 +161,14 @@ The Account feature displays the user's profile information, digital passport ID
     - Version text below button: "Cavite Tourism Passport App • v2.4.1 (Build 2027)" (static text, not from constants)
     - _Requirements: Log out button with immediate sign out_
 
-- [ ] 6. Export new components
-  - [ ] 6.1 Export account components from index
+- [x] 6. Export new components
+  - [x] 6.1 Export account components from index
     - Create or update `src/components/account/index.ts`
     - Export PassportIdCard component (if created as separate component)
     - Export AddContactSheet component
     - _Requirements: Clean exports for account components_
 
-  - [ ] 6.2 Export new hooks from index
+  - [x] 6.2 Export new hooks from index
     - Open `src/hooks/index.ts`
     - Export useContactVerification and useSignOut hooks
     - _Requirements: Clean exports for account hooks_
