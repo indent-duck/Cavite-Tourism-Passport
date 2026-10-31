@@ -1,10 +1,161 @@
 # Account Design Specification
 
-## Visual Reference
+## Overview
 
-- **Image:** `design/screens/10-account/account.png`
-- **HTML:** `design/screens/10-account/account.html`
-- **Screen Width:** 390px (1x), 780px (2x export)
+The Account feature provides user profile management with three main responsibilities: displaying the digital passport ID card with verification status, managing contact number verification (not collected at signup), and secure logout with confirmation. The feature integrates AddContactSheet (bottom sheet), LogoutConfirmModal (modal overlay), and a Privacy Policy screen (root-level route) with the main Account tab screen.
+
+## Architecture
+
+**Screen hierarchy:**
+- `src/app/(tabs)/account.tsx` - Main Account screen (tab route)
+- `src/app/privacy.tsx` - Privacy Policy & Terms screen (root-level route with back arrow)
+
+**Component structure:**
+- `PassportIdCard` - Self-contained ID card with QR code, copy functionality, gradient background
+- `AddContactSheet` - Three-stage bottom sheet (phone input → OTP verification → success)
+- `LogoutConfirmModal` - Modal overlay with Cancel/Confirm actions
+
+**Data flow:**
+1. Screen → Hook (`useCurrentUser`, `useContactVerification`, `useSignOut`) → API function → Mock data
+2. Contact verification: `sendCode` → `verifyCode` → invalidate `currentUser` query → refetch
+3. Sign out: `signOut` API → clear React Query cache (in-memory + persisted) → navigate to login
+
+## Components and Interfaces
+
+### PassportIdCard
+- **Props:** `{ user: User }` (from useCurrentUser)
+- **State:** `copied: boolean` (for copy button feedback)
+- **Behavior:** Copy button shows checkmark for 1.8s, haptic feedback on copy
+- **Styling:** Gradient background (#0B2A4A → #003260 → #001f3f), decorative circles, QR code SVG
+
+### AddContactSheet
+- **Props:** `{ visible: boolean, onDismiss: () => void, onSuccess: () => void }`
+- **State:** `stage: 'input' | 'verify' | 'success'`, `phoneNumber: string`, `code: string`, `countdown: number`
+- **Hooks:** `useContactVerification` for sendCode/verifyCode
+- **Behavior:** Three-stage flow with validation, 30s resend countdown, keyboard handling
+
+### LogoutConfirmModal
+- **Props:** `{ visible: boolean, onDismiss: () => void, onConfirm: () => void }`
+- **State:** None (uses `useSignOut.isLoading` for Confirm button loading state)
+- **Behavior:** Overlay dismisses on Cancel or Android back button, Confirm calls signOut
+
+### Privacy Screen
+- **Route:** `src/app/privacy.tsx` (check design for tab bar visibility; nest in `(tabs)` if visible)
+- **Data:** `legalContent` from `src/data/legal-content.ts`
+- **Sections:** Introduction, Information We Collect, How We Use Your Information, Data Sharing, Your Rights, Security, Changes to This Policy, Contact Us
+
+## Data Models
+
+### User (extended)
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  address: string;
+  passportId: string;
+  municipality: string;
+  points: number;
+  contactNumber?: string;      // New: optional contact number
+  contactVerified?: boolean;   // New: verification status
+}
+```
+
+### Legal Content
+```typescript
+interface LegalContent {
+  introduction: string;
+  informationWeCollect: string;
+  howWeUseYourInformation: string;
+  dataSharingAndDisclosure: string;
+  yourRights: string;
+  security: string;
+  changesToThisPolicy: string;
+  contactUs: string;
+  lastUpdated: string;
+}
+```
+
+## Correctness Properties
+
+### Property 1: Contact verification atomicity
+
+**Validates: Requirements 2 (Add Contact Number flow)**
+
+`verifyCode` returns true → API updates `currentMockUser.contactNumber` and `contactVerified = true` → query invalidation refetches → UI shows verified badge. No partial updates: either both fields update or neither does.
+
+### Property 2: Cache clearing completeness
+
+**Validates: Requirements 5 (Sign out)**
+
+`signOut` calls `queryClient.clear()` and `queryClient.removeQueries()` → persisted cache cleared → re-login does not show stale data. All queries (in-memory and persisted) must be cleared.
+
+### Property 3: Logout confirmation safety
+
+**Validates: Requirements 3 (Log out confirmation modal)**
+
+Modal with Cancel/Confirm → Cancel keeps session → Confirm calls signOut with loading state → Android back button acts as Cancel. Accidental logout prevented by explicit confirmation.
+
+### Property 4: Contact number format consistency
+
+**Validates: Requirements 2 (Add Contact Number flow)**
+
+Accept 09XXXXXXXXX or +639XXXXXXXXX → store as +63 format → display with spacing (e.g., "+63 917 123 4567"). All storage and display uses the same normalized format.
+
+### Property 5: OTP verification consistency
+
+**Validates: Requirements 2 (Add Contact Number flow)**
+
+Code "123456" succeeds, all others fail (matches auth flows). Mock behavior is deterministic and consistent across all verification flows.
+
+## Error Handling
+
+1. **Contact verification errors:**
+   - Network failure: Show error below CodeInput, allow retry
+   - Invalid code: Show "Invalid code. Please try again." in error color
+   - Timeout: Bottom sheet remains open, user can retry or close
+
+2. **Sign out errors:**
+   - Network failure: Still clear local cache and navigate to login (fail gracefully)
+   - Cache clearing failure: Log error but proceed with navigation
+
+3. **Privacy screen errors:**
+   - Missing legal content: Show placeholder text with notice
+   - Navigation errors: Fall back to Account screen
+
+## Testing Strategy
+
+1. **Unit tests (future):**
+   - `useContactVerification`: sendCode success, verifyCode with valid/invalid codes, query invalidation
+   - `useSignOut`: cache clearing, navigation after sign out
+   - `PassportIdCard`: copy button state, QR code rendering
+   - `LogoutConfirmModal`: Cancel behavior, Confirm loading state
+
+2. **Integration tests (manual):**
+   - Add Contact Number flow: input → send → verify → success → UI update
+   - Invalid OTP flow: input → send → invalid code → error message → retry
+   - Logout flow: tap button → modal opens → Cancel keeps session → Confirm signs out
+   - Privacy screen: open from Account → scroll content → back arrow returns
+   - Sign up terms link: tap link → privacy screen opens (if link exists)
+
+3. **E2E tests (manual on physical device):**
+   - Contact verification with keyboard: verify keyboard doesn't cover inputs
+   - Logout and force-close: sign out → force-close app → reopen → no old data
+   - Android back button: bottom sheet closes, modal closes, privacy screen navigates back
+   - Settings row navigates to `/settings`, Redemptions navigates to `/rewards`
+
+## Visual Design Reference
+
+- **Account screen:**
+  - **Image:** `design/screens/10-account/account.png`
+  - **HTML:** `design/screens/10-account/account.html`
+  - **Screen Width:** 390px (1x), 780px (2x export)
+
+- **Log out confirmation modal:**
+  - **Image:** `design/screens/10-account/logout-confirmation.png`
+
+- **Privacy Policy & Terms screen:**
+  - **Image:** `design/screens/10-account/privacy-policy-terms.png`
 
 ## Layout Structure
 
@@ -394,13 +545,123 @@ Each row:
 - Flex row, center alignment, 8px gap
 - Logout icon (Ionicons `log-out-outline`), 18px size
 - Press feedback: scale to 0.99
-- Action: Sign out immediately (no confirmation)
+- Action: Open log out confirmation modal (task 5.7)
 
 **Version text below button (margin top: 8px):**
 - 11px font size
 - Text secondary color
 - Center alignment
-- Text: "Cavite Tourism Passport App • v2.4.1 (Build 2027)"
+- Text: Use APP_VERSION from constants (e.g., "Cavite Tourism Passport App • v2.4.1 (Build 2027)")
+
+## Log Out Confirmation Modal
+
+Match design from `logout-confirmation.png`. This is a modal overlay that appears when the user taps the "Log out" button.
+
+**Overlay:**
+- Semi-transparent black background (rgba(0, 0, 0, 0.5))
+- Full screen
+- Center-aligned modal container
+
+**Modal container:**
+- White background
+- 20px border radius
+- 320px max width
+- 24px padding
+- Shadow (large)
+- Center-aligned content
+
+**Icon:**
+- Warning icon (Ionicons `warning-outline` or `alert-circle-outline`)
+- 56px size
+- Error color (red)
+- 12px bottom margin
+
+**Title:**
+- 18px font size
+- Bold weight
+- Primary color
+- Text: "Log Out?"
+- 8px bottom margin
+
+**Message:**
+- 14px font size
+- Text secondary color
+- Center alignment
+- Text: "Are you sure you want to log out? You'll need to sign in again to access your passport."
+- 24px bottom margin
+
+**Button row (horizontal, equal width):**
+- 12px gap between buttons
+- Full width
+
+**Cancel button:**
+- Outline variant (white background, border, primary text)
+- 44px height
+- Flex: 1
+- Text: "Cancel"
+- Closes modal, keeps session
+
+**Confirm button:**
+- Primary variant (error color background, white text)
+- 44px height
+- Flex: 1
+- Text: "Log Out"
+- Shows loading spinner when signOut is in progress
+- Calls signOut from useSignOut hook
+
+**Android back button:**
+- Closes modal (same as Cancel)
+
+## Privacy Policy & Terms Screen
+
+Match design from `privacy-policy-terms.png`. This is a root-level route (`src/app/privacy.tsx`) with a back arrow.
+
+**Check the design image:** If the tab bar is visible in `privacy-policy-terms.png`, nest the route inside `(tabs)` instead of at root level. If no tab bar is visible, use root level as described here.
+
+**Layout:**
+- ScreenContainer with `scrollable={true}`, `showHeader={true}`, `headerTitle="Privacy Policy & Terms"`
+- Back arrow in header navigates back
+- White background
+- 16px horizontal padding
+
+**Header:**
+- 56px height
+- White background
+- Bottom border (1px, `border-divider`)
+- Back button (Ionicons `arrow-back`, 20px size)
+- Title: "Privacy Policy & Terms"
+  - 18px font size
+  - Bold weight
+  - Primary color
+  - Center-aligned
+
+**Content sections:**
+- Scrollable content with multiple sections
+- Each section has a title (16px, bold, primary color, 24px bottom margin) and body text (14px, text color, 16px line height, 24px bottom margin)
+- Sections (titles and content come from `src/data/legal-content.ts`):
+  1. **Introduction**
+  2. **Information We Collect**
+  3. **How We Use Your Information**
+  4. **Data Sharing and Disclosure**
+  5. **Your Rights**
+  6. **Security**
+  7. **Changes to This Policy**
+  8. **Contact Us**
+
+**Content source:**
+- All text comes from `src/data/legal-content.ts`
+- Mark content as placeholder text pending Tourism Office and legal review
+- Use `legalContent` object with keys matching section names (e.g., `legalContent.introduction`, `legalContent.informationWeCollect`, etc.)
+
+**Footer:**
+- Last updated date (12px, text secondary color, center-aligned)
+- 32px bottom padding (additional space after content)
+
+**Behavior:**
+- Opened from Account screen "Privacy Policy & Terms" navigation row
+- Also opened from sign up email screen terms link (if link exists in email.tsx)
+- Android back button navigates back
+- ScreenContainer handles safe area and keyboard automatically
 
 ## Add Contact Number Bottom Sheet
 

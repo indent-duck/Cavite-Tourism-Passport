@@ -1,10 +1,12 @@
 import { AddContactSheet } from '@/components/account/AddContactSheet';
+import { LogoutConfirmModal } from '@/components/account/LogoutConfirmModal';
 import { PassportIdCard } from '@/components/account/PassportIdCard';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { getStamps } from '@/data/api';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { useSignOut } from '@/hooks/useSignOut';
+import { APP_VERSION } from '@/lib/constants';
 import { colors, radii, shadows, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -34,6 +36,7 @@ import {
  */
 export default function AccountScreen() {
   const [contactSheetVisible, setContactSheetVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const { data: promoPeriod } = usePromoPeriod();
@@ -41,10 +44,10 @@ export default function AccountScreen() {
     queryKey: ['stamps'],
     queryFn: getStamps,
   });
-  const { signOut, isLoading: signingOut } = useSignOut();
+  const { signOut } = useSignOut();
 
   const handleLogOut = () => {
-    signOut();
+    setLogoutModalVisible(true);
   };
 
   const handleAddContactSuccess = () => {
@@ -320,21 +323,14 @@ export default function AccountScreen() {
             pressed && styles.logoutButtonPressed,
           ]}
           onPress={handleLogOut}
-          disabled={signingOut}
         >
-          {signingOut ? (
-            <ActivityIndicator size="small" color={colors.error} />
-          ) : (
-            <>
-              <Ionicons name="log-out-outline" size={18} color={colors.error} />
-              <Text style={styles.logoutText}>Log out</Text>
-            </>
-          )}
+          <Ionicons name="log-out-outline" size={18} color={colors.error} />
+          <Text style={styles.logoutText}>Log out</Text>
         </Pressable>
 
         {/* Version Text */}
         <Text style={styles.versionText}>
-          Cavite Tourism Passport App • v2.4.1 (Build 2027)
+          Cavite Tourism Passport App • v{APP_VERSION} (Build 2027)
         </Text>
       </View>
 
@@ -343,6 +339,16 @@ export default function AccountScreen() {
         visible={contactSheetVisible}
         onDismiss={() => setContactSheetVisible(false)}
         onSuccess={handleAddContactSuccess}
+      />
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        visible={logoutModalVisible}
+        onDismiss={() => setLogoutModalVisible(false)}
+        onConfirm={() => {
+          setLogoutModalVisible(false);
+          signOut();
+        }}
       />
     </ScreenContainer>
   );

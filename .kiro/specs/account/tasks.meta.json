@@ -173,6 +173,25 @@
         "chatSessionId": "sess_a19b6f7f-6e30-4dae-8fda-526cfd0c333d",
         "timestamp": 1793345214739
       }
+    ],
+    "5.6 Update Log Out button to open confirmation modal": [
+      {
+        "executionId": "d5a23712-27cd-41d5-94fe-cc6248148a0e",
+        "chatSessionId": "sess_cf536cdb-78b9-440d-8d3f-530f1193b903",
+        "timestamp": 1793416286489
+      }
+    ],
+    "5.7 Create LogoutConfirmModal component": [
+      {
+        "executionId": "f7a66b88-0678-46a2-b992-af88bfe287d8",
+        "chatSessionId": "sess_266be497-270e-450b-a0df-82cd7557d68c",
+        "timestamp": 1793416504849
+      },
+      {
+        "executionId": "f7a66b88-0678-46a2-b992-af88bfe287d8",
+        "chatSessionId": "sess_266be497-270e-450b-a0df-82cd7557d68c",
+        "timestamp": 1793416823116
+      }
     ]
   }
 }

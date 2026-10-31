@@ -13,8 +13,8 @@ This spec covers:
    - Activity stats cards (stamps, points, promo period)
    - Account details section (name, address, email, contact number)
    - Contact number row with "Add Contact Number" button (or "Verified" badge if already added)
-   - Navigation links (Settings, Redemptions, Privacy)
-   - Log out button
+   - Navigation links (Settings, Redemptions & Vouchers, Privacy Policy & Terms)
+   - Log out button (opens confirmation modal)
 
 2. **Add Contact Number flow** (bottom sheet)
    - Step 1: Philippine mobile number input with validation
@@ -22,17 +22,38 @@ This spec covers:
    - Step 3: Success confirmation
    - No contact number is collected at sign up—it is only added here
 
-3. **Sign out**
+3. **Log out confirmation modal** (`src/components/account/LogoutConfirmModal.tsx`)
+   - Modal with "Are you sure?" message
+   - Cancel button (keeps session)
+   - Confirm button (calls signOut with loading state)
+   - Android back button cancels
+
+4. **Privacy Policy & Terms screen** (`src/app/privacy.tsx`)
+   - Root-level route with back arrow
+   - Scrollable content from `src/data/legal-content.ts` (placeholder text pending Tourism Office and legal review)
+   - Opened from Account screen "Privacy Policy & Terms" row
+   - Also opened from sign up email screen terms link (if present)
+
+5. **Sign out**
    - Clear mock session
    - Clear React Query cache (both in-memory and persisted)
    - Navigate to login screen with `router.replace`
 
 ## Design Reference
 
-- **Image:** `design/screens/10-account/account.png`
-- **HTML:** `design/screens/10-account/account.html` (for exact spacing, sizes, radii, and colors only—never copy HTML or Tailwind)
-- **Stitch Screen ID:** `8cc60c3e5e494e52b321eec690c314d6`
-- **Route:** `src/app/(tabs)/account.tsx`
+- **Account screen:**
+  - **Image:** `design/screens/10-account/account.png`
+  - **HTML:** `design/screens/10-account/account.html` (for exact spacing, sizes, radii, and colors only—never copy HTML or Tailwind)
+  - **Stitch Screen ID:** `8cc60c3e5e494e52b321eec690c314d6`
+  - **Route:** `src/app/(tabs)/account.tsx`
+
+- **Log out confirmation modal:**
+  - **Image:** `design/screens/10-account/logout-confirmation.png`
+  - **Route:** Modal component in `src/components/account/LogoutConfirmModal.tsx`
+
+- **Privacy Policy & Terms screen:**
+  - **Image:** `design/screens/10-account/privacy-policy-terms.png`
+  - **Route:** `src/app/privacy.tsx` (root-level route with back arrow)
 
 ## Data Flow
 
@@ -51,7 +72,13 @@ Screens and components **never import mock data directly**. Flow:
    - Uses `@gorhom/bottom-sheet`
    - Uses TextInput and CodeInput from `src/components/ui`
 
-2. **PassportIdCard** (`src/components/account/PassportIdCard.tsx`) (optional separate component)
+2. **LogoutConfirmModal** (`src/components/account/LogoutConfirmModal.tsx`)
+   - Modal with confirmation message
+   - Cancel button (closes modal, keeps session)
+   - Confirm button (calls signOut with loading state)
+   - Android back button cancels (closes modal)
+
+3. **PassportIdCard** (`src/components/account/PassportIdCard.tsx`) (optional separate component)
    - Digital ID card with gradient background, decorative patterns, QR code
    - Copy button for Passport ID
    - Matches the secure ID card design from account.png
@@ -99,20 +126,22 @@ Screens and components **never import mock data directly**. Flow:
 
 ## Behavior Rules
 
-- **No confirmation for log out:** The log out button immediately signs out (account.png shows no confirmation dialog)
+- **Log out requires confirmation:** The log out button opens a confirmation modal with Cancel and Confirm buttons; only Confirm calls signOut
 - **No contact number at sign up:** Contact number is not collected during registration—only added here in Account settings
 - **Philippine mobile format:** Accept 09XXXXXXXXX or +639XXXXXXXXX, store as +63 format
 - **OTP verification:** Code "123456" succeeds, all others fail (matches auth verify flows)
 - **Resend code countdown:** 30 seconds (matches auth verify screens)
 - **Keyboard behavior:** Bottom sheet must handle keyboard so it does not cover inputs or buttons
-- **Android back button:** Closes the bottom sheet, returns to Account screen
+- **Android back button:** Closes the bottom sheet or modal, returns to Account screen
 - **No avatar or profile photo:** The User type has no avatar field, and the design shows no photo
+- **Privacy screen text is placeholder:** Content in `src/data/legal-content.ts` is placeholder text pending Tourism Office and legal review
 
 ## Navigation
 
 - **Gear icon → `/settings`:** Opens the Settings screen (existing route, separate spec)
-- **"Redemptions & Vouchers" row:** Placeholder for future spec (does nothing or shows "Coming soon" toast)
-- **"Privacy Policy & Terms" row:** Placeholder for future spec (does nothing or shows "Coming soon" toast)
+- **"Redemptions & Vouchers" row → `/rewards`:** Opens the Rewards list screen
+- **"Privacy Policy & Terms" row → `/privacy`:** Opens the Privacy Policy & Terms screen (this spec)
+- **Terms link in sign up email screen → `/privacy`:** Opens the Privacy Policy & Terms screen (if link exists in email.tsx)
 - **"Edit" button in Account Details:** Placeholder for future Edit Profile feature (does nothing in this spec)
 
 ## Out of Scope
@@ -129,19 +158,22 @@ The following are **not** included in this spec:
 
 ## Known Design Deviations
 
-The following differences from account.png should be documented in `DIFFERENCES.md`:
+The following differences from the design images should be documented in `DIFFERENCES.md`:
 
 1. **No avatar or profile photo:** If account.png shows a profile photo or avatar, omit it (User type has no avatar field)
 2. **"Edit" button is non-functional:** It appears in the design but does nothing in this spec (future Edit Profile feature)
-3. **Redemptions and Privacy rows are placeholders:** They appear in the design but are not implemented (future specs)
-4. Any other visual or behavioral differences discovered during implementation
+3. Any other visual or behavioral differences discovered during implementation
 
 ## Testing Checklist
 
 - [ ] Account screen renders correctly with all sections
 - [ ] Digital ID card shows correct Passport ID and user data
 - [ ] Copy button works and shows checkmark feedback
-- [ ] Activity stats cards show live data from hooks
+- [ ] Activity stats cards show live data from hooks (points card shows no "+150 new" indicator)
+- [ ] Version shows APP_VERSION from constants (not static text)
+- [ ] "Redemptions & Vouchers" row navigates to `/rewards`
+- [ ] Settings row subtitle does not show "Language"
+- [ ] ID card shows "Province of Cavite" (not "Republic of the Philippines")
 - [ ] Contact Number row shows "+63 •••••••••" and "Add Contact Number" button initially
 - [ ] "Add Contact Number" button opens bottom sheet
 - [ ] Phone input stage validates Philippine mobile format
@@ -154,9 +186,18 @@ The following differences from account.png should be documented in `DIFFERENCES.
 - [ ] Keyboard does not cover inputs or buttons in bottom sheet
 - [ ] Android back button closes bottom sheet
 - [ ] Settings gear icon navigates to `/settings`
-- [ ] Log out button immediately signs out (no confirmation)
+- [ ] "Privacy Policy & Terms" row navigates to `/privacy`
+- [ ] Privacy screen opens with back arrow and scrollable content
+- [ ] Privacy screen content comes from `src/data/legal-content.ts`
+- [ ] Terms link in sign up email screen (if present) opens `/privacy`
+- [ ] Log out button opens confirmation modal
+- [ ] Confirmation modal shows "Are you sure?" message
+- [ ] Cancel button closes modal and keeps session
+- [ ] Confirm button shows loading state and signs out
+- [ ] Android back button on modal cancels (closes modal)
 - [ ] Log out clears React Query cache (re-login does not show old data)
 - [ ] Log out navigates to login screen with `router.replace`
+- [ ] After logout, force-close and reopen app to confirm no old user data returns
 - [ ] Android back button works correctly on Account screen
 - [ ] `npx tsc --noEmit` passes with zero errors
 - [ ] `npx expo lint` passes with zero errors
@@ -173,8 +214,10 @@ The following differences from account.png should be documented in `DIFFERENCES.
 
 ## Design Assets
 
-- `design/screens/10-account/account.png` (visual reference)
+- `design/screens/10-account/account.png` (visual reference for Account screen)
 - `design/screens/10-account/account.html` (spacing, sizes, colors reference only)
+- `design/screens/10-account/logout-confirmation.png` (visual reference for logout modal)
+- `design/screens/10-account/privacy-policy-terms.png` (visual reference for privacy screen)
 - `design/screens/README.md` (screen inventory and scale information)
 
 ## Notes

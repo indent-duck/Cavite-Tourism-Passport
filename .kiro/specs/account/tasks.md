@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Account feature displays the user's profile information, digital passport ID card, and activity statistics. It provides the interface for adding and verifying a contact number (not collected at sign up) and logging out. The screen shows the Passport ID prominently in a secure-looking ID card, profile details (name, address, email), and a contact number row with an "Add" button (or verified badge if added). A gear icon opens Settings (separate spec), and a "Log out" button clears the session and React Query cache. All data flows through hooks in `src/hooks` that call `src/data/api.ts`, which returns mock data for now.
+The Account feature displays the user's profile information, digital passport ID card, and activity statistics. It provides the interface for adding and verifying a contact number (not collected at sign up) and logging out. The screen shows the Passport ID prominently in a secure-looking ID card, profile details (name, address, email), and a contact number row with an "Add" button (or verified badge if added). Navigation links open Settings, Rewards, and Privacy screens. A "Log out" button opens a confirmation modal before signing out. All data flows through hooks in `src/hooks` that call `src/data/api.ts`, which returns mock data for now.
 
 ## Tasks
 
@@ -92,6 +92,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Use theme tokens for all styling
     - Handle keyboard avoiding (KeyboardAvoidingView or bottom sheet's keyboardBehavior prop)
     - Use Ionicons for icons
+    - Android back button closes the sheet (same as close button)
     - _Requirements: Bottom sheet component for contact number verification flow_
 
 - [x] 5. Implement Account screen
@@ -107,7 +108,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Create ID card component in the Account screen or as a separate component in `src/components/account/PassportIdCard.tsx`
     - Dark blue gradient background (from #0B2A4A via #003260 to #001f3f)
     - Decorative security pattern backdrop (subtle circles)
-    - Top row: shield icon in a rounded container, "Republic of the Philippines" text above "Cavite Tourism Passport" title, and "Active" badge with green dot
+    - Top row: shield icon in a rounded container, "Province of Cavite" text (not "Republic of the Philippines") above "Cavite Tourism Passport" title, and "Active" badge with green dot
     - Middle section: "Passport ID Number" label, Passport ID in mono font (CVT-2027-000123), copy button, holder name, and municipality with location pin icon
     - Right side: QR code in white rounded container (use simplified SVG matching the design, not a real QR library)
     - Bottom strip: "Provincial Tourism Board" and "Official Pass 2027" text
@@ -119,11 +120,11 @@ The Account feature displays the user's profile information, digital passport ID
   - [x] 5.3 Create Activity Stats cards section
     - Three cards in a grid (3 columns, equal width):
       - Stamps card: icon, "Stamps" label, "5 / 20" count, progress bar (25%)
-      - Points card: icon, "Credits" label, "450 pts" count, "+150 new" indicator with up arrow
+      - Points card: icon, "Credits" label, "450 pts" count (no "+150 new" indicator)
       - Promo card: icon, "Promo" label, "Q1 Season" title, "Jan 1 – Mar 31" date range
     - Use data from useCurrentUser and usePromoPeriod hooks
     - Cards have white background, 16px radius, border, shadow
-    - Match design from account.png
+    - Match design from account.png (omit the "+150 new" indicator from Points card)
     - _Requirements: Activity stats cards with live data_
 
   - [x] 5.4 Create Account Details section
@@ -145,27 +146,44 @@ The Account feature displays the user's profile information, digital passport ID
   - [x] 5.5 Create Navigation Links section
     - Card with white background, 16px radius, border, shadow
     - Three navigation rows:
-      - Settings & Preferences: tune icon, title, subtitle "Push Notifications, Language & Help FAQs", chevron right
+      - Settings & Preferences: tune icon, title, subtitle "Push Notifications & Help FAQs" (no "Language")
       - Redemptions & Vouchers: qr_code_2 icon, title, subtitle "View claimed rewards & active QR passes", chevron right
       - Privacy Policy & Terms: shield_person icon, title, subtitle "Cavite Tourism Registry guidelines & data privacy", chevron right
     - Settings row navigates to `/settings` (existing route, separate spec)
-    - Redemptions and Privacy rows are placeholders (future specs)—tap shows a toast "Coming soon" or does nothing
+    - Redemptions row navigates to `/rewards`
+    - Privacy row navigates to `/privacy` (task 8)
     - Use Pressable with press feedback
     - _Requirements: Navigation links section_
 
-  - [x] 5.6 Create Log Out button
+  - [x] 5.6 Update Log Out button to open confirmation modal
     - Red outlined button at the bottom: "Log out" text with logout icon
     - White background, red border, red text
-    - On press, call `signOut` from useSignOut hook (no confirmation dialog—account.png shows no confirmation)
-    - Button should show loading spinner if `isLoading` is true from useSignOut hook
-    - Version text below button: "Cavite Tourism Passport App • v2.4.1 (Build 2027)" (static text, not from constants)
-    - _Requirements: Log out button with immediate sign out_
+    - On press, open LogoutConfirmModal (task 5.7) instead of calling signOut directly
+    - No loading spinner on this button (loading is shown on the modal's Confirm button)
+    - Version text below button: use APP_VERSION from constants (e.g., "Cavite Tourism Passport App • v2.4.1 (Build 2027)")
+    - _Requirements: Log out button opens confirmation modal_
+
+  - [x] 5.7 Create LogoutConfirmModal component
+    - Create `src/components/account/LogoutConfirmModal.tsx`
+    - Implement LogoutConfirmModalProps interface: `{ visible, onDismiss, onConfirm }`
+    - Semi-transparent black overlay (rgba(0, 0, 0, 0.5))
+    - White modal container (320px max width, 20px border radius, 24px padding, large shadow, center-aligned)
+    - Warning icon (Ionicons `warning-outline` or `alert-circle-outline`, 56px size, error color)
+    - Title: "Log Out?" (18px, bold, primary color)
+    - Message: "Are you sure you want to log out? You'll need to sign in again to access your passport." (14px, text secondary, center-aligned)
+    - Button row (horizontal, equal width, 12px gap):
+      - Cancel button (outline variant, "Cancel" text, calls onDismiss)
+      - Confirm button (primary variant with error color background, "Log Out" text, calls onConfirm, shows loading spinner from useSignOut.isLoading)
+    - Android back button closes modal (same as Cancel)
+    - Match design from `logout-confirmation.png`
+    - _Requirements: Logout confirmation modal_
 
 - [x] 6. Export new components
   - [x] 6.1 Export account components from index
     - Create or update `src/components/account/index.ts`
     - Export PassportIdCard component (if created as separate component)
     - Export AddContactSheet component
+    - Export LogoutConfirmModal component
     - _Requirements: Clean exports for account components_
 
   - [x] 6.2 Export new hooks from index
@@ -173,12 +191,55 @@ The Account feature displays the user's profile information, digital passport ID
     - Export useContactVerification and useSignOut hooks
     - _Requirements: Clean exports for account hooks_
 
-- [ ] 7. Checkpoint - Verify Account screen and test all flows
+- [ ] 7. Create legal content and Privacy screen
+  - [ ] 7.1 Create legal content file
+    - Create `src/data/legal-content.ts`
+    - Export `legalContent` object with keys for each section:
+      - `introduction`: Placeholder introduction text
+      - `informationWeCollect`: Placeholder text about data collection
+      - `howWeUseYourInformation`: Placeholder text about data usage
+      - `dataSharingAndDisclosure`: Placeholder text about data sharing
+      - `yourRights`: Placeholder text about user rights
+      - `security`: Placeholder text about security measures
+      - `changesToThisPolicy`: Placeholder text about policy changes
+      - `contactUs`: Placeholder contact information
+    - Add a comment at the top: "Placeholder text pending Tourism Office and legal review"
+    - _Requirements: Legal content file with placeholder text_
+
+  - [ ] 7.2 Create Privacy Policy & Terms screen
+    - Create `src/app/privacy.tsx` as a root-level route (check `privacy-policy-terms.png`: if tab bar is visible, nest inside `(tabs)` instead)
+    - Use ScreenContainer with `scrollable={true}`, `showHeader={true}`, `headerTitle="Privacy Policy & Terms"`
+    - Import `legalContent` from `src/data/legal-content.ts`
+    - Render each section with title (16px, bold, primary, 24px bottom margin) and body text (14px, text color, 16px line height, 24px bottom margin)
+    - Sections: Introduction, Information We Collect, How We Use Your Information, Data Sharing and Disclosure, Your Rights, Security, Changes to This Policy, Contact Us
+    - Footer with last updated date (12px, text secondary, center-aligned)
+    - 32px bottom padding
+    - 16px horizontal padding
+    - White background
+    - Android back button navigates back
+    - _Requirements: Privacy Policy & Terms screen_
+
+  - [ ] 7.3 Wire Privacy link in Account screen
+    - Open `src/app/(tabs)/account.tsx`
+    - Update "Privacy Policy & Terms" navigation row to navigate to `/privacy` using `router.push('/privacy')`
+    - Remove any placeholder "Coming soon" toast or disabled state
+    - _Requirements: Privacy row navigates to privacy screen_
+
+  - [ ] 7.4 Wire Privacy link in sign up email screen (if present)
+    - Open `src/app/(auth)/signup/email.tsx`
+    - Check if terms text exists with links to "Provincial Tourism Terms of Service" and "Privacy Policy"
+    - If links exist, make them pressable and navigate to `/privacy` using `router.push('/privacy')`
+    - If no links exist, skip this subtask
+    - _Requirements: Sign up terms link opens privacy screen_
+
+- [ ] 8. Checkpoint - Verify all Account features and flows
   - Open the app on a physical Android phone
   - Navigate to Account tab
   - Verify the Account screen renders correctly:
-    - Digital ID card with correct data and layout
-    - Activity stats cards with live data
+    - Digital ID card shows "Province of Cavite" (not "Republic of the Philippines")
+    - Activity stats cards show live data (Points card has no "+150 new" indicator)
+    - Version text uses APP_VERSION from constants
+    - Settings row subtitle does not show "Language"
     - Account details section with correct user data
     - Contact Number row shows "+63 •••••••••" and "Add Contact Number" button
     - Navigation links section renders
@@ -199,21 +260,39 @@ The Account feature displays the user's profile information, digital passport ID
     - Enter a number and proceed to OTP stage
     - Enter code "111111" (not "123456")
     - Verify error message appears
-  - Test the Log Out flow:
+  - Test the Log Out confirmation flow:
     - Tap "Log out" button
-    - Verify no confirmation dialog appears
-    - Verify app navigates to login screen immediately
-    - Verify React Query cache is cleared (re-login should not show old user data)
+    - Verify confirmation modal opens with "Are you sure?" message
+    - Tap "Cancel" button
+    - Verify modal closes and session is still active (user is still on Account screen)
+    - Tap "Log out" button again
+    - Tap "Confirm" button
+    - Verify Confirm button shows loading spinner
+    - Verify app navigates to login screen after sign out
+    - Force-close the app and reopen it
+    - Verify no old user data returns (React Query cache was cleared)
+  - Test the Privacy Policy & Terms screen:
+    - Navigate to Account tab
+    - Tap "Privacy Policy & Terms" row
+    - Verify privacy screen opens with back arrow and scrollable content
+    - Verify content comes from `src/data/legal-content.ts` with all sections
+    - Tap back arrow and verify return to Account screen
+    - Navigate to sign up email screen (if terms link exists)
+    - Tap terms link
+    - Verify privacy screen opens
+  - Test navigation:
+    - Settings row navigates to `/settings`
+    - "Redemptions & Vouchers" row navigates to `/rewards`
   - Test keyboard behavior:
     - Verify keyboard does not cover input or buttons in AddContactSheet
   - Test Android back button:
-    - Open AddContactSheet and press Android back button
-    - Verify sheet closes
-    - From Account screen, press Android back button
-    - Verify tab bar navigation works correctly (does not exit app if other tabs were visited)
+    - Open AddContactSheet and press Android back button → Verify sheet closes
+    - Open LogoutConfirmModal and press Android back button → Verify modal closes (same as Cancel)
+    - From Account screen, press Android back button → Verify tab bar navigation works correctly
+    - From Privacy screen, press Android back button → Verify return to previous screen
   - Run `npx tsc --noEmit` and verify no TypeScript errors
   - Run `npx expo lint` and verify no linting errors
-  - Create `DIFFERENCES.md` in `.kiro/specs/account/` listing every difference between the implementation and account.png
+  - Create `DIFFERENCES.md` in `.kiro/specs/account/` listing every difference between the implementation and the design images
 
 ## Notes
 
@@ -222,26 +301,36 @@ The Account feature displays the user's profile information, digital passport ID
 - No promo chip on the Account screen (Header's rightSlot is undefined on this tab)
 - The gear icon in the design navigates to `/settings`, which is an existing route (Settings is a separate spec)
 - The "Edit" button in Account Details is a placeholder for future Edit Profile feature—it does nothing in this spec
-- Redemptions & Vouchers and Privacy Policy & Terms navigation rows are placeholders for future specs—they do nothing or show a "Coming soon" toast
-- Log out immediately clears the session and cache with no confirmation dialog (account.png shows no confirmation)
+- Log out now requires confirmation via LogoutConfirmModal (matching `logout-confirmation.png`)
+- Cancel button on modal keeps the session and closes the modal
+- Confirm button on modal calls signOut from useSignOut hook with loading state
+- Android back button on modal acts as Cancel (closes modal, keeps session)
 - Log out uses `router.replace` to prevent Android back button from returning to the authenticated tabs
 - Contact number is not collected at sign up—it is only added here in the Account screen
 - Contact number verification uses the same mock code "123456" that succeeds in other verification flows
-- CodeInput component already exists in `src/components/ui/CodeInput.tsx` (verified in the codebase check)
+- CodeInput component already exists in `src/components/ui/CodeInput.tsx`
 - `@gorhom/bottom-sheet` may require GestureHandlerRootView or a provider in the root layout—add it if needed (JavaScript only, no native changes)
 - Activity stats use live data from useCurrentUser and usePromoPeriod hooks (no hardcoded values)
+- Points card does NOT show the "+150 new" indicator (removed per content cleanup)
 - The QR code in the ID card is a simplified SVG matching the design—not a real QR code library
 - Philippine mobile format: 09XXXXXXXXX or +639XXXXXXXXX (accept both, store as +63 format)
 - "Resend code" countdown is 30 seconds (matches auth verify screens)
 - All spacing, radii, colors, and fonts use theme tokens—no hardcoded values
 - The "Verified" badge is green with a checkmark icon, matching the design
-- The version text at the bottom is static: "Cavite Tourism Passport App • v2.4.1 (Build 2027)"
-- No avatar or profile photo on this screen (User type has no avatar field, and account.png shows no photo)
-- If account.png shows an avatar/photo, omit it and list it in DIFFERENCES.md
+- Version text uses APP_VERSION from constants (not static text)
+- "Redemptions & Vouchers" row navigates to `/rewards` (not a placeholder)
+- Settings row subtitle is "Push Notifications & Help FAQs" (no "Language")
+- Digital ID card shows "Province of Cavite" instead of "Republic of the Philippines" (pending Tourism Office confirmation)
+- Privacy Policy & Terms screen opens from Account "Privacy Policy & Terms" row
+- Privacy screen may also open from sign up email terms link (if the link exists)
+- Privacy screen content is in `src/data/legal-content.ts` and marked as placeholder text pending Tourism Office and legal review
+- Privacy screen is a root-level route at `src/app/privacy.tsx` unless the design shows the tab bar (then nest in `(tabs)`)
+- No avatar or profile photo on this screen (User type has no avatar field)
+- If design images show an avatar/photo, omit it and list it in DIFFERENCES.md
 - Testing must be on a physical Android phone (no emulator)
 - TypeScript strict mode must pass with zero errors
 - ESLint must pass with zero errors
-- DIFFERENCES.md lists every visual or behavioral difference between the implementation and account.png
+- DIFFERENCES.md lists every visual or behavioral difference between the implementation and the design images
 
 ## Task Dependency Graph
 
@@ -266,15 +355,19 @@ The Account feature displays the user's profile information, digital passport ID
     },
     {
       "id": 4,
-      "tasks": ["5.1", "5.2", "5.3", "5.4", "5.5", "5.6"]
+      "tasks": ["5.1", "5.2", "5.3", "5.4", "5.5", "5.6", "5.7"]
     },
     {
       "id": 5,
-      "tasks": ["6.1", "6.2"]
+      "tasks": ["6.1", "6.2", "7.1", "7.2"]
     },
     {
       "id": 6,
-      "tasks": ["7"]
+      "tasks": ["7.3", "7.4"]
+    },
+    {
+      "id": 7,
+      "tasks": ["8"]
     }
   ]
 }
