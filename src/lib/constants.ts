@@ -5,6 +5,29 @@ export const CLAIM_QR_EXPIRY_MINUTES = 15; // TBD
 
 export const SITE_QR_FORMAT = 'CAVITE-SITE-{siteId}'; // TBD, placeholder format
 
+// Scanner constants
+// Only true in __DEV__
+export const DEV_SKIP_LOCATION_CHECK = true;
+
+/**
+ * Parse site QR code payload and extract siteId
+ * @param payload - QR code payload in format "cvt:site:<siteId>"
+ * @returns siteId if valid, null if malformed
+ * @note SITE_QR_FORMAT is an open decision - this implementation matches "cvt:site:<siteId>" format
+ */
+export function parseSiteQr(payload: string): string | null {
+  if (!payload || typeof payload !== 'string') {
+    return null;
+  }
+
+  const match = payload.match(/^cvt:site:(.+)$/);
+  if (!match || !match[1]) {
+    return null;
+  }
+
+  return match[1];
+}
+
 // Fixed values
 export const APP_VERSION = '1.0.0';
 
