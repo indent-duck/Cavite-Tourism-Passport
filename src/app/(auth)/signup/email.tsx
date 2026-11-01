@@ -176,8 +176,14 @@ export default function SignupEmailScreen() {
           </Pressable>
           <Text style={styles.termsText}>
             By continuing, you agree to the{' '}
-            <Text style={styles.termsLink}>Provincial Tourism Terms of Service</Text> &{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>.
+            <Pressable onPress={() => router.push('/privacy')}>
+              <Text style={styles.termsLink}>Provincial Tourism Terms of Service</Text>
+            </Pressable>{' '}
+            &{' '}
+            <Pressable onPress={() => router.push('/privacy')}>
+              <Text style={styles.termsLink}>Privacy Policy</Text>
+            </Pressable>
+            .
           </Text>
         </View>
 

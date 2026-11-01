@@ -159,12 +159,6 @@ export default function AccountScreen() {
               <Text style={[styles.statCount, { color: colors.accent }]}>{user.points}</Text>
               <Text style={[styles.statTotal, { color: colors.accent }]}>pts</Text>
             </View>
-            {user.points > 0 && (
-              <View style={styles.pointsIndicator}>
-                <Ionicons name="arrow-up" size={11} color="#059669" />
-                <Text style={styles.pointsNew}>+{user.points} new</Text>
-              </View>
-            )}
           </View>
 
           {/* Promo Card */}
@@ -265,7 +259,7 @@ export default function AccountScreen() {
               </View>
               <View style={styles.linkTextGroup}>
                 <Text style={styles.linkTitle}>Settings & Preferences</Text>
-                <Text style={styles.linkSubtitle}>Push Notifications, Language & Help FAQs</Text>
+                <Text style={styles.linkSubtitle}>Push Notifications & Help FAQs</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -279,7 +273,7 @@ export default function AccountScreen() {
               styles.linkRow,
               pressed && styles.linkRowPressed,
             ]}
-            onPress={() => handleComingSoon('Redemptions & Vouchers')}
+            onPress={() => router.push('/rewards')}
           >
             <View style={styles.linkLeft}>
               <View style={[styles.linkIconContainer, styles.linkIconSecondary]}>
@@ -301,7 +295,7 @@ export default function AccountScreen() {
               styles.linkRow,
               pressed && styles.linkRowPressed,
             ]}
-            onPress={() => handleComingSoon('Privacy Policy & Terms')}
+            onPress={() => router.push('/privacy')}
           >
             <View style={styles.linkLeft}>
               <View style={[styles.linkIconContainer, styles.linkIconSurface]}>

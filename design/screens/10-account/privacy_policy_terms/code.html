@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_stack" name="shell-type"/>
+<title>Settings &amp; Help - Cavite Tourism Passport</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-fixed": "#321200",
+            "tertiary-fixed-dim": "#71dc92",
+            "secondary-fixed-dim": "#ffb68b",
+            "surface-container-low": "#f1f3ff",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#8df9ac",
+            "surface-container-lowest": "#ffffff",
+            "inverse-surface": "#21304f",
+            "surface-dim": "#ccdaff",
+            "passport-leather": "#0B2A4A",
+            "background": "#faf9ff",
+            "on-primary-container": "#89baff",
+            "on-tertiary": "#ffffff",
+            "surface-card": "#F4F6FA",
+            "error": "#ba1a1a",
+            "secondary-container": "#fc8127",
+            "surface-variant": "#d9e2ff",
+            "status-error": "#D64545",
+            "inverse-primary": "#a4c8ff",
+            "on-primary-fixed": "#001c3a",
+            "on-surface": "#0a1b39",
+            "tertiary-container": "#00542a",
+            "surface-container-high": "#e1e8ff",
+            "passport-foil": "#F89C48",
+            "on-surface-variant": "#424750",
+            "primary": "#003260",
+            "primary-fixed": "#d4e3ff",
+            "on-primary": "#ffffff",
+            "surface-tint": "#28609f",
+            "on-tertiary-fixed": "#00210d",
+            "text-secondary": "#6B7280",
+            "secondary": "#994700",
+            "on-background": "#0a1b39",
+            "surface-bright": "#faf9ff",
+            "secondary-fixed": "#ffdbc8",
+            "on-error": "#ffffff",
+            "on-secondary-container": "#602a00",
+            "primary-fixed-dim": "#a4c8ff",
+            "on-primary-fixed-variant": "#004784",
+            "inverse-on-surface": "#edf0ff",
+            "tertiary": "#003a1b",
+            "surface": "#faf9ff",
+            "on-tertiary-fixed-variant": "#005229",
+            "outline": "#727781",
+            "on-error-container": "#93000a",
+            "primary-container": "#004987",
+            "border-divider": "#E5E7EB",
+            "on-tertiary-container": "#61cc84",
+            "surface-container-highest": "#d9e2ff",
+            "outline-variant": "#c2c6d2",
+            "background-canvas": "#FFFFFF",
+            "surface-container": "#e9edff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#753400"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            body: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .pb-safe {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+    }
+    .pt-safe {
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#F8FAFD] text-on-surface antialiased min-h-screen flex justify-center">
+<!-- Mobile Android Container (390px bounded) -->
+<div class="w-full max-w-[390px] min-h-screen flex flex-col bg-[#F8FAFD] relative shadow-2xl">
+<!-- Top App Bar: only back button on the left and title, no profile/avatar button on the right -->
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-border-divider/70 px-4 py-3 flex items-center">
+<div class="flex items-center gap-2">
+<button aria-label="Back to Account" class="w-10 h-10 -ml-1.5 rounded-full flex items-center justify-center text-primary active:bg-surface-container-high transition-colors" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-[19px] font-bold text-primary tracking-tight">Settings &amp; Help</h1>
+</div>
+</header>
+<!-- Main Content Container with full scrollability and pb-12 -->
+<main class="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-6 pb-12"><div class="flex flex-col w-full gap-5">
+<!-- Official Government Notice Banner -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-28 h-28 rounded-full bg-secondary-fixed/30 pointer-events-none blur-xl"></div>
+<div class="flex items-center gap-2 mb-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary text-on-primary font-label-sm text-label-sm tracking-wide">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+        Official Policy
+      </span>
+<span class="px-2 py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">
+        NPC Reg. No. PIC-2027-0482
+      </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary mb-1">
+      Cavite Tourism Registry &amp; Digital Passport Terms
+    </h2>
+<p class="font-body-sm text-body-sm text-text-secondary leading-relaxed">
+      Governed under Republic Act No. 10173 (Data Privacy Act of 2012) and Provincial Ordinance No. 2026-089.
+    </p>
+<!-- Metadata pill summary -->
+<div class="mt-3 pt-3 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center gap-1.5 text-text-secondary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-secondary">update</span>
+<span>Effective: Jan 1, 2027 • v2.4</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary-container font-label-md text-label-md bg-tertiary-fixed/30 px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]">gavel</span>
+<span>DOJ-Compliant</span>
+</div>
+</div>
+</section>
+<!-- Interactive Search / Filter Chips for Fast Reference -->
+<section class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5" id="policy-pills">
+<button class="policy-chip shrink-0 px-3.5 py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm" data-target="section-1" type="button">
+      1. Personal Data
+    </button>
+<button class="policy-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-card text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all" data-target="section-2" type="button">
+      2. Geofence &amp; GPS
+    </button>
+<button class="policy-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-card text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all" data-target="section-3" type="button">
+      3. Stamp Rules
+    </button>
+<button class="policy-chip shrink-0 px-3.5 py-1.5 rounded-full bg-surface-card text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all" data-target="section-4" type="button">
+      4. Rights &amp; Deletion
+    </button>
+</section>
+<!-- Section 1: Data Privacy & Tourist Information Collection -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col gap-3 scroll-mt-20" id="section-1">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-xl bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[19px]">badge</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Section 01</span>
+<h3 class="font-title-md text-title-md text-primary">Data Privacy &amp; Collection</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">shield</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+      In accordance with RA 10173, the Provincial Government of Cavite collects minimal identity markers exclusively to issue and link your authenticated provincial digital traveler credentials.
+    </p>
+<!-- Scope listing -->
+<div class="rounded-xl bg-background-canvas p-3 flex flex-col gap-2">
+<span class="font-label-md text-label-md text-primary">Collected Attributes:</span>
+<ul class="flex flex-col gap-1.5">
+<li class="flex items-start gap-2 text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container mt-0.5">check_circle</span>
+<span>Full Legal Name &amp; Permanent Philippine Municipality / City</span>
+</li>
+<li class="flex items-start gap-2 text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container mt-0.5">check_circle</span>
+<span>Verified Mobile Number (via one-time SMS OTP verification)</span>
+</li>
+<li class="flex items-start gap-2 text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container mt-0.5">check_circle</span>
+<span>Issuance Passport Identifier (e.g., <code class="font-mono bg-surface-card px-1 py-0.5 rounded text-primary">CVT-2027-xxxxxx</code>)</span>
+</li>
+</ul>
+</div>
+<!-- Exclusion notice -->
+<div class="rounded-xl bg-surface-container-high/60 p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-error text-[18px] shrink-0 mt-0.5">block</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+<strong class="text-on-surface">Strictly Excluded:</strong> No biometric identifiers, iris scans, facial recognition templates, or raw financial instruments are ever recorded or retained by this platform.
+      </p>
+</div>
+</section>
+<!-- Section 2: Location Data & Geofenced QR Verification -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col gap-3 scroll-mt-20" id="section-2">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-xl bg-secondary-fixed flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[19px]">near_me</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Section 02</span>
+<h3 class="font-title-md text-title-md text-primary">Geofencing &amp; Spot GPS</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">fmd_good</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+      Authenticity stamps require proximity proof. When you open the digital camera to scan an authorized site QR code, one instantaneous GPS query is triggered.
+    </p>
+<div class="grid grid-cols-2 gap-2.5">
+<div class="rounded-xl bg-background-canvas p-3 flex flex-col gap-1">
+<div class="flex items-center gap-1.5 text-secondary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">radar</span>
+<span>Boundary Gate</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-primary">±150m</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Tolerance radius around historical site landmark markers.</p>
+</div>
+<div class="rounded-xl bg-background-canvas p-3 flex flex-col gap-1">
+<div class="flex items-center gap-1.5 text-tertiary-container font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">location_off</span>
+<span>Zero Tracking</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-primary">0 sec</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Background coordinates are never polled or logged.</p>
+</div>
+</div>
+<div class="rounded-xl bg-surface-container-low p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Coordinates are discarded immediately after cryptographic hash generation. No trajectory trails or user routes are retained on municipal database servers.
+      </p>
+</div>
+</section>
+<!-- Section 3: Stamp Collection & Rewards Redemption -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col gap-3 scroll-mt-20" id="section-3">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[19px]">military_tech</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Section 03</span>
+<h3 class="font-title-md text-title-md text-primary">Stamp Collection &amp; Rewards</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">award_star</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+      Digital stamps acquired inside the booklet are official tokens issued under tourism promotional campaigns. Fair participation guidelines apply:
+    </p>
+<div class="space-y-2">
+<!-- Rule 1 -->
+<div class="p-3 rounded-xl bg-background-canvas flex items-start gap-2.5">
+<span class="font-mono text-secondary font-label-sm text-label-sm mt-0.5">01</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-primary">Campaign Eligibility Period</p>
+<p class="font-body-sm text-body-sm text-text-secondary">
+            Current promotional cycle runs through <strong>March 31, 2027</strong>. Unredeemed badge points roll over to secondary cultural incentives.
+          </p>
+</div>
+</div>
+<!-- Rule 2 -->
+<div class="p-3 rounded-xl bg-background-canvas flex items-start gap-2.5">
+<span class="font-mono text-secondary font-label-sm text-label-sm mt-0.5">02</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-primary">Single-Use 15-Minute Token</p>
+<p class="font-body-sm text-body-sm text-text-secondary">
+            Physical reward counter claims generate a dynamic, self-invalidating 15-minute verification token presented exclusively to Provincial Tourism desks.
+          </p>
+</div>
+</div>
+<!-- Rule 3 -->
+<div class="p-3 rounded-xl bg-background-canvas flex items-start gap-2.5">
+<span class="font-mono text-secondary font-label-sm text-label-sm mt-0.5">03</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-error">Anti-Tampering Enforcement</p>
+<p class="font-body-sm text-body-sm text-text-secondary">
+            Virtual machine spoofing, simulated mock GPS coordinates, and duplicate credential transfers invoke permanent passport revocation.
+          </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Retention, Rights & Official Inquiries -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col gap-3 scroll-mt-20" id="section-4">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[19px]">account_balance</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Section 04</span>
+<h3 class="font-title-md text-title-md text-primary">Retention &amp; Tourist Rights</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">contact_support</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+      Under Section 16 of the Data Privacy Act, travelers retain full rights to inspect, amend, or purge registered tourist entries upon identity confirmation.
+    </p>
+<div class="rounded-xl bg-background-canvas p-3 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary">Retention Duration</span>
+<span class="font-label-sm text-label-sm bg-surface-card px-2 py-0.5 rounded text-text-secondary">36 Months</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-relaxed">
+        Records are securely purged automatically after 36 months of profile inactivity, or within 7 business days following a formal right-to-be-forgotten request.
+      </p>
+</div>
+<!-- Official Contacts Box -->
+<div class="rounded-xl bg-primary text-on-primary p-3.5 flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-passport-foil">account_balance</span>
+<span class="font-label-lg text-label-lg">Provincial Tourism &amp; Cultural Affairs Office</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-primary-container leading-relaxed">
+        Provincial Capitol Compound, Trece Martires City, Cavite 4109<br/>
+        Email: <span class="text-on-primary underline">privacy@tourism.cavite.gov.ph</span><br/>
+        Hotline: (046) 419-1997 / 419-0244
+      </p>
+</div>
+</section>
+<!-- Interactive Accordion for Common Legal FAQs -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">help_center</span>
+<h3 class="font-title-md text-title-md text-primary">Frequently Addressed Inquiries</h3>
+</div>
+<!-- FAQ Item 1 -->
+<div class="rounded-xl bg-background-canvas overflow-hidden">
+<button aria-expanded="false" class="faq-toggle w-full px-3.5 py-3 text-left flex items-center justify-between gap-2 active:bg-surface-container-low transition-colors" type="button">
+<span class="font-label-lg text-label-lg text-primary">Can I use my stamp rewards offline?</span>
+<span class="material-symbols-outlined faq-arrow text-text-secondary text-[20px] transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-drawer hidden px-3.5 pb-3 pt-1">
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          Stamps already verified and minted in your passport ledger remain visible offline. However, collecting new stamps and generating reward redemption tokens require active internet connectivity to ensure instantaneous geofence validation.
+        </p>
+</div>
+</div>
+<!-- FAQ Item 2 -->
+<div class="rounded-xl bg-background-canvas overflow-hidden">
+<button aria-expanded="false" class="faq-toggle w-full px-3.5 py-3 text-left flex items-center justify-between gap-2 active:bg-surface-container-low transition-colors" type="button">
+<span class="font-label-lg text-label-lg text-primary">Are stamps shared with commercial third parties?</span>
+<span class="material-symbols-outlined faq-arrow text-text-secondary text-[20px] transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-drawer hidden px-3.5 pb-3 pt-1">
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          Never. Tourism visit statistics are strictly aggregated and anonymized for provincial infrastructure planning. No individual visit profile is sold, leased, or transmitted to commercial marketing vendors.
+        </p>
+</div>
+</div>
+<!-- FAQ Item 3 -->
+<div class="rounded-xl bg-background-canvas overflow-hidden">
+<button aria-expanded="false" class="faq-toggle w-full px-3.5 py-3 text-left flex items-center justify-between gap-2 active:bg-surface-container-low transition-colors" type="button">
+<span class="font-label-lg text-label-lg text-primary">How do I permanently delete my account?</span>
+<span class="material-symbols-outlined faq-arrow text-text-secondary text-[20px] transition-transform duration-200">expand_more</span>
+</button>
+<div class="faq-drawer hidden px-3.5 pb-3 pt-1">
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          You may initiate full profile dissolution under Account &gt; Settings &gt; Request Data Purge, or by emailing the Data Protection Officer with your passport credential number.
+        </p>
+</div>
+</div>
+</section>
+<!-- Bottom Acceptance / Compliance Certificate Card -->
+<section class="rounded-2xl bg-surface-card p-4 shadow-sm flex flex-col items-center text-center gap-3">
+<!-- Emblem SVG -->
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary shadow-sm">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+<path d="m9 12 2 2 4-4"></path>
+</svg>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-primary">Certified Provincial Registry</h4>
+<p class="font-body-sm text-body-sm text-text-secondary mt-0.5 max-w-[290px]">
+        This digital portal adheres to the ISO/IEC 27001 baseline privacy framework and the National Privacy Commission of the Philippines.
+      </p>
+</div>
+<div class="w-full flex flex-col gap-2 mt-2">
+<!-- Download PDF Action -->
+<button class="w-full h-12 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-2 active:bg-on-secondary-container transition-colors shadow-sm" id="download-pdf-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+        Download PDF Copy (382 KB)
+      </button>
+<!-- Return Button -->
+<button class="w-full h-12 rounded-full border-[1.5px] border-primary-container text-primary font-label-lg text-label-lg flex items-center justify-center gap-1.5 active:bg-surface-container-high transition-colors" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Back to Account
+      </button>
+</div>
+</section>
+</div>
+<script>
+  // Quick Section Navigation Chips
+  document.querySelectorAll('.policy-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const targetId = chip.getAttribute('data-target');
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Update active chip state
+      document.querySelectorAll('.policy-chip').forEach(c => {
+        c.classList.remove('bg-primary-container', 'text-on-primary');
+        c.classList.add('bg-surface-card', 'text-on-surface');
+      });
+      chip.classList.remove('bg-surface-card', 'text-on-surface');
+      chip.classList.add('bg-primary-container', 'text-on-primary');
+    });
+  });
+
+  // Local FAQ Accordion Handler (Safe Fallback)
+  document.querySelectorAll('.faq-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const drawer = btn.nextElementSibling;
+      const arrow = btn.querySelector('.faq-arrow');
+      const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+
+      if (isExpanded) {
+        btn.setAttribute('aria-expanded', 'false');
+        drawer.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+      } else {
+        btn.setAttribute('aria-expanded', 'true');
+        drawer.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-180');
+      }
+    });
+  });
+
+  // Download PDF Micro-feedback
+  const downloadBtn = document.getElementById('download-pdf-btn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      const originalHtml = downloadBtn.innerHTML;
+      downloadBtn.innerHTML = `
+        <span class="material-symbols-outlined text-[18px] animate-spin">refresh</span>
+        Preparing Encrypted PDF...
+      `;
+      setTimeout(() => {
+        downloadBtn.innerHTML = `
+          <span class="material-symbols-outlined text-[18px]">check</span>
+          Saved to Downloads
+        `;
+        setTimeout(() => {
+          downloadBtn.innerHTML = originalHtml;
+        }, 2500);
+      }, 900);
+    });
+  }
+</script></main>
+</div>
+<script>
+    // Interactive Accordions
+    document.querySelectorAll('.faq-toggle').forEach(button => {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        const content = button.nextElementSibling;
+        const arrow = button.querySelector('.faq-arrow');
+
+        if (expanded) {
+          button.setAttribute('aria-expanded', 'false');
+          content.classList.add('hidden');
+          arrow.classList.remove('rotate-180');
+        } else {
+          button.setAttribute('aria-expanded', 'true');
+          content.classList.remove('hidden');
+          arrow.classList.add('rotate-180');
+        }
+      });
+    });
+
+    // Push Notifications Toggle
+    const toggleBtn = document.getElementById('notif-toggle');
+    const knob = document.getElementById('notif-knob');
+    let isNotifActive = true;
+
+    if (toggleBtn && knob) {
+      toggleBtn.addEventListener('click', () => {
+        isNotifActive = !isNotifActive;
+        toggleBtn.setAttribute('aria-checked', isNotifActive.toString());
+        if (isNotifActive) {
+          toggleBtn.classList.remove('bg-outline-variant');
+          toggleBtn.classList.add('bg-primary-container');
+          knob.classList.remove('translate-x-0');
+          knob.classList.add('translate-x-5');
+        } else {
+          toggleBtn.classList.remove('bg-primary-container');
+          toggleBtn.classList.add('bg-outline-variant');
+          knob.classList.remove('translate-x-5');
+          knob.classList.add('translate-x-0');
+        }
+      });
+    }
+  </script>
+</body></html>

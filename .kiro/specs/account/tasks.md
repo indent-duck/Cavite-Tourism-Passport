@@ -191,8 +191,8 @@ The Account feature displays the user's profile information, digital passport ID
     - Export useContactVerification and useSignOut hooks
     - _Requirements: Clean exports for account hooks_
 
-- [ ] 7. Create legal content and Privacy screen
-  - [ ] 7.1 Create legal content file
+- [x] 7. Create legal content and Privacy screen
+  - [x] 7.1 Create legal content file
     - Create `src/data/legal-content.ts`
     - Export `legalContent` object with keys for each section:
       - `introduction`: Placeholder introduction text
@@ -206,7 +206,7 @@ The Account feature displays the user's profile information, digital passport ID
     - Add a comment at the top: "Placeholder text pending Tourism Office and legal review"
     - _Requirements: Legal content file with placeholder text_
 
-  - [ ] 7.2 Create Privacy Policy & Terms screen
+  - [x] 7.2 Create Privacy Policy & Terms screen
     - Create `src/app/privacy.tsx` as a root-level route (check `privacy-policy-terms.png`: if tab bar is visible, nest inside `(tabs)` instead)
     - Use ScreenContainer with `scrollable={true}`, `showHeader={true}`, `headerTitle="Privacy Policy & Terms"`
     - Import `legalContent` from `src/data/legal-content.ts`
@@ -219,13 +219,13 @@ The Account feature displays the user's profile information, digital passport ID
     - Android back button navigates back
     - _Requirements: Privacy Policy & Terms screen_
 
-  - [ ] 7.3 Wire Privacy link in Account screen
+  - [x] 7.3 Wire Privacy link in Account screen
     - Open `src/app/(tabs)/account.tsx`
     - Update "Privacy Policy & Terms" navigation row to navigate to `/privacy` using `router.push('/privacy')`
     - Remove any placeholder "Coming soon" toast or disabled state
     - _Requirements: Privacy row navigates to privacy screen_
 
-  - [ ] 7.4 Wire Privacy link in sign up email screen (if present)
+  - [x] 7.4 Wire Privacy link in sign up email screen (if present)
     - Open `src/app/(auth)/signup/email.tsx`
     - Check if terms text exists with links to "Provincial Tourism Terms of Service" and "Privacy Policy"
     - If links exist, make them pressable and navigate to `/privacy` using `router.push('/privacy')`
