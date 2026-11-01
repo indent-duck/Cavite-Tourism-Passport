@@ -5,7 +5,9 @@ import {
     mockItineraries,
     mockPromoPeriod,
     mockRewards,
-    mockSites
+    mockSettings,
+    mockSites,
+    updateMockSettings
 } from "./mock-data";
 import {
     Category,
@@ -16,9 +18,10 @@ import {
     PromoPeriod,
     Reward,
     RewardEligibility,
+    Settings,
     Site,
     Stamp,
-    User,
+    User
 } from "./types";
 
 // Utility to simulate network delay (300-800ms)
@@ -368,4 +371,27 @@ export async function generateClaimQR(rewardId: string): Promise<ClaimQR> {
 export async function getPromoPeriod(): Promise<PromoPeriod> {
   await randomDelay();
   return mockPromoPeriod;
+}
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+/**
+ * Get user settings
+ */
+export async function getSettings(): Promise<Settings> {
+  await randomDelay();
+  return mockSettings;
+}
+
+/**
+ * Update user settings
+ * Updates settings in-memory for the UI-first phase
+ */
+export async function updateSettings(settings: Partial<Settings>): Promise<Settings> {
+  await randomDelay();
+  
+  // Update mock settings using spread syntax (via helper function)
+  return updateMockSettings(settings);
 }

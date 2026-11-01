@@ -1,0 +1,127 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Update types and mock data for settings": [
+      {
+        "executionId": "15830b27-8bda-44f3-9e13-f7ffe65b7979",
+        "chatSessionId": "sess_337c50aa-c939-42fe-9fb9-714983d5034b",
+        "timestamp": 1793520294891
+      },
+      {
+        "executionId": "15830b27-8bda-44f3-9e13-f7ffe65b7979",
+        "chatSessionId": "sess_337c50aa-c939-42fe-9fb9-714983d5034b",
+        "timestamp": 1793520533461
+      }
+    ],
+    "2.2 Add updateSettings function to api.ts": [
+      {
+        "executionId": "95e28414-1e68-4b8e-9c6d-d6778e6717fa",
+        "chatSessionId": "sess_cec4823f-0e65-4552-9adf-08bba434838b",
+        "timestamp": 1793525891212
+      },
+      {
+        "executionId": "95e28414-1e68-4b8e-9c6d-d6778e6717fa",
+        "chatSessionId": "sess_cec4823f-0e65-4552-9adf-08bba434838b",
+        "timestamp": 1793526030271
+      }
+    ],
+    "3.1 Create useSettings hook": [
+      {
+        "executionId": "322494c4-1afd-47e0-a222-1b3ac23692e3",
+        "chatSessionId": "sess_df0555a0-63c9-4018-b968-2539c1b445df",
+        "timestamp": 1793526129706
+      },
+      {
+        "executionId": "322494c4-1afd-47e0-a222-1b3ac23692e3",
+        "chatSessionId": "sess_df0555a0-63c9-4018-b968-2539c1b445df",
+        "timestamp": 1793526190639
+      }
+    ],
+    "3.2 Export useSettings from hooks index": [
+      {
+        "executionId": "322494c4-1afd-47e0-a222-1b3ac23692e3",
+        "chatSessionId": "sess_df0555a0-63c9-4018-b968-2539c1b445df",
+        "timestamp": 1793526194999
+      },
+      {
+        "executionId": "322494c4-1afd-47e0-a222-1b3ac23692e3",
+        "chatSessionId": "sess_df0555a0-63c9-4018-b968-2539c1b445df",
+        "timestamp": 1793526227824
+      }
+    ],
+    "3. Create useSettings hook": [
+      {
+        "executionId": "322494c4-1afd-47e0-a222-1b3ac23692e3",
+        "chatSessionId": "sess_df0555a0-63c9-4018-b968-2539c1b445df",
+        "timestamp": 1793526227956
+      }
+    ],
+    "5.1 Create Settings screen layout and header": [
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793526519517
+      },
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793527091190
+      }
+    ],
+    "5.2 Create Device & Alerts section": [
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793526519687
+      },
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793527091641
+      }
+    ],
+    "5.3 Create FAQs & Help section": [
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793526520424
+      },
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793527092385
+      }
+    ],
+    "5.4 Create Official Tourism Links section": [
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793526521140
+      },
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793527093104
+      }
+    ],
+    "5.5 Create footer with app version": [
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793526521963
+      },
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793527093874
+      }
+    ],
+    "5. Implement Settings screen": [
+      {
+        "executionId": "54124b59-7a26-4332-a9b1-b1e82046a979",
+        "chatSessionId": "sess_d05898fc-206f-426e-8a09-c3eb1e69e18a",
+        "timestamp": 1793527093983
+      }
+    ]
+  }
+}

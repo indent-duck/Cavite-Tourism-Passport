@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: spacing.base,
+    padding: spacing.md,
     paddingBottom: spacing.xxl,
     gap: spacing.lg,
   },

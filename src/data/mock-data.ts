@@ -1,11 +1,13 @@
 import {
     Event,
+    FAQ,
     Itinerary,
     PromoPeriod,
     Reward,
+    Settings,
     Site,
     Stamp,
-    User,
+    User
 } from "./types";
 
 // ============================================================================
@@ -513,3 +515,56 @@ export const mockPromoPeriod: PromoPeriod = {
   endDate: new Date("2027-03-31"),
   active: true,
 };
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+// User settings (default: push notifications enabled)
+export let mockSettings: Settings = {
+  pushNotificationsEnabled: true,
+};
+
+/**
+ * Helper function to update mockSettings
+ * Uses spread syntax to create a new object and reassign the export
+ */
+export function updateMockSettings(settings: Partial<Settings>): Settings {
+  mockSettings = { ...mockSettings, ...settings };
+  return mockSettings;
+}
+
+// ============================================================================
+// FAQs (Frequently Asked Questions)
+// ============================================================================
+
+export const mockFaqs: FAQ[] = [
+  {
+    id: "faq-1",
+    question: "How do I collect stamps with the QR scanner?",
+    answer:
+      "Point camera at the official partner QR at the site counter/entrance while location is enabled. The app validates the stamp coordinates and securely logs your digital passport stamp badge immediately.",
+    icon: "qr-code-outline",
+  },
+  {
+    id: "faq-2",
+    question: "How do points and rewards redemption work?",
+    answer:
+      "Each category earns points per stamp: Dining 150, Staycation 200, Adventure 100, Heritage 50, and Festival 50 (bonus only). To redeem rewards, you need at least 700 points AND at least one stamp from each of Dining, Staycation, Adventure, and Heritage. You can claim one prize per promo period at the Cavite Tourism Office.",
+    icon: "gift-outline",
+  },
+  {
+    id: "faq-3",
+    question: "Can I scan a site QR code more than once?",
+    answer:
+      "Each site QR grants points once per active promotional season. Returning visits during the same promo period will not earn additional points, but you can collect stamps again in the next promo period.",
+    icon: "sync-outline",
+  },
+  {
+    id: "faq-4",
+    question: "What should I do if the scanner cannot verify my location?",
+    answer:
+      "Ensure GPS is set to High Accuracy and camera permissions are granted. If you are indoors or in mountain areas with weak GPS, step outside near the entrance checkpoint or connect to the venue's Wi-Fi network.",
+    icon: "location-outline",
+  },
+];

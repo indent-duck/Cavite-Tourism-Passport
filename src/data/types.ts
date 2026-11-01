@@ -128,6 +128,19 @@ export interface PromoPeriod {
   active: boolean;
 }
 
+// Settings
+export interface Settings {
+  pushNotificationsEnabled: boolean;
+}
+
+// FAQ
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  icon?: string; // Optional Ionicons icon name
+}
+
 // API response wrapper
 export interface ApiResponse<T> {
   data: T;

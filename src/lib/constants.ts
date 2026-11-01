@@ -23,3 +23,11 @@ export const PASSWORD_REQUIRES_NUMBER = true;
 export const PASSWORD_REQUIRES_UPPERCASE = true;
 export const PASSWORD_REQUIRES_SPECIAL = true;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Social Links (TBD - pending Tourism Office URLs)
+export const SOCIAL_LINKS = {
+  BIYAHENG_SOUTH: 'https://example.com/biyaheng-south', // TBD
+  CAVITE_TOURISM: 'https://example.com/cavite-tourism', // TBD
+  DOT_4A: 'https://example.com/dot-region4a', // TBD
+  DILG_4A: 'https://example.com/dilg-region4a', // TBD
+};
