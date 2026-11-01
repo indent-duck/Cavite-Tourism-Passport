@@ -12,21 +12,21 @@ The Scanner spec implements the QR code scanning feature for collecting stamps a
   - Add Haversine distance calculation helper `getDistanceMeters(lat1, lon1, lat2, lon2): number` to new file `src/lib/geo.ts`
   - _Requirements: 3.1 (Geofence verification), open decision constants_
 
-- [ ] 2. Extend types and mock data for stamp collection
+- [x] 2. Extend types and mock data for stamp collection
   - Add `CollectStampResult` type to `src/data/types.ts` with discriminated union: `{ success: true; stamp: Stamp } | { success: false; reason: 'invalid' | 'alreadyScanned' | 'locationFailed' | 'offline' }`
   - Add `collectStamp` function to `src/data/api.ts` that accepts `(payload: string, coords: { latitude: number; longitude: number } | null): Promise<CollectStampResult>`
   - Mock logic: parse payload with `parseSiteQr`, return invalid if malformed or unknown site, return alreadyScanned if stamp exists in `currentMockStamps` for this site, check Haversine distance unless `DEV_SKIP_LOCATION_CHECK` is true, return locationFailed if over GEOFENCE_DISTANCE_METERS, otherwise add new stamp to `currentMockStamps`, add points to `currentMockUser.points`, and return success with the new stamp
   - Export `currentMockStamps` and `currentMockUser` as mutable for in-memory updates during this UI-first phase
   - _Requirements: 2.2 (Collect stamp API), 3.1 (Location verification)_
 
-- [ ] 3. Create scanner hooks and mutations
+- [x] 3. Create scanner hooks and mutations
   - Create `src/hooks/useCollectStamp.ts` as React Query mutation wrapping `collectStamp` from `api.ts`
   - On success, invalidate `['currentUser']` and `['stamps']` query keys to refresh header and Passport screen
   - Create `src/hooks/usePermissions.ts` with functions `useCameraPermission()` and `useLocationPermission()` wrapping `expo-camera` and `expo-location` permission hooks
   - Each returns `{ status, canAskAgain, requestPermission }` following Expo SDK permission conventions
   - _Requirements: 2.3 (Scanner hooks), 3.2 (Permission handling)_
 
-- [ ] 4. Implement permission gate screens
+- [x] 4. Implement permission gate screens
   - Replace `src/app/scanner.tsx` placeholder with full permission flow
   - Stage 1 (primer): show icon (camera outline), two short rows ("Camera: scan QR codes", "Location: confirm you are at the site"), "Continue" button (triggers permission requests sequentially), "Not now" button (closes scanner via `router.back()`)
   - Use existing UI component patterns (Button, ScreenContainer)
@@ -36,7 +36,7 @@ The Scanner spec implements the QR code scanning feature for collecting stamps a
   - Only advance to viewfinder when both permissions are granted
   - _Requirements: 3.2 (Permission primer and blocked screens)_
 
-- [ ] 5. Implement camera viewfinder
+- [x] 5. Implement camera viewfinder
   - Create `src/components/scanner/ScannerViewfinder.tsx` component
   - Full-screen CameraView from `expo-camera` with `barCodeScannerSettings={{ barCodeTypes: ['qr'] }}`
   - Overlay: top close button (Ionicons 'close', 44px diameter, semi-transparent black background with backdrop blur), centered reticle (4 orange corner brackets, 256px square, matching `design/screens/06-scanner/scanner-viewfinder.png`), bottom text "Point your camera at the site's QR code" in white on semi-transparent black pill

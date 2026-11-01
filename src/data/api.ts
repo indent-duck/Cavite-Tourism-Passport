@@ -1,3 +1,5 @@
+import { DEV_SKIP_LOCATION_CHECK, GEOFENCE_DISTANCE_METERS, parseSiteQr } from "@/lib/constants";
+import { getDistanceMeters } from "@/lib/geo";
 import {
     currentMockStamps,
     currentMockUser,
@@ -12,6 +14,7 @@ import {
 import {
     Category,
     ClaimQR,
+    CollectStampResult,
     Event,
     Itinerary,
     POINTS_PER_CATEGORY,
@@ -209,17 +212,58 @@ export async function getStamps(): Promise<Stamp[]> {
 }
 
 /**
- * Collect a stamp at a site
- * Mock: Always succeeds, generates new stamp with appropriate points
+ * Collect a stamp at a site by scanning QR code
+ * Mock: Validates QR payload format, checks if already scanned, verifies location (unless dev flag is on)
+ * @param payload - QR code payload (format: "cvt:site:<siteId>")
+ * @param coords - User's current location or null if location unavailable
+ * @returns CollectStampResult with success/failure and reason
  */
-export async function collectStamp(siteId: string): Promise<Stamp> {
+export async function collectStamp(
+  payload: string,
+  coords: { latitude: number; longitude: number } | null
+): Promise<CollectStampResult> {
   await randomDelay();
 
-  const site = mockSites.find((s) => s.id === siteId);
-  if (!site) {
-    throw new Error("Site not found");
+  // Parse QR payload
+  const siteId = parseSiteQr(payload);
+  if (!siteId) {
+    return { success: false, reason: "invalid" };
   }
 
+  // Find site in catalog
+  const site = mockSites.find((s) => s.id === siteId);
+  if (!site) {
+    return { success: false, reason: "invalid" };
+  }
+
+  // Check if user already collected stamp from this site
+  const alreadyScanned = currentMockStamps.some((s) => s.siteId === siteId);
+  if (alreadyScanned) {
+    return { success: false, reason: "alreadyScanned" };
+  }
+
+  // Location verification (unless dev flag skips it)
+  if (!DEV_SKIP_LOCATION_CHECK) {
+    // If coords are null, location check failed (timeout or services disabled)
+    if (!coords) {
+      return { success: false, reason: "locationFailed" };
+    }
+
+    // Calculate distance between user and site
+    const distance = getDistanceMeters(
+      coords.latitude,
+      coords.longitude,
+      site.latitude,
+      site.longitude
+    );
+
+    // Check if user is within geofence
+    if (distance > GEOFENCE_DISTANCE_METERS) {
+      return { success: false, reason: "locationFailed" };
+    }
+  }
+
+  // Success: create new stamp
   const newStamp: Stamp = {
     id: `stamp-${Date.now()}`,
     userId: currentMockUser.id,
@@ -231,7 +275,13 @@ export async function collectStamp(siteId: string): Promise<Stamp> {
     collectedAt: new Date(),
   };
 
-  return newStamp;
+  // Add stamp to user's collection (in-memory update)
+  currentMockStamps.push(newStamp);
+
+  // Add points to user's balance (in-memory update)
+  currentMockUser.points += newStamp.pointsEarned;
+
+  return { success: true, stamp: newStamp };
 }
 
 // ============================================================================

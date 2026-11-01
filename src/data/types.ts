@@ -141,6 +141,11 @@ export interface FAQ {
   icon?: string; // Optional Ionicons icon name
 }
 
+// Stamp collection result (discriminated union)
+export type CollectStampResult =
+  | { success: true; stamp: Stamp }
+  | { success: false; reason: "invalid" | "alreadyScanned" | "locationFailed" | "offline" };
+
 // API response wrapper
 export interface ApiResponse<T> {
   data: T;

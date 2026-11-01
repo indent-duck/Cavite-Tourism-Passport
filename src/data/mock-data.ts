@@ -42,8 +42,8 @@ const mockEligibleUser: User = {
   contactVerified: false,
 };
 
-// Export the appropriate user based on flag
-export const currentMockUser = USE_ELIGIBLE_USER ? mockEligibleUser : mockUser;
+// Export the appropriate user based on flag (mutable for in-memory updates during UI-first phase)
+export let currentMockUser = USE_ELIGIBLE_USER ? mockEligibleUser : mockUser;
 
 // User's collected stamps
 // Total: 450 points from 1 Dining (150), 1 Staycation (200), 2 Heritage (50 each)
@@ -116,8 +116,8 @@ const eligibleUserStamps: Stamp[] = [
   },
 ];
 
-// Export the appropriate stamps based on flag
-export const currentMockStamps = USE_ELIGIBLE_USER ? eligibleUserStamps : mockStamps;
+// Export the appropriate stamps based on flag (mutable for in-memory updates during UI-first phase)
+export let currentMockStamps = USE_ELIGIBLE_USER ? eligibleUserStamps : mockStamps;
 
 // Site catalog (diverse set across all categories)
 export const mockSites: Site[] = [
