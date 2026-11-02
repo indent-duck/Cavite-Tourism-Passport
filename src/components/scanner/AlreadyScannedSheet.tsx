@@ -2,10 +2,10 @@ import { Button } from '@/components/ui/Button';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ResultSheet } from './ResultSheet';
+import type { SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * Already Scanned Sheet
@@ -27,7 +27,7 @@ export interface AlreadyScannedSheetProps {
   onBackToScanner: () => void;
 }
 
-export const AlreadyScannedSheet = forwardRef<BottomSheetModal, AlreadyScannedSheetProps>(
+export const AlreadyScannedSheet = forwardRef<SimpleModalSheetRef, AlreadyScannedSheetProps>(
   ({ siteName, collectedDate, onViewPassport, onBackToScanner }, ref) => {
     const { data: promoPeriod } = usePromoPeriod();
 
@@ -118,15 +118,9 @@ export const AlreadyScannedSheet = forwardRef<BottomSheetModal, AlreadyScannedSh
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <Button
-              title="View in Passport"
+              title="Dismiss"
               onPress={onViewPassport}
               variant="primary"
-              fullWidth
-            />
-            <Button
-              title="Back to Scanner"
-              onPress={onBackToScanner}
-              variant="outline"
               fullWidth
             />
           </View>
@@ -140,27 +134,26 @@ AlreadyScannedSheet.displayName = 'AlreadyScannedSheet';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: `${colors.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },
   messageContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   title: {
     fontFamily: typography.fontFamily,
-    ...typography.headlineLarge,
+    ...typography.headlineMedium,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -180,7 +173,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   infoTextContainer: {
     flex: 1,
@@ -193,20 +186,20 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontFamily: typography.fontFamily,
-    ...typography.titleMedium,
+    ...typography.bodyMedium,
     color: colors.text,
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: spacing.md,
+    marginVertical: spacing.sm,
   },
   noteContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
     width: '100%',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     paddingHorizontal: spacing.sm,
   },
   noteText: {
@@ -217,7 +210,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: '100%',
-    gap: spacing.md,
-    marginTop: 'auto',
+    marginTop: spacing.base,
   },
 });

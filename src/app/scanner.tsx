@@ -49,11 +49,11 @@ export default function ScannerScreen() {
   const [collectedStamp, setCollectedStamp] = useState<Stamp | null>(null);
 
   // Refs for bottom sheets
-  const successSheetRef = useRef<BottomSheetModal>(null);
-  const invalidQrSheetRef = useRef<BottomSheetModal>(null);
-  const alreadyScannedSheetRef = useRef<BottomSheetModal>(null);
-  const locationFailedSheetRef = useRef<BottomSheetModal>(null);
-  const noInternetSheetRef = useRef<BottomSheetModal>(null);
+  const successSheetRef = useRef<SimpleModalSheetRef>(null);
+  const invalidQrSheetRef = useRef<SimpleModalSheetRef>(null);
+  const alreadyScannedSheetRef = useRef<SimpleModalSheetRef>(null);
+  const locationFailedSheetRef = useRef<SimpleModalSheetRef>(null);
+  const noInternetSheetRef = useRef<SimpleModalSheetRef>(null);
 
   // Determine the current stage based on permission statuses
   const getStage = (): PermissionStage => {
@@ -193,17 +193,9 @@ export default function ScannerScreen() {
    */
   const handleDevTestInvalid = () => {
     console.log('[Scanner] Dev test: Invalid QR');
-    console.log('[Scanner] invalidQrSheetRef.current:', invalidQrSheetRef.current);
     setModalState('invalid');
-    setTimeout(() => {
-      console.log('[Scanner] Attempting to open invalid sheet...');
-      if (invalidQrSheetRef.current) {
-        console.log('[Scanner] Ref exists, calling present()');
-        invalidQrSheetRef.current.present();
-      } else {
-        console.error('[Scanner] Ref is null!');
-      }
-    }, 100);
+    // Direct call without timeout
+    invalidQrSheetRef.current?.present();
   };
 
   /**
@@ -381,29 +373,22 @@ export default function ScannerScreen() {
   // ============================================================================
 
   /**
-   * "View in Passport" button handler
-   * Closes scanner and navigates to Passport tab
+   * "View in Passport" / "Dismiss" button handler for success/already scanned
+   * Just closes the modal and stays on scanner
    */
   const handleViewPassport = () => {
-    // Close all modals
+    // Close the modals
     successSheetRef.current?.close();
     alreadyScannedSheetRef.current?.close();
     
-    // Reset state
+    // Reset state to allow rescanning
     setModalState(null);
     setCollectedStamp(null);
     setScannedSite(null);
-    
-    // Close scanner and navigate to Passport tab
-    router.back();
-    // Small delay to ensure scanner closes before navigation
-    setTimeout(() => {
-      router.push('/(tabs)/passport');
-    }, 100);
   };
 
   /**
-   * "Scan Another Code" / "Back to Scanner" / "Try Again" button handler
+   * "Scan Another Code" / "Back to Scanner" / "Try Again" / "Dismiss" button handler
    * Dismisses modal and resumes scanning
    */
   const handleResumeScanning = () => {
@@ -411,6 +396,8 @@ export default function ScannerScreen() {
     successSheetRef.current?.close();
     invalidQrSheetRef.current?.close();
     alreadyScannedSheetRef.current?.close();
+    locationFailedSheetRef.current?.close();
+    noInternetSheetRef.current?.close();
     
     // Reset state
     setModalState(null);
@@ -419,7 +406,7 @@ export default function ScannerScreen() {
   };
 
   /**
-   * "Check Location & Retry" button handler
+   * "Check Location & Retry" / "Dismiss" button handler
    * Dismisses modal and retries the scan flow
    */
   const handleRetryLocation = () => {
@@ -432,7 +419,7 @@ export default function ScannerScreen() {
   };
 
   /**
-   * "Retry Connection" button handler
+   * "Retry Connection" / "Dismiss" button handler
    * Dismisses modal and retries the scan
    */
   const handleRetryConnection = () => {
@@ -444,8 +431,8 @@ export default function ScannerScreen() {
   };
 
   /**
-   * "Cancel" / "Dismiss" / "Close Scanner" button handler
-   * Closes scanner entirely
+   * "Cancel" / "Dismiss" / "Close Scanner" button handler (UNUSED NOW)
+   * All Dismiss buttons now just close the modal
    */
   const handleCloseScanner = () => {
     // Close all modals
@@ -457,9 +444,6 @@ export default function ScannerScreen() {
     setModalState(null);
     setCollectedStamp(null);
     setScannedSite(null);
-    
-    // Close scanner
-    router.back();
   };
 
   // Render based on stage
@@ -515,7 +499,7 @@ export default function ScannerScreen() {
         <InvalidQrSheet
           ref={invalidQrSheetRef}
           onTryAgain={handleResumeScanning}
-          onCancel={handleCloseScanner}
+          onCancel={handleResumeScanning}
         />
 
         {/* Already Scanned Sheet */}
@@ -524,7 +508,7 @@ export default function ScannerScreen() {
           siteName={scannedSite?.name || ''}
           collectedDate={collectedStamp?.collectedAt || new Date()}
           onViewPassport={handleViewPassport}
-          onBackToScanner={handleResumeScanning}
+          onBackToScanner={handleViewPassport}
         />
 
         {/* Location Failed Sheet */}
@@ -533,14 +517,14 @@ export default function ScannerScreen() {
           targetSiteName={scannedSite?.name || ''}
           targetMunicipality={scannedSite?.municipality || ''}
           onRetry={handleRetryLocation}
-          onDismiss={handleCloseScanner}
+          onDismiss={handleRetryLocation}
         />
 
         {/* No Internet Sheet */}
         <NoInternetSheet
           ref={noInternetSheetRef}
           onRetry={handleRetryConnection}
-          onClose={handleCloseScanner}
+          onClose={handleRetryConnection}
         />
       </View>
     );

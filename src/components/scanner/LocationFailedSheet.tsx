@@ -1,10 +1,10 @@
-import React, { forwardRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
-import { ResultSheet } from './ResultSheet';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { forwardRef } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { ResultSheet } from './ResultSheet';
+import type { SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * Location Failed Sheet
@@ -27,7 +27,7 @@ export interface LocationFailedSheetProps {
   onDismiss: () => void;
 }
 
-export const LocationFailedSheet = forwardRef<BottomSheetModal, LocationFailedSheetProps>(
+export const LocationFailedSheet = forwardRef<SimpleModalSheetRef, LocationFailedSheetProps>(
   ({ targetSiteName, targetMunicipality, onRetry, onDismiss }, ref) => {
     return (
       <ResultSheet ref={ref} snapPoints={['70%']}>
@@ -84,15 +84,9 @@ export const LocationFailedSheet = forwardRef<BottomSheetModal, LocationFailedSh
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <Button
-              title="Check Location & Retry"
+              title="Dismiss"
               onPress={onRetry}
               variant="primary"
-              fullWidth
-            />
-            <Button
-              title="Dismiss"
-              onPress={onDismiss}
-              variant="outline"
               fullWidth
             />
           </View>
@@ -106,16 +100,15 @@ LocationFailedSheet.displayName = 'LocationFailedSheet';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: `${colors.accent}15`,
     alignItems: 'center',
     justifyContent: 'center',
@@ -126,7 +119,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: typography.fontFamily,
-    ...typography.headlineLarge,
+    ...typography.headlineMedium,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -169,7 +162,8 @@ const styles = StyleSheet.create({
   },
   targetSite: {
     fontFamily: typography.fontFamily,
-    ...typography.titleMedium,
+    ...typography.bodyMedium,
+    fontWeight: '600',
     color: colors.primary,
   },
   errorCard: {
@@ -185,7 +179,7 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
+    ...typography.bodySmall,
     color: colors.error,
   },
   tipCard: {
@@ -196,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.accent}10`,
     borderRadius: spacing.md,
     padding: spacing.base,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   tipText: {
     flex: 1,
@@ -206,7 +200,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: '100%',
-    gap: spacing.md,
-    marginTop: 'auto',
+    marginTop: spacing.base,
   },
 });

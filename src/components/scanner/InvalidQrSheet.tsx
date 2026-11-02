@@ -1,10 +1,10 @@
-import React, { forwardRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
-import { ResultSheet } from './ResultSheet';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { forwardRef } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { ResultSheet } from './ResultSheet';
+import type { SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * Invalid QR Sheet
@@ -23,7 +23,7 @@ export interface InvalidQrSheetProps {
   onCancel: () => void;
 }
 
-export const InvalidQrSheet = forwardRef<BottomSheetModal, InvalidQrSheetProps>(
+export const InvalidQrSheet = forwardRef<SimpleModalSheetRef, InvalidQrSheetProps>(
   ({ onTryAgain, onCancel }, ref) => {
     return (
       <ResultSheet ref={ref} snapPoints={['70%']}>
@@ -95,15 +95,9 @@ export const InvalidQrSheet = forwardRef<BottomSheetModal, InvalidQrSheetProps>(
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <Button
-              title="Try Again"
+              title="Dismiss"
               onPress={onTryAgain}
               variant="primary"
-              fullWidth
-            />
-            <Button
-              title="Cancel"
-              onPress={onCancel}
-              variant="outline"
               fullWidth
             />
           </View>
@@ -117,27 +111,26 @@ InvalidQrSheet.displayName = 'InvalidQrSheet';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: `${colors.error}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },
   messageContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   title: {
     fontFamily: typography.fontFamily,
-    ...typography.headlineLarge,
+    ...typography.headlineMedium,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -150,7 +143,7 @@ const styles = StyleSheet.create({
   },
   tipsContainer: {
     width: '100%',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   tipsHeader: {
     flexDirection: 'row',
@@ -167,17 +160,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: spacing.md,
     padding: spacing.base,
-    gap: spacing.md,
+    gap: spacing.sm,
     marginBottom: spacing.base,
   },
   tipItem: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   tipNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -185,13 +178,13 @@ const styles = StyleSheet.create({
   },
   tipNumberText: {
     fontFamily: typography.fontFamily,
-    ...typography.labelMedium,
+    ...typography.labelSmall,
     color: colors.background,
   },
   tipText: {
     flex: 1,
     fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
+    ...typography.bodySmall,
     color: colors.text,
   },
   bold: {
@@ -203,12 +196,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: spacing.md,
     padding: spacing.base,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   sealIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: `${colors.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
@@ -218,8 +211,9 @@ const styles = StyleSheet.create({
   },
   sealTitle: {
     fontFamily: typography.fontFamily,
-    ...typography.titleMedium,
+    ...typography.bodyMedium,
     color: colors.text,
+    fontWeight: '600',
   },
   sealText: {
     fontFamily: typography.fontFamily,
@@ -228,7 +222,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: '100%',
-    gap: spacing.md,
-    marginTop: 'auto',
+    marginTop: spacing.base,
   },
 });

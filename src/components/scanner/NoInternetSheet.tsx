@@ -1,10 +1,10 @@
-import React, { forwardRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
-import { ResultSheet } from './ResultSheet';
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { forwardRef } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { ResultSheet } from './ResultSheet';
+import type { SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * No Internet Sheet
@@ -25,7 +25,7 @@ export interface NoInternetSheetProps {
   onClose: () => void;
 }
 
-export const NoInternetSheet = forwardRef<BottomSheetModal, NoInternetSheetProps>(
+export const NoInternetSheet = forwardRef<SimpleModalSheetRef, NoInternetSheetProps>(
   ({ onRetry, onClose }, ref) => {
     return (
       <ResultSheet ref={ref} snapPoints={['60%']}>
@@ -63,15 +63,9 @@ export const NoInternetSheet = forwardRef<BottomSheetModal, NoInternetSheetProps
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <Button
-              title="Retry Connection"
+              title="Dismiss"
               onPress={onRetry}
               variant="primary"
-              fullWidth
-            />
-            <Button
-              title="Close Scanner"
-              onPress={onClose}
-              variant="outline"
               fullWidth
             />
           </View>
@@ -85,27 +79,26 @@ NoInternetSheet.displayName = 'NoInternetSheet';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   messageContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   title: {
     fontFamily: typography.fontFamily,
-    ...typography.headlineLarge,
+    ...typography.headlineMedium,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -136,7 +129,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.primary}10`,
     borderRadius: spacing.md,
     padding: spacing.base,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   tipText: {
     flex: 1,
@@ -146,7 +139,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: '100%',
-    gap: spacing.md,
-    marginTop: 'auto',
+    marginTop: spacing.base,
   },
 });

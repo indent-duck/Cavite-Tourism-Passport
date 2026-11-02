@@ -25,7 +25,7 @@ export interface SuccessSheetProps {
   onScanAnother: () => void;
 }
 
-export const SuccessSheet = forwardRef<BottomSheetModal, SuccessSheetProps>(
+export const SuccessSheet = forwardRef<SimpleModalSheetRef, SuccessSheetProps>(
   ({ stamp, totalBalance, onViewPassport, onScanAnother }, ref) => {
     // Format date and time
     const formatDateTime = (date: Date): string => {
@@ -88,15 +88,9 @@ export const SuccessSheet = forwardRef<BottomSheetModal, SuccessSheetProps>(
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <Button
-              title="View in Passport"
+              title="Dismiss"
               onPress={onViewPassport}
               variant="primary"
-              fullWidth
-            />
-            <Button
-              title="Scan Another Code"
-              onPress={onScanAnother}
-              variant="outline"
               fullWidth
             />
           </View>
@@ -110,36 +104,36 @@ SuccessSheet.displayName = 'SuccessSheet';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
   },
   stampContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   stampBadge: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 3,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 2,
     borderColor: colors.primary,
     borderStyle: 'dashed',
-    padding: spacing.md,
+    padding: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   stampInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 100,
-    borderWidth: 2,
+    borderRadius: 80,
+    borderWidth: 1,
     borderColor: colors.primary,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
+    padding: spacing.xs,
   },
   stampLabel: {
     fontFamily: typography.fontFamily,
@@ -149,7 +143,8 @@ const styles = StyleSheet.create({
   },
   stampSiteName: {
     fontFamily: typography.fontFamily,
-    ...typography.titleMedium,
+    ...typography.bodyMedium,
+    fontWeight: '600',
     color: colors.primary,
     textAlign: 'center',
     marginBottom: spacing.xs,
@@ -158,36 +153,36 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily,
     ...typography.bodySmall,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   stampCode: {
     fontFamily: typography.fontFamily,
-    ...typography.labelMedium,
+    ...typography.labelSmall,
     color: colors.primary,
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: spacing.md,
-    right: spacing.md,
+    bottom: spacing.sm,
+    right: spacing.sm,
     backgroundColor: colors.background,
-    borderRadius: 12,
-    width: 32,
-    height: 32,
+    borderRadius: 10,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dateTime: {
     fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
+    ...typography.bodySmall,
     color: colors.textSecondary,
   },
   messageContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   title: {
     fontFamily: typography.fontFamily,
-    ...typography.headlineLarge,
+    ...typography.headlineMedium,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -200,8 +195,8 @@ const styles = StyleSheet.create({
   pointsContainer: {
     flexDirection: 'row',
     width: '100%',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   pointsEarned: {
     flex: 1,
@@ -209,13 +204,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: spacing.md,
-    padding: spacing.base,
-    gap: spacing.md,
+    padding: spacing.sm,
+    gap: spacing.sm,
   },
   starIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: `${colors.accent}20`,
     alignItems: 'center',
     justifyContent: 'center',
@@ -228,8 +223,8 @@ const styles = StyleSheet.create({
   },
   pointsValue: {
     fontFamily: typography.fontFamily,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '700',
     color: colors.accent,
   },
@@ -246,14 +241,13 @@ const styles = StyleSheet.create({
   },
   balanceValue: {
     fontFamily: typography.fontFamily,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '700',
     color: colors.primary,
   },
   buttonContainer: {
     width: '100%',
-    gap: spacing.md,
-    marginTop: 'auto',
+    marginTop: spacing.base,
   },
 });
