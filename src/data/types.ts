@@ -144,7 +144,10 @@ export interface FAQ {
 // Stamp collection result (discriminated union)
 export type CollectStampResult =
   | { success: true; stamp: Stamp }
-  | { success: false; reason: "invalid" | "alreadyScanned" | "locationFailed" | "offline" };
+  | { success: false; reason: "invalid" }
+  | { success: false; reason: "alreadyScanned"; existingStamp: Stamp }
+  | { success: false; reason: "locationFailed" }
+  | { success: false; reason: "offline" };
 
 // API response wrapper
 export interface ApiResponse<T> {

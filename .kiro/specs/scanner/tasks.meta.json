@@ -60,6 +60,44 @@
         "chatSessionId": "sess_3229b68c-3abc-4fad-a1c5-1d76252104d6",
         "timestamp": 1793533262190
       }
+    ],
+    "6. Implement scan handling and location check": [
+      {
+        "executionId": "5bae3d61-f634-4418-8c94-50344e378861",
+        "chatSessionId": "sess_2ae6d60e-dda5-4df5-9bca-d8bac1d7d0ad",
+        "timestamp": 1793533436769
+      }
+    ],
+    "7. Create result modal bottom sheets": [
+      {
+        "executionId": "6571bda0-cca3-4882-8b42-aed53616b768",
+        "chatSessionId": "sess_8eb514a6-d15e-48d1-b6c9-2b52bea44ad3",
+        "timestamp": 1793609122921
+      },
+      {
+        "executionId": "6571bda0-cca3-4882-8b42-aed53616b768",
+        "chatSessionId": "sess_8eb514a6-d15e-48d1-b6c9-2b52bea44ad3",
+        "timestamp": 1793609603151
+      }
+    ],
+    "8. Wire result modals to scanner screen": [
+      {
+        "executionId": "22e0bfe8-9aa7-41b9-a8ce-6fa371281fae",
+        "chatSessionId": "sess_41f6f6fd-b676-42ef-9654-91637f3eae85",
+        "timestamp": 1793609652607
+      }
+    ],
+    "9. Create dev-only test panel": [
+      {
+        "executionId": "7f90a51f-9f83-47d4-917a-2f7ab4bb3b66",
+        "chatSessionId": "sess_66915edf-db2e-472e-b358-37c6211926e9",
+        "timestamp": 1793610721588
+      },
+      {
+        "executionId": "7f90a51f-9f83-47d4-917a-2f7ab4bb3b66",
+        "chatSessionId": "sess_66915edf-db2e-472e-b358-37c6211926e9",
+        "timestamp": 1793610989764
+      }
     ]
   }
 }

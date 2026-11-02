@@ -6,6 +6,7 @@ import {
     Inter_700Bold,
     useFonts,
 } from '@expo-google-fonts/inter';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -37,17 +38,19 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="scanner" />
-          <Stack.Screen name="sites/[id]" />
-          <Stack.Screen name="itineraries/[id]" />
-          <Stack.Screen name="events/[id]" />
-          <Stack.Screen name="rewards" />
-          <Stack.Screen name="settings" />
-        </Stack>
+        <BottomSheetModalProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="scanner" />
+            <Stack.Screen name="sites/[id]" />
+            <Stack.Screen name="itineraries/[id]" />
+            <Stack.Screen name="events/[id]" />
+            <Stack.Screen name="rewards" />
+            <Stack.Screen name="settings" />
+          </Stack>
+        </BottomSheetModalProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

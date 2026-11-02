@@ -237,9 +237,9 @@ export async function collectStamp(
   }
 
   // Check if user already collected stamp from this site
-  const alreadyScanned = currentMockStamps.some((s) => s.siteId === siteId);
-  if (alreadyScanned) {
-    return { success: false, reason: "alreadyScanned" };
+  const existingStamp = currentMockStamps.find((s) => s.siteId === siteId);
+  if (existingStamp) {
+    return { success: false, reason: "alreadyScanned", existingStamp };
   }
 
   // Location verification (unless dev flag skips it)
