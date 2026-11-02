@@ -374,22 +374,25 @@ export default function ScannerScreen() {
 
   /**
    * "View in Passport" / "Dismiss" button handler for success/already scanned
-   * Just closes the modal and stays on scanner
+   * Closes modal, exits scanner, and returns to previous screen
    */
   const handleViewPassport = () => {
     // Close the modals
     successSheetRef.current?.close();
     alreadyScannedSheetRef.current?.close();
     
-    // Reset state to allow rescanning
+    // Reset state
     setModalState(null);
     setCollectedStamp(null);
     setScannedSite(null);
+    
+    // Exit scanner and go back to previous screen
+    router.back();
   };
 
   /**
    * "Scan Another Code" / "Back to Scanner" / "Try Again" / "Dismiss" button handler
-   * Dismisses modal and resumes scanning
+   * Closes modal, exits scanner, and returns to previous screen
    */
   const handleResumeScanning = () => {
     // Close all modals
@@ -403,36 +406,45 @@ export default function ScannerScreen() {
     setModalState(null);
     setCollectedStamp(null);
     setScannedSite(null);
+    
+    // Exit scanner and go back to previous screen
+    router.back();
   };
 
   /**
    * "Check Location & Retry" / "Dismiss" button handler
-   * Dismisses modal and retries the scan flow
+   * Closes modal, exits scanner, and returns to previous screen
    */
   const handleRetryLocation = () => {
     // Close modal
     locationFailedSheetRef.current?.close();
     
-    // Reset state to allow rescanning
+    // Reset state
     setModalState(null);
     setScannedSite(null);
+    
+    // Exit scanner and go back to previous screen
+    router.back();
   };
 
   /**
    * "Retry Connection" / "Dismiss" button handler
-   * Dismisses modal and retries the scan
+   * Closes modal, exits scanner, and returns to previous screen
    */
   const handleRetryConnection = () => {
     // Close modal
     noInternetSheetRef.current?.close();
     
-    // Reset state to allow rescanning
+    // Reset state
     setModalState(null);
+    
+    // Exit scanner and go back to previous screen
+    router.back();
   };
 
   /**
    * "Cancel" / "Dismiss" / "Close Scanner" button handler (UNUSED NOW)
-   * All Dismiss buttons now just close the modal
+   * All Dismiss buttons now close scanner and return to previous screen
    */
   const handleCloseScanner = () => {
     // Close all modals
@@ -444,6 +456,9 @@ export default function ScannerScreen() {
     setModalState(null);
     setCollectedStamp(null);
     setScannedSite(null);
+    
+    // Exit scanner and go back to previous screen
+    router.back();
   };
 
   // Render based on stage
