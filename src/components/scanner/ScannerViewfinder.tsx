@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * ScannerViewfinder Component
@@ -45,6 +46,9 @@ export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
   onScanCode,
   isPaused = false,
 }) => {
+  // Get safe area insets for proper positioning
+  const insets = useSafeAreaInsets();
+  
   // Track last scanned payload and timestamp for debouncing
   const lastScanRef = useRef<{
     payload: string;
@@ -122,7 +126,7 @@ export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
       {/* Overlay */}
       <View style={styles.overlay}>
         {/* Close Button */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: insets.top + spacing.base }]}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={handleClose}
@@ -184,7 +188,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   topBar: {
-    paddingTop: Platform.OS === 'android' ? spacing.xl : spacing.huge,
     paddingHorizontal: spacing.base,
     alignItems: 'flex-start',
   },
