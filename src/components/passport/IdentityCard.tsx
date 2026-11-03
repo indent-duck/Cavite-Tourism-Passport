@@ -67,40 +67,48 @@ export function IdentityCard() {
 
       {/* Body */}
       <View style={styles.body}>
-        {/* Holder Icon and Passport ID */}
+        {/* Holder Photo and Passport ID */}
         <View style={styles.holderSection}>
-          <Ionicons
-            name="person-circle"
-            size={80}
-            color={colors.primary}
-            style={styles.personIcon}
-          />
-          <View style={styles.passportIdSection}>
-            <Text style={styles.passportId}>{currentUser.passportId}</Text>
-            <Text style={styles.fieldLabel}>Passport ID</Text>
+          {/* Passport Photo Container */}
+          <View style={styles.photoContainer}>
+            <View style={styles.photoBox}>
+              <Ionicons
+                name="person"
+                size={56}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={styles.photoLabel}>HOLDER</Text>
+          </View>
+          
+          <View style={styles.passportIdContainer}>
+            <View style={styles.passportIdBox}>
+              <Text style={styles.fieldLabel}>Passport ID</Text>
+              <Text style={styles.passportId}>{currentUser.passportId}</Text>
+            </View>
           </View>
         </View>
 
         {/* Full Name */}
-        <View style={styles.field}>
-          <Text style={styles.fieldValue}>{currentUser.name}</Text>
+        <View style={styles.fieldBox}>
           <Text style={styles.fieldLabel}>Full Name</Text>
+          <Text style={styles.fieldValue}>{currentUser.name}</Text>
         </View>
 
         {/* Address */}
-        <View style={styles.field}>
-          <Text style={styles.fieldValue}>{currentUser.address}</Text>
+        <View style={styles.fieldBox}>
           <Text style={styles.fieldLabel}>Address</Text>
+          <Text style={styles.fieldValue}>{currentUser.address}</Text>
         </View>
 
         {/* Dates */}
-        <View style={styles.datesRow}>
+        <View style={styles.datesBox}>
           <View style={styles.dateField}>
-            <Text style={styles.dateLabel}>Issued:</Text>
+            <Text style={styles.fieldLabel}>Issued</Text>
             <Text style={styles.dateValue}>{issuedDate}</Text>
           </View>
           <View style={styles.dateField}>
-            <Text style={styles.dateLabel}>Valid Through:</Text>
+            <Text style={styles.fieldLabel}>Valid Through</Text>
             <Text style={styles.dateValue}>{validThroughDate}</Text>
           </View>
         </View>
@@ -167,63 +175,96 @@ const styles = StyleSheet.create({
   // Body styles
   body: {
     backgroundColor: colors.passportCream,
-    padding: spacing.base, // p-4
-    gap: spacing.md,
+    padding: spacing.base,
+    gap: spacing.sm,
   },
   holderSection: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  photoContainer: {
     alignItems: 'center',
-    gap: spacing.base,
-    marginBottom: spacing.sm,
   },
-  personIcon: {
-    width: 80,
-    height: 80,
+  photoBox: {
+    width: 84,
+    height: 108, // 3:4 aspect ratio (portrait)
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: radii.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  passportIdSection: {
+  photoLabel: {
+    ...typography.labelSmall,
+    color: colors.textSecondary,
+    fontSize: 9,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  passportIdContainer: {
     flex: 1,
-    gap: 4,
+  },
+  passportIdBox: {
+    backgroundColor: '#FAF6EA',
+    borderWidth: 1,
+    borderColor: '#E9DFCA',
+    borderRadius: radii.md,
+    padding: spacing.sm,
   },
   passportId: {
     fontFamily: 'monospace',
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '900',
+    color: colors.primary,
   },
   
-  // Field styles
-  field: {
-    gap: 4,
+  // Field box styles (bordered containers with rounded corners)
+  fieldBox: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: '#E8DDCA',
+    borderRadius: radii.md,
+    padding: spacing.sm,
   },
   fieldValue: {
     ...typography.bodyMedium,
     color: colors.text,
-    fontWeight: '600',
+    fontWeight: '800',
+    fontSize: 15,
   },
   fieldLabel: {
-    ...typography.bodySmall,
+    ...typography.labelSmall,
     color: colors.textSecondary,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    marginBottom: 2,
   },
   
-  // Dates row
-  datesRow: {
+  // Dates box
+  datesBox: {
     flexDirection: 'row',
-    gap: spacing.base,
-    marginTop: spacing.sm,
+    gap: spacing.sm,
+    backgroundColor: '#F5EFE1',
+    borderWidth: 1,
+    borderColor: '#E8DDCA',
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    marginTop: spacing.xs,
   },
   dateField: {
     flex: 1,
   },
-  dateLabel: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
   dateValue: {
     ...typography.bodyMedium,
     color: colors.text,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 13,
   },
   
   // Footer styles

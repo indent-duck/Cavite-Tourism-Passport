@@ -159,6 +159,8 @@ export const typography = {
  * Border radius values in pixels.
  */
 export const radii = {
+  sm: 6,
+  md: 10,
   card: 16,
   button: 24,   // Pill shape
   chip: 16,

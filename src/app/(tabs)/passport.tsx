@@ -185,8 +185,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   toggleContainer: {
-    marginTop: spacing.base,
-    marginBottom: spacing.xl,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   cardContainer: {
     marginBottom: spacing.base,
