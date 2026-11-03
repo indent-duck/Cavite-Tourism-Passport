@@ -1,26 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography, radii } from '@/theme';
-import {
-  PASSPORT_ISSUER_LINE,
-  PASSPORT_SUBTITLE,
-  PASSPORT_HEADER_LABEL,
-  PASSPORT_FOOTER,
-} from '@/lib/constants';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
+import {
+    PASSPORT_FOOTER,
+    PASSPORT_HEADER_LABEL,
+    PASSPORT_ISSUER_LINE,
+    PASSPORT_SUBTITLE,
+} from '@/lib/constants';
+import { colors, radii, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View } from 'react-native';
 
 /**
  * Format date as "01 JAN 2027"
+ * Handles both Date objects and date strings
  */
-function formatPassportDate(date: Date): string {
+function formatPassportDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (isNaN(dateObj.getTime())) {
+    return 'INVALID DATE';
+  }
+  
   return new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   })
-    .format(date)
+    .format(dateObj)
     .toUpperCase();
 }
 

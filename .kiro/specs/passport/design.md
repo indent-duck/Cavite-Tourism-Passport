@@ -140,11 +140,13 @@
 
 ### Spacing
 
+- **Screen container padding**: `spacing.sm` for horizontal and top padding (tighter margins)
 - Card padding: 16px
 - Tile gap: 8px
 - Section margins: 12-16px
 - Slot padding: 12px
 - Icon-text gap: 8px
+- Toggle bottom margin: `spacing.xl` (more space between toggle and card below)
 
 ## Removed Elements
 

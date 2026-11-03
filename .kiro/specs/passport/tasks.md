@@ -51,7 +51,7 @@ The Passport screen displays the user's digital tourism passport with a summary 
   - Use only theme tokens, no hex values in component
   - _Requirements: 2.4, 2.5_
 
-- [ ] 5. Create Visas & Stamps card component and stamp slots
+- [x] 5. Create Visas & Stamps card component and stamp slots
   - Create `src/components/passport/StampsCard.tsx` for the main card structure
   - Navy blue header (colors.primary) with PASSPORT_STAMPS_TITLE constant on left and "N STAMPED" pill badge (N = stamps.length) on right
   - Cream tinted body (colors.passportCream) with 2-column grid of stamp slots
@@ -69,7 +69,7 @@ The Passport screen displays the user's digital tourism passport with a summary 
   - Use only theme tokens, no hex values in component
   - _Requirements: 2.6, 2.7, 2.8_
 
-- [ ] 6. Implement Passport screen with view toggle
+- [x] 6. Implement Passport screen with view toggle
   - Update `src/app/(tabs)/passport.tsx` to replace placeholder
   - Create local view state defaulting to 'identity' ('identity' | 'stamps'), changed only by the segmented toggle
   - Render ScreenContainer with scrollable={true}, edges={['left', 'right']}, withTabBarPadding={true}
