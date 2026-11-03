@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_stack" name="shell-type"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "background": "#faf9ff",
+            "on-surface-variant": "#424750",
+            "on-primary": "#ffffff",
+            "secondary-container": "#fc8127",
+            "tertiary-container": "#00542a",
+            "secondary-fixed-dim": "#ffb68b",
+            "surface-variant": "#d9e2ff",
+            "outline-variant": "#c2c6d2",
+            "on-secondary-container": "#602a00",
+            "primary": "#003260",
+            "surface-container-high": "#e1e8ff",
+            "error": "#ba1a1a",
+            "surface-bright": "#faf9ff",
+            "passport-leather": "#0B2A4A",
+            "on-error": "#ffffff",
+            "status-error": "#D64545",
+            "on-secondary": "#ffffff",
+            "text-secondary": "#6B7280",
+            "on-tertiary": "#ffffff",
+            "surface-tint": "#28609f",
+            "surface-container-highest": "#d9e2ff",
+            "secondary": "#994700",
+            "border-divider": "#E5E7EB",
+            "inverse-primary": "#a4c8ff",
+            "primary-fixed-dim": "#a4c8ff",
+            "tertiary": "#003a1b",
+            "on-tertiary-fixed-variant": "#005229",
+            "on-background": "#0a1b39",
+            "surface": "#faf9ff",
+            "surface-container": "#e9edff",
+            "on-primary-fixed": "#001c3a",
+            "on-secondary-fixed": "#321200",
+            "on-secondary-fixed-variant": "#753400",
+            "tertiary-fixed": "#8df9ac",
+            "background-canvas": "#FFFFFF",
+            "on-surface": "#0a1b39",
+            "on-error-container": "#93000a",
+            "passport-foil": "#F89C48",
+            "primary-fixed": "#d4e3ff",
+            "on-tertiary-container": "#61cc84",
+            "surface-card": "#F4F6FA",
+            "on-primary-fixed-variant": "#004784",
+            "outline": "#727781",
+            "secondary-fixed": "#ffdbc8",
+            "primary-container": "#004987",
+            "inverse-surface": "#21304f",
+            "on-tertiary-fixed": "#00210d",
+            "error-container": "#ffdad6",
+            "tertiary-fixed-dim": "#71dc92",
+            "surface-container-low": "#f1f3ff",
+            "inverse-on-surface": "#edf0ff",
+            "on-primary-container": "#89baff",
+            "surface-container-lowest": "#ffffff",
+            "surface-dim": "#ccdaff"
+          },
+          "fontFamily": {
+            "sans": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: #faf9ff;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-font-smoothing: antialiased;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+    .custom-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#faf9ff] text-on-surface antialiased flex justify-center items-start min-h-screen">
+<!-- Mobile Android Container (390px layout) -->
+<div class="w-full max-w-[390px] min-h-screen bg-background-canvas flex flex-col relative shadow-xl">
+<!-- Pinned Clean Android Header -->
+<header class="fixed top-0 inset-x-0 max-w-[390px] mx-auto z-40 bg-surface/95 backdrop-blur-md pt-safe border-b border-border-divider/50">
+<!-- Android Status Bar Simulation -->
+<div class="flex items-center justify-between px-4 h-6 text-on-surface-variant text-[12px] font-medium">
+<span class="font-bold text-on-surface">09:41</span>
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[15px]">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[15px]">wifi</span>
+<span class="material-symbols-outlined text-[15px]">battery_full</span>
+</div>
+</div>
+<!-- Clean Stack Header Content -->
+<div class="h-14 px-3 flex items-center justify-between">
+<div class="flex items-center gap-2 min-w-0">
+<button aria-label="Go Back" class="w-10 h-10 flex items-center justify-center text-primary rounded-full hover:bg-surface-container active:scale-95 transition-all" onclick="window.history.back()">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-[18px] font-bold text-primary truncate tracking-tight">Reward Detail   Qr Generated</h1>
+</div>
+</div>
+</header>
+<!-- Natural Scrollable Main Viewport (pt-20 = status bar + h-14 app bar) -->
+<main class="flex-1 w-full px-4 pt-20 pb-safe flex flex-col gap-4 custom-scroll">
+<div class="flex flex-col w-full pb-6">
+<!-- Reward Overview Summary Card -->
+<div class="w-full bg-surface-card rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+<div class="w-14 h-14 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">redeem</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center justify-between gap-1 mb-0.5">
+<h2 class="font-title-md text-title-md text-primary truncate">Cavite Souvenir Kit</h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold shrink-0">
+          700 pts
+        </span>
+</div>
+<div class="flex items-center gap-1 text-text-secondary">
+<span class="material-symbols-outlined text-[15px] shrink-0 text-secondary-container">location_on</span>
+<span class="font-body-sm text-body-sm truncate">Provincial Tourism Center, Trece Martires</span>
+</div>
+</div>
+</div>
+<!-- Main Voucher QR Container -->
+<div class="w-full mt-4 bg-surface-container-lowest rounded-2xl shadow-md p-5 flex flex-col items-center relative overflow-hidden">
+<!-- Top Decorative Guilloche Accent Ribbon -->
+<div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary via-secondary-container to-primary"></div>
+<!-- Claim Pass Validity Badge with Live Countdown -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed/50 text-on-secondary-fixed mt-1 mb-4">
+<span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+<span class="font-label-md text-label-md">Single-Use Pass • Valid for <span class="font-bold" id="claim-timer">14:59</span></span>
+</div>
+<!-- Scalable QR Code Container with Corner Frame Motifs -->
+<div class="relative p-3.5 bg-surface-container-lowest rounded-2xl shadow-sm flex items-center justify-center">
+<!-- Decorative Passport-Style Corner Guides -->
+<div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-primary rounded-tl-sm pointer-events-none"></div>
+<div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-primary rounded-tr-sm pointer-events-none"></div>
+<div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-primary rounded-bl-sm pointer-events-none"></div>
+<div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-primary rounded-br-sm pointer-events-none"></div>
+<!-- Scannable High-Contrast SVG QR Pattern with Brand Seal Center -->
+<div class="w-52 h-52 relative flex items-center justify-center bg-surface-container-lowest p-2 rounded-xl">
+<svg class="w-full h-full text-passport-leather" fill="currentColor" viewbox="0 0 200 200">
+<!-- Top Left Finder Pattern -->
+<rect fill="none" height="50" rx="8" stroke="currentColor" stroke-width="8" width="50" x="10" y="10"></rect>
+<rect height="22" rx="4" width="22" x="24" y="24"></rect>
+<!-- Top Right Finder Pattern -->
+<rect fill="none" height="50" rx="8" stroke="currentColor" stroke-width="8" width="50" x="140" y="10"></rect>
+<rect height="22" rx="4" width="22" x="154" y="24"></rect>
+<!-- Bottom Left Finder Pattern -->
+<rect fill="none" height="50" rx="8" stroke="currentColor" stroke-width="8" width="50" x="10" y="140"></rect>
+<rect height="22" rx="4" width="22" x="24" y="154"></rect>
+<!-- Decorative Timing Stripes -->
+<line stroke="currentColor" stroke-dasharray="8 8" stroke-linecap="round" stroke-width="6" x1="68" x2="132" y1="24" y2="24"></line>
+<line stroke="currentColor" stroke-dasharray="8 8" stroke-linecap="round" stroke-width="6" x1="24" x2="24" y1="68" y2="132"></line>
+<!-- QR Data Matrix Blocks (Styled for Authentic Verification Scanners) -->
+<rect height="10" rx="2" width="10" x="68" y="44"></rect>
+<rect height="10" rx="2" width="10" x="86" y="44"></rect>
+<rect height="10" rx="2" width="10" x="104" y="44"></rect>
+<rect height="10" rx="2" width="10" x="122" y="44"></rect>
+<rect height="10" rx="2" width="10" x="44" y="68"></rect>
+<rect height="10" rx="2" width="10" x="68" y="68"></rect>
+<rect height="10" rx="2" width="10" x="122" y="68"></rect>
+<rect height="10" rx="2" width="10" x="146" y="68"></rect>
+<rect height="10" rx="2" width="10" x="44" y="86"></rect>
+<rect height="10" rx="2" width="10" x="146" y="86"></rect>
+<rect height="10" rx="2" width="10" x="164" y="86"></rect>
+<rect height="10" rx="2" width="10" x="44" y="104"></rect>
+<rect height="10" rx="2" width="10" x="146" y="104"></rect>
+<rect height="10" rx="2" width="10" x="164" y="104"></rect>
+<rect height="10" rx="2" width="10" x="44" y="122"></rect>
+<rect height="10" rx="2" width="10" x="68" y="122"></rect>
+<rect height="10" rx="2" width="10" x="122" y="122"></rect>
+<rect height="10" rx="2" width="10" x="146" y="122"></rect>
+<rect height="10" rx="2" width="10" x="68" y="146"></rect>
+<rect height="10" rx="2" width="10" x="86" y="146"></rect>
+<rect height="10" rx="2" width="10" x="104" y="146"></rect>
+<rect height="10" rx="2" width="10" x="122" y="146"></rect>
+<rect height="10" rx="2" width="10" x="68" y="164"></rect>
+<rect height="10" rx="2" width="10" x="104" y="164"></rect>
+<rect height="10" rx="2" width="10" x="146" y="164"></rect>
+<rect height="10" rx="2" width="10" x="164" y="164"></rect>
+<!-- Center Provincial Emblem Plaque -->
+<circle cx="100" cy="100" fill="#FFFFFF" r="22"></circle>
+<circle cx="100" cy="100" fill="#004987" r="18"></circle>
+<polygon fill="#F89C48" points="100,88 103,96 112,96 105,101 107,110 100,105 93,110 95,101 88,96 97,96"></polygon>
+</svg>
+</div>
+</div>
+<!-- Ticket Reference Code & Copy Action -->
+<div class="mt-4 flex flex-col items-center">
+<span class="font-label-sm text-label-sm text-text-secondary uppercase tracking-wider mb-1">Ticket Reference ID</span>
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-card rounded-lg">
+<span class="font-title-md text-title-md text-primary font-mono tracking-tight" id="ticket-id">CLAIM-CVT-700-48291</span>
+<button aria-label="Copy reference ID" class="text-text-secondary hover:text-primary transition-colors flex items-center justify-center p-0.5 rounded" id="copy-btn">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary-container font-medium opacity-0 transition-opacity mt-1" id="copy-feedback">Copied to clipboard</span>
+</div>
+<!-- Divider Pill Notch Effect -->
+<div class="w-full flex items-center gap-2 my-4">
+<div class="h-[1px] flex-1 bg-surface-container"></div>
+<span class="font-label-sm text-label-sm text-text-secondary">SECURITY VERIFIED</span>
+<div class="h-[1px] flex-1 bg-surface-container"></div>
+</div>
+<!-- Staff Scan Requirement Instructions -->
+<div class="w-full bg-surface-card rounded-xl p-3 flex items-start gap-2.5">
+<div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-primary text-[16px]">info</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface flex-1">
+        Show this code to a tourism office officer. Points are deducted when the reward is claimed.
+      </p>
+</div>
+</div>
+<!-- Additional Guidance Notice Card -->
+<div class="w-full mt-4 bg-surface-container-low rounded-xl p-3.5 flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary-container text-[20px] shrink-0 mt-0.5">verified</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+      Single claim per promo period. Present your digital passport along with this QR code at the redemption counter.
+    </p>
+</div>
+<!-- Bottom Primary Action Button -->
+<div class="w-full mt-6">
+<button class="w-full h-12 bg-primary-container text-on-primary rounded-full font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all" id="done-btn">
+<span>Done</span>
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+</button>
+</div>
+</div>
+<script>
+  (function() {
+    // Live countdown timer logic (15 minutes)
+    var duration = 15 * 60;
+    var timerEl = document.getElementById('claim-timer');
+    if (timerEl) {
+      var interval = setInterval(function() {
+        duration--;
+        if (duration <= 0) {
+          clearInterval(interval);
+          timerEl.textContent = 'Expired';
+          return;
+        }
+        var m = Math.floor(duration / 60);
+        var s = duration % 60;
+        timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+      }, 1000);
+    }
+
+    // Quick copy voucher reference code
+    var copyBtn = document.getElementById('copy-btn');
+    var copyFeedback = document.getElementById('copy-feedback');
+    var ticketIdEl = document.getElementById('ticket-id');
+
+    if (copyBtn && ticketIdEl && copyFeedback) {
+      copyBtn.addEventListener('click', function() {
+        var text = ticketIdEl.textContent || 'CLAIM-CVT-700-48291';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(showToast);
+        } else {
+          showToast();
+        }
+      });
+    }
+
+    function showToast() {
+      copyFeedback.classList.remove('opacity-0');
+      copyFeedback.classList.add('opacity-100');
+      setTimeout(function() {
+        copyFeedback.classList.remove('opacity-100');
+        copyFeedback.classList.add('opacity-0');
+      }, 2000);
+    }
+
+    // Done button navigation
+    var doneBtn = document.getElementById('done-btn');
+    if (doneBtn) {
+      doneBtn.addEventListener('click', function() {
+        window.history.back();
+      });
+    }
+  })();
+</script>
+</main>
+</div>
+</body></html>
