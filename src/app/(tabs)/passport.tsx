@@ -157,8 +157,7 @@ export default function PassportScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.sm,
-    paddingTop: spacing.sm,
+    // No padding here - ScreenContainer provides spacing.base (16px) horizontal padding
   },
   centerContainer: {
     flex: 1,

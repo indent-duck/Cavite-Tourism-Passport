@@ -146,21 +146,26 @@ export function RewardCard({
             </View>
           )}
 
-          {/* Limited badge - Top-left */}
+          {/* Gradient overlay at bottom */}
+          <View style={styles.gradientOverlay} />
+
+          {/* Points badge - Top-left */}
+          <View style={styles.pointsBadge}>
+            <Ionicons name="star" size={14} color={colors.accent} />
+            <Text style={styles.pointsBadgeText}>
+              {reward.pointsCost} pts
+            </Text>
+          </View>
+
+          {/* Limited badge - Top-right */}
           {reward.limited && reward.remainingClaims !== undefined && (
             <View style={styles.limitedBadge}>
+              <View style={styles.pulsingDot} />
               <Text style={styles.limitedBadgeText}>
                 Limited: {reward.remainingClaims} left
               </Text>
             </View>
           )}
-
-          {/* Points badge - Bottom-right */}
-          <View style={styles.pointsBadge}>
-            <Text style={styles.pointsBadgeText}>
-              {reward.pointsCost} pts
-            </Text>
-          </View>
         </View>
 
         {/* Content Section */}
@@ -186,9 +191,12 @@ export function RewardCard({
           {/* Points Progress Bar (if not eligible) */}
           {showProgressBar && eligibility && (
             <View style={styles.progressSection}>
-              <Text style={styles.progressText}>
-                {eligibility.currentPoints} / {reward.pointsCost} pts ({Math.round(pointsProgress)}%)
-              </Text>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressLabel}>Points Progress</Text>
+                <Text style={styles.progressValue}>
+                  {eligibility.currentPoints} / {reward.pointsCost} pts ({Math.round(pointsProgress)}%)
+                </Text>
+              </View>
               <View style={styles.progressBarContainer}>
                 <View
                   style={[
@@ -228,72 +236,105 @@ export function RewardCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     marginBottom: spacing.base,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: `${colors.border}60`,
     ...shadows.card,
   },
   imageContainer: {
     position: 'relative',
     width: '100%',
-    aspectRatio: 16 / 10,
-    backgroundColor: colors.surface,
+    aspectRatio: 16 / 9,
+    backgroundColor: '#D1D5DB',
   },
   image: {
     width: '100%',
     height: '100%',
-    borderTopLeftRadius: radii.card,
-    borderTopRightRadius: radii.card,
   },
   placeholderOverlay: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.card,
-    borderTopRightRadius: radii.card,
+    backgroundColor: '#D1D5DB',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
+    backgroundColor: 'transparent',
+  },
+  pointsBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: `${colors.primary}F0`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: `${colors.background}30`,
+  },
+  pointsBadgeText: {
+    ...typography.bodyMedium,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.background,
+    letterSpacing: 0.3,
   },
   limitedBadge: {
     position: 'absolute',
     top: spacing.sm,
-    left: spacing.sm,
-    backgroundColor: colors.accent,
+    right: spacing.sm,
+    backgroundColor: `${colors.background}F5`,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.card,
+    paddingVertical: 4,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: `${colors.border}50`,
+    shadowColor: '#1B2A49',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  pulsingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accent,
   },
   limitedBadgeText: {
     ...typography.bodySmall,
-    color: colors.background,
-    fontWeight: '600',
-  },
-  pointsBadge: {
-    position: 'absolute',
-    bottom: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.card,
-  },
-  pointsBadgeText: {
-    ...typography.bodyMedium,
-    color: colors.background,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.text,
   },
   content: {
-    padding: spacing.base,
+    padding: spacing.sm,
+    gap: spacing.xs,
   },
   title: {
     ...typography.titleMedium,
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.xs,
   },
   description: {
     ...typography.bodySmall,
+    fontSize: 12,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    lineHeight: 18,
   },
   locationRow: {
     flexDirection: 'row',
@@ -303,16 +344,34 @@ const styles = StyleSheet.create({
   },
   locationText: {
     ...typography.bodySmall,
+    fontSize: 11,
     color: colors.textSecondary,
     flex: 1,
   },
   progressSection: {
-    marginBottom: spacing.sm,
+    backgroundColor: `${colors.primary}10`,
+    borderRadius: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: `${colors.border}30`,
   },
-  progressText: {
-    ...typography.bodySmall,
-    color: colors.text,
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.xs,
+  },
+  progressLabel: {
+    ...typography.bodySmall,
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  progressValue: {
+    ...typography.bodySmall,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.accent,
   },
   progressBarContainer: {
     height: 8,
@@ -326,13 +385,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
+    alignSelf: 'stretch',
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.md,
+    alignItems: 'center',
   },
   statusBadgeText: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

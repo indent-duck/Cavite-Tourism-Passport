@@ -146,8 +146,8 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - "Done ✓" button (primary blue)
     - _Requirements: Viewing Reward Detail - QR Generated State, Timer Logic, QR Code Generation, Design Differences #5-7_
 
-- [~] 5. Implement rewards list screen
-  - [ ] 5.1 Replace placeholder in `src/app/rewards/index.tsx`
+- [x] 5. Implement rewards list screen
+  - [x] 5.1 Replace placeholder in `src/app/rewards/index.tsx`
     - Use `ScreenContainer` with `scrollable={true}`, back arrow in header, title "Reward Details"
     - Use `useCurrentUser` for current points
     - Use `useStamps` (existing hook) to get user's stamps (NOT currentMockStamps)

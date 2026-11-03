@@ -1,26 +1,25 @@
-import { colors, radii, shadows, spacing, typography } from '@/theme';
-import { Category, POINTS_PER_CATEGORY } from '@/data/types';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Category, POINTS_PER_CATEGORY } from "@/data/types";
+import { colors, radii, spacing, typography } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, View } from "react-native";
 
 /**
  * PointsSummaryCard Component
- * 
+ *
  * Displays the user's total points balance and category stamp collection progress.
- * Shows which of the 4 main categories (Dining, Staycation, Heritage, Adventure) 
+ * Shows which of the 4 main categories (Dining, Staycation, Heritage, Adventure)
  * have been collected and which are still missing.
- * 
+ *
  * Props:
  * - points: Current user's total points
  * - stampCategories: Array of Category enums representing collected stamps
  * - testID: Optional test identifier
- * 
+ *
  * Layout:
  * - Top: "TOTAL BALANCE" label, large points display, subtext
  * - Bottom: "Category Stamp Milestones" label with "N of 4 categories collected" badge
  * - Four category chips in 2x2 grid showing Dining, Staycation, Heritage, Adventure
- * 
+ *
  * Validates: Requirements 1.2.1 (Points Summary Card)
  */
 
@@ -34,14 +33,19 @@ export interface PointsSummaryCardProps {
 }
 
 // Define the 4 main categories in display order
-const MAIN_CATEGORIES: Category[] = ['Dining', 'Staycation', 'Heritage', 'Adventure'];
+const MAIN_CATEGORIES: Category[] = [
+  "Dining",
+  "Staycation",
+  "Heritage",
+  "Adventure",
+];
 
 // Category icon mapping
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Dining: 'restaurant',
-  Staycation: 'bed',
-  Heritage: 'business',
-  Adventure: 'compass',
+  Dining: "restaurant",
+  Staycation: "bed",
+  Heritage: "business",
+  Adventure: "compass",
 };
 
 // Category color mapping
@@ -58,8 +62,8 @@ export function PointsSummaryCard({
   testID,
 }: PointsSummaryCardProps) {
   // Count how many of the 4 main categories have been collected
-  const collectedCount = MAIN_CATEGORIES.filter(cat => 
-    stampCategories.includes(cat)
+  const collectedCount = MAIN_CATEGORIES.filter((cat) =>
+    stampCategories.includes(cat),
   ).length;
 
   return (
@@ -67,7 +71,10 @@ export function PointsSummaryCard({
       {/* Points Balance Section */}
       <View style={styles.balanceSection}>
         <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
-        <Text style={styles.pointsDisplay}>{points} pts</Text>
+        <View style={styles.pointsRow}>
+          <Text style={styles.pointsNumber}>{points}</Text>
+          <Text style={styles.pointsLabel}> pts</Text>
+        </View>
         <Text style={styles.balanceSubtext}>
           Earned across 4 Cavite Passport categories
         </Text>
@@ -89,7 +96,7 @@ export function PointsSummaryCard({
 
         {/* Category Chips Grid */}
         <View style={styles.chipsGrid}>
-          {MAIN_CATEGORIES.map(category => {
+          {MAIN_CATEGORIES.map((category) => {
             const isCollected = stampCategories.includes(category);
             const categoryColor = CATEGORY_COLORS[category];
             const categoryIcon = CATEGORY_ICONS[category];
@@ -117,20 +124,25 @@ export function PointsSummaryCard({
                   <Text
                     style={[
                       styles.chipStatus,
-                      { color: isCollected ? colors.text : colors.error },
+                      {
+                        color: isCollected ? colors.success : "#92400E",
+                        backgroundColor: isCollected
+                          ? "transparent"
+                          : "#FEF3C7",
+                      },
                     ]}
                   >
                     {isCollected
                       ? `Collected • ${categoryPoints} pts`
-                      : 'Missing • Needs 1 stamp'}
+                      : "Missing (Need 1)"}
                   </Text>
                 </View>
 
                 {/* Status Icon */}
                 <Ionicons
-                  name={isCollected ? 'checkmark-circle' : 'alert-circle'}
-                  size={20}
-                  color={isCollected ? colors.success : colors.error}
+                  name={isCollected ? "checkmark-circle" : "alert-circle"}
+                  size={18}
+                  color={isCollected ? colors.success : "#D97706"}
                   style={styles.statusIcon}
                 />
               </View>
@@ -144,95 +156,124 @@ export function PointsSummaryCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.background,
+    backgroundColor: "#E9EDFF", // Light blue gradient background
     borderRadius: radii.card,
     padding: spacing.base,
-    ...shadows.card,
+    borderWidth: 1,
+    borderColor: `${colors.border}50`,
+    shadowColor: "#1B2A49",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   balanceSection: {
-    alignItems: 'center',
-    paddingBottom: spacing.base,
+    alignItems: "flex-start",
+    paddingBottom: spacing.sm,
   },
   balanceLabel: {
     ...typography.labelSmall,
+    fontSize: 11,
+    fontWeight: "600",
     color: colors.textSecondary,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
-  pointsDisplay: {
-    ...typography.displayLarge,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  pointsRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  pointsNumber: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: colors.accent,
+    letterSpacing: -0.5,
+    lineHeight: 40,
+  },
+  pointsLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.accent,
   },
   balanceSubtext: {
     ...typography.bodySmall,
+    fontSize: 11,
     color: colors.textSecondary,
-    textAlign: 'center',
+    marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.base,
+    backgroundColor: `${colors.border}50`,
+    marginVertical: spacing.sm,
   },
   milestonesSection: {
-    gap: spacing.base,
-  },
-  milestonesHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
     gap: spacing.sm,
   },
+  milestonesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
   milestonesLabel: {
-    ...typography.titleMedium,
-    color: colors.text,
+    ...typography.labelMedium,
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.primary,
   },
   badge: {
-    backgroundColor: colors.surface,
+    backgroundColor: `${colors.accent}30`,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 20,
   },
   badgeText: {
     ...typography.bodySmall,
-    color: colors.text,
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.accent,
   },
   chipsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.background,
     borderWidth: 1,
-    borderRadius: spacing.sm,
-    paddingHorizontal: spacing.md,
+    borderRadius: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
-    height: 36,
-    // 2 chips per row with gap between them
-    // (container width - horizontal padding - gap) / 2
-    // Assuming typical screen width and card padding
-    flexBasis: '47%',
-    flexGrow: 0,
-    flexShrink: 0,
+    minHeight: 52,
+    marginBottom: spacing.sm,
+    // 2 chips per row with space between
+    width: "48.5%",
+    shadowColor: "#1B2A49",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   chipIcon: {
     marginRight: spacing.sm,
   },
   chipContent: {
     flex: 1,
-    marginRight: spacing.xs,
   },
   chipName: {
     ...typography.labelMedium,
+    fontSize: 12,
+    fontWeight: "700",
     color: colors.text,
     marginBottom: 2,
   },
   chipStatus: {
     ...typography.bodySmall,
+    fontSize: 10,
+    fontWeight: "600",
   },
   statusIcon: {
     marginLeft: spacing.xs,

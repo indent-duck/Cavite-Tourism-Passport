@@ -26,7 +26,7 @@
 - Use React Native `StyleSheet` with tokens from `src/theme`. Do not use NativeWind or Tailwind. (If this decision changes, update this file.)
 - Never hardcode colors, spacing, radii, or font sizes in components. Always import from `src/theme`.
 - Tokens: primary `#004987`, accent `#F47B20`, background `#FFFFFF`, surface `#F4F6FA`, text `#1B2A49`, secondary text `#6B7280`, success `#2E9E5B`, error `#D64545`. Card radius 16, pill buttons and chips, Inter font.
-- **Screen container padding:** Use `spacing.sm` for horizontal and top padding in the main container of tab screens and full-screen layouts (not `spacing.base`). This provides tighter, more compact margins.
+- **Screen container padding:** Use `spacing.base` (16px) for horizontal padding in the main container of screens to match the design references. Use `spacing.sm` for top padding.
 - The bottom navigation bar is fully opaque white. Scrollable screens need bottom padding so the tab bar never covers content.
 - Respect safe areas and the Android system back button and gesture on every screen, including each step of multi-step flows.
 
