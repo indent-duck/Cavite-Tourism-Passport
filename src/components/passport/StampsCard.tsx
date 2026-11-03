@@ -1,97 +1,30 @@
-import { Category, Event, Site, Stamp } from '@/data/types';
+import { Stamp } from '@/data/types';
 import {
     PASSPORT_STAMPS_HEADER,
     PASSPORT_STAMPS_TITLE,
 } from '@/lib/constants';
 import { colors, radii, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { StampSlot } from './StampSlot';
 
 interface StampsCardProps {
   stamps: Stamp[];
-  sites: Site[];
-  events: Event[];
 }
 
 /**
- * Group sites by category in the specified order
+ * Visas & Stamps card component
+ * 
+ * Displays collected stamps in chronological order (most recent first).
+ * Shows only collected stamps with category badges - no uncollected placeholders.
+ * 
+ * Validates: Requirements 2.6, 2.7
  */
-function groupSitesByCategory(sites: Site[]): Record<Category, Site[]> {
-  const groups: Record<Category, Site[]> = {
-    Dining: [],
-    Staycation: [],
-    Adventure: [],
-    Heritage: [],
-    Festival: [],
-  };
-
-  sites.forEach((site) => {
-    if (site.category !== 'Festival') {
-      groups[site.category].push(site);
-    }
-  });
-
-  return groups;
-}
-
-/**
- * Get festival events that offer stamps
- */
-function getFestivalEvents(events: Event[]): Event[] {
-  return events.filter(
-    (event) => event.festivalStamp && event.festivalStamp.available
+export function StampsCard({ stamps }: StampsCardProps) {
+  // Sort stamps chronologically (most recent first)
+  const sortedStamps = [...stamps].sort(
+    (a, b) => b.collectedAt.getTime() - a.collectedAt.getTime()
   );
-}
-
-/**
- * Find stamp for a given site ID
- */
-function findStampForSite(stamps: Stamp[], siteId: string): Stamp | undefined {
-  return stamps.find((stamp) => stamp.siteId === siteId);
-}
-
-export function StampsCard({ stamps, sites, events }: StampsCardProps) {
-  const siteGroups = groupSitesByCategory(sites);
-  const festivalEvents = getFestivalEvents(events);
-  const categoryOrder: Category[] = [
-    'Dining',
-    'Staycation',
-    'Adventure',
-    'Heritage',
-    'Festival',
-  ];
-
-  // Build flat list of slots in category order
-  const slots: {
-    site: Site | Event;
-    stamp: Stamp | undefined;
-    category: Category;
-    siteId: string;
-  }[] = [];
-
-  // Add sites by category
-  categoryOrder.forEach((category) => {
-    if (category !== 'Festival') {
-      siteGroups[category].forEach((site) => {
-        slots.push({
-          site,
-          stamp: findStampForSite(stamps, site.id),
-          category,
-          siteId: site.id,
-        });
-      });
-    }
-  });
-
-  // Add festival events
-  festivalEvents.forEach((event) => {
-    slots.push({
-      site: event,
-      stamp: findStampForSite(stamps, event.id),
-      category: 'Festival',
-      siteId: event.id,
-    });
-  });
 
   return (
     <View style={styles.card}>
@@ -103,19 +36,33 @@ export function StampsCard({ stamps, sites, events }: StampsCardProps) {
         </View>
       </View>
 
-      {/* Body - Stamp slots in 2-column grid */}
+      {/* Body - Collected stamps or empty state */}
       <View style={styles.body}>
-        <View style={styles.grid}>
-          {slots.map((slot, index) => (
-            <StampSlot
-              key={`${slot.siteId}-${index}`}
-              site={slot.site}
-              stamp={slot.stamp}
-              category={slot.category}
-              siteId={slot.siteId}
+        {sortedStamps.length === 0 ? (
+          // Empty state
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="map-outline"
+              size={64}
+              color={colors.textSecondary}
+              style={styles.emptyIcon}
             />
-          ))}
-        </View>
+            <Text style={styles.emptyTitle}>Start Your Journey!</Text>
+            <Text style={styles.emptyMessage}>
+              Scan QR codes at partner sites to collect your first stamp.
+            </Text>
+          </View>
+        ) : (
+          // Stamp grid
+          <View style={styles.grid}>
+            {sortedStamps.map((stamp, index) => (
+              <StampSlot
+                key={`${stamp.id}-${index}`}
+                stamp={stamp}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Footer */}
@@ -163,6 +110,27 @@ const styles = StyleSheet.create({
   body: {
     backgroundColor: colors.passportCream,
     padding: spacing.base,
+    minHeight: 200,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxxl,
+  },
+  emptyIcon: {
+    marginBottom: spacing.base,
+  },
+  emptyTitle: {
+    ...typography.headlineMedium,
+    color: colors.text,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    ...typography.bodyMedium,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: 280,
   },
   grid: {
     flexDirection: 'row',

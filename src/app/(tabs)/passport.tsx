@@ -37,6 +37,7 @@ export default function PassportScreen() {
     refetch: refetchStamps,
   } = useStamps();
   
+  // Sites and events hooks are needed - SummaryCard uses them to calculate total stamp slots
   const {
     data: sites = [],
     isLoading: sitesLoading,
@@ -128,7 +129,7 @@ export default function PassportScreen() {
               {view === 'identity' ? (
                 <IdentityCard />
               ) : (
-                <StampsCard stamps={stamps} sites={sites} events={events} />
+                <StampsCard stamps={stamps} />
               )}
             </View>
 

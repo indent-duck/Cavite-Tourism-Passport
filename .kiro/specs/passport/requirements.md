@@ -67,35 +67,33 @@
 
 **2.6 Visas & Stamps Card**
 - Navy header with PASSPORT_STAMPS_TITLE on left and "N STAMPED" badge on right
-- Cream body with 2-column grid of stamp slots
-- Grouped by category: Dining, Staycation, Adventure, Heritage, Festival
+- Cream body with 2-column grid of collected stamp slots only
+- **Chronological order**: Stamps sorted by collectedAt (most recent first)
 - Footer with PASSPORT_STAMPS_HEADER constant and "PAGE 02"
 - All text in English only
+- **No uncollected/locked slots shown** - only display stamps the user has collected
+- **Empty state**: When 0 stamps, show encouraging message: "Start Your Journey! Scan QR codes at partner sites to collect your first stamp."
 
-**2.7 Stamp Slots - Collected State**
+**2.7 Stamp Slots - Collected Appearance**
 - Ink-stamp visual with dashed border in category color
 - Deterministic rotation: hash siteId to -2 to 2 degrees (never random)
-- Show category label, site name, municipality, date only, points
+- **Category badge**: Small pill at top showing category (e.g., "DINING", "HERITAGE")
+  - Badge uses category color as background, white text, uppercase
+- Show site name, municipality, date only (format: "JAN 14, 2027"), points
 - Green "Stamped" check icon
+- Tinted background (category color at low opacity)
 
-**2.8 Stamp Slots - Uncollected State**
-- Muted gray with dashed border
-- Lock icon
-- Show site name, municipality, points in orange badge
-- Gray "Uncollected" text with empty circle icon
-- No rotation
-
-**2.9 View State Management**
+**2.8 View State Management**
 - View state is plain local state defaulting to 'identity'
 - Toggle changes view between 'identity' and 'stamps'
 - No URL parameters or routing involved
 
-**2.10 Loading and Error States**
+**2.9 Loading and Error States**
 - Loading: show skeleton or spinner for stamps, sites, events queries
 - Error: show error message with retry button for all queries
 - Empty state: 0 stamps, all slots uncollected, 0% completion
 
-**2.11 Action Buttons**
+**2.10 Action Buttons**
 - "View Rewards" button below passport card navigates to /rewards
 - Note text: "Collect stamps by scanning the QR code at each partner site."
 
@@ -112,10 +110,12 @@
 - Support Android back button
 - View state is local only (no URL routing)
 
-**3.3 Category Colors**
+**3.3 Category Colors and Sorting**
 - Heritage uses one fixed color (no alternating)
-- Festival section always shows (at least one event has festivalStamp)
+- Festival section shows when user has collected festival stamps
 - Festival stamps are bonus only, +50 pts
+- **Stamps are sorted chronologically (most recent first), not by category**
+- Category is indicated by the badge at the top of each stamp
 
 **3.4 Performance**
 - React Query hooks with proper cache invalidation

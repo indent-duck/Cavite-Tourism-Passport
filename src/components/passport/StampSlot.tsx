@@ -1,14 +1,10 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Category, Stamp } from '@/data/types';
 import { colors, radii, spacing, typography } from '@/theme';
-import { Category, Event, Site, Stamp } from '@/data/types';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface StampSlotProps {
-  site: Site | Event;
-  stamp: Stamp | undefined;
-  category: Category;
-  siteId: string;
+  stamp: Stamp;
 }
 
 /**
@@ -29,11 +25,12 @@ function hashStringToRotation(str: string): number {
 /**
  * Format date as "JAN 14, 2027"
  */
-function formatStampDate(date: Date): string {
+function formatStampDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  const month = months[date.getMonth()];
-  const day = date.getDate();
-  const year = date.getFullYear();
+  const month = months[dateObj.getMonth()];
+  const day = dateObj.getDate();
+  const year = dateObj.getFullYear();
   return `${month} ${day}, ${year}`;
 }
 
@@ -52,117 +49,60 @@ function getCategoryColor(category: Category): string {
 }
 
 /**
- * Extract site name and municipality from Site or Event
+ * Stamp slot component - shows a collected stamp with category badge
+ * 
+ * Displays stamp in chronological order with:
+ * - Category badge at top (color-coded)
+ * - Site name and municipality
+ * - Collection date (date only)
+ * - Points earned
+ * - Stamped status with checkmark
+ * - Deterministic rotation for visual variety
+ * 
+ * Validates: Requirements 2.7
  */
-function getSiteInfo(site: Site | Event): { name: string; municipality: string } {
-  if ('municipality' in site) {
-    return { name: site.name, municipality: site.municipality };
-  }
-  // Event type - extract municipality from location
-  return { name: site.title, municipality: site.location };
-}
+export function StampSlot({ stamp }: StampSlotProps) {
+  const categoryColor = getCategoryColor(stamp.siteCategory);
+  const rotation = hashStringToRotation(stamp.siteId);
 
-/**
- * Get points for category or event
- */
-function getPoints(site: Site | Event): number {
-  if ('category' in site) {
-    // Site - use category points
-    const categoryPoints: Record<Category, number> = {
-      Dining: 150,
-      Staycation: 200,
-      Adventure: 100,
-      Heritage: 50,
-      Festival: 50,
-    };
-    return categoryPoints[site.category];
-  }
-  // Event - use festival stamp bonus
-  return site.festivalStamp?.pointsBonus || 50;
-}
-
-export function StampSlot({ site, stamp, category, siteId }: StampSlotProps) {
-  const isCollected = !!stamp;
-  const categoryColor = getCategoryColor(category);
-  const { name, municipality } = getSiteInfo(site);
-  const points = getPoints(site);
-  const rotation = isCollected ? hashStringToRotation(siteId) : 0;
-
-  if (isCollected) {
-    // Collected stamp slot
-    return (
-      <View
-        style={[
-          styles.slot,
-          styles.collectedSlot,
-          { borderColor: categoryColor, transform: [{ rotate: `${rotation}deg` }] },
-        ]}
-      >
-        {/* Category label */}
-        <Text
-          style={[
-            styles.categoryLabel,
-            { color: categoryColor, borderColor: categoryColor },
-          ]}
-        >
-          {category.toUpperCase()}
-        </Text>
-
-        {/* Site name */}
-        <Text style={styles.siteName} numberOfLines={2}>
-          {name}
-        </Text>
-
-        {/* Municipality */}
-        <Text style={styles.municipality} numberOfLines={1}>
-          {municipality}
-        </Text>
-
-        {/* Date */}
-        <Text style={styles.date}>{formatStampDate(stamp.collectedAt)}</Text>
-
-        {/* Points */}
-        <Text style={[styles.points, { color: categoryColor }]}>+{points} pts</Text>
-
-        {/* Stamped badge */}
-        <View style={styles.statusBadge}>
-          <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-          <Text style={styles.stampedText}>Stamped</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // Uncollected stamp slot
   return (
-    <View style={[styles.slot, styles.uncollectedSlot]}>
-      {/* Lock icon */}
-      <Ionicons
-        name="lock-closed"
-        size={20}
-        color={colors.textSecondary}
-        style={styles.lockIcon}
-      />
+    <View
+      style={[
+        styles.slot,
+        {
+          borderColor: categoryColor,
+          backgroundColor: `${categoryColor}10`, // 10% opacity tint
+          transform: [{ rotate: `${rotation}deg` }],
+        },
+      ]}
+    >
+      {/* Category badge */}
+      <View style={[styles.categoryBadge, { backgroundColor: categoryColor }]}>
+        <Text style={styles.categoryBadgeText}>{stamp.siteCategory.toUpperCase()}</Text>
+      </View>
 
       {/* Site name */}
-      <Text style={styles.uncollectedSiteName} numberOfLines={2}>
-        {name}
+      <Text style={styles.siteName} numberOfLines={2}>
+        {stamp.siteName}
       </Text>
 
       {/* Municipality */}
-      <Text style={styles.uncollectedMunicipality} numberOfLines={1}>
-        {municipality}
+      <Text style={styles.municipality} numberOfLines={1}>
+        {stamp.municipality}
       </Text>
 
-      {/* Points badge */}
-      <View style={styles.pointsBadge}>
-        <Text style={styles.pointsBadgeText}>+{points} pts</Text>
-      </View>
+      {/* Date */}
+      <Text style={styles.date}>{formatStampDate(stamp.collectedAt)}</Text>
 
-      {/* Uncollected badge */}
+      {/* Points */}
+      <Text style={[styles.points, { color: categoryColor }]}>
+        +{stamp.pointsEarned} pts
+      </Text>
+
+      {/* Stamped badge */}
       <View style={styles.statusBadge}>
-        <Ionicons name="ellipse-outline" size={16} color={colors.textSecondary} />
-        <Text style={styles.uncollectedText}>Uncollected</Text>
+        <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+        <Text style={styles.stampedText}>Stamped</Text>
       </View>
     </View>
   );
@@ -177,21 +117,17 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     minHeight: 140,
   },
-  collectedSlot: {
-    backgroundColor: colors.passportCream,
-  },
-  uncollectedSlot: {
-    backgroundColor: colors.background,
-    borderColor: colors.textSecondary,
-  },
-  categoryLabel: {
-    ...typography.labelSmall,
-    borderWidth: 1,
+  categoryBadge: {
     borderRadius: radii.chip,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
     alignSelf: 'flex-start',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  categoryBadgeText: {
+    ...typography.labelSmall,
+    color: colors.background,
+    fontWeight: '700',
   },
   siteName: {
     ...typography.labelMedium,
@@ -221,35 +157,5 @@ const styles = StyleSheet.create({
   stampedText: {
     ...typography.labelSmall,
     color: colors.success,
-  },
-  lockIcon: {
-    alignSelf: 'center',
-    marginBottom: spacing.sm,
-  },
-  uncollectedSiteName: {
-    ...typography.labelMedium,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  uncollectedMunicipality: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  pointsBadge: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.chip,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    alignSelf: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  pointsBadgeText: {
-    ...typography.labelSmall,
-    color: colors.background,
-  },
-  uncollectedText: {
-    ...typography.labelSmall,
-    color: colors.textSecondary,
   },
 });

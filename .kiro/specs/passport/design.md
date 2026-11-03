@@ -85,25 +85,41 @@
 ├─────────────────────────────────────┤
 │                                      │ ← Cream body
 │  ┌─────────┐  ┌─────────┐          │
-│  │ DINING  │  │HERITAGE │          │
+│  │[DINING] │  │[HERITAGE]          │
 │  │ Café A  │  │ Fort A  │          │ 2-column grid
-│  │ Amadeo  │  │  Kawit  │          │
-│  │JAN 14'27│  │FEB 20'27│          │
-│  │ +150pts │  │ +50 pts │          │
+│  │ Amadeo  │  │  Kawit  │          │ Chronological
+│  │JAN 14'27│  │FEB 20'27│          │ order (newest
+│  │ +150pts │  │ +50 pts │          │ first)
 │  │✓Stamped │  │✓Stamped │          │
 │  └─────────┘  └─────────┘          │
 │                                      │
 │  ┌─────────┐  ┌─────────┐          │
-│  │   🔒    │  │   🔒    │          │
-│  │Adventure│  │Festival │          │ Uncollected
-│  │ Site B  │  │  Fest A │          │
-│  │Tagaytay │  │ Cavite  │          │
-│  │[+100pts]│  │ [+50pts]│          │
-│  │○Uncoll. │  │○Uncoll. │          │
+│  │[STAYCAY]│  │[HERITAGE]          │
+│  │Resort X │  │Aguinaldo│          │ All stamps
+│  │Tagaytay │  │  Kawit  │          │ shown with
+│  │MAR 01'27│  │MAR 15'27│          │ category
+│  │ +200pts │  │ +50 pts │          │ badges
+│  │✓Stamped │  │✓Stamped │          │
 │  └─────────┘  └─────────┘          │
 │                                      │
 ├─────────────────────────────────────┤
 │ OFFICIAL STAMP REGISTER  PAGE 02    │ ← Beige footer
+└─────────────────────────────────────┘
+
+Empty state (0 stamps):
+┌─────────────────────────────────────┐
+│ 🎖️ Official Stamps     [0 STAMPED]  │
+├─────────────────────────────────────┤
+│                                      │
+│         🗺️                          │
+│                                      │
+│   Start Your Journey!                │
+│                                      │
+│   Scan QR codes at partner sites    │
+│   to collect your first stamp.      │
+│                                      │
+├─────────────────────────────────────┤
+│ OFFICIAL STAMP REGISTER  PAGE 02    │
 └─────────────────────────────────────┘
 ```
 
@@ -112,15 +128,23 @@
 - Body: cream background, 2-column grid (48% width each, 4% gap)
 - Footer: beige background with text from PASSPORT_STAMPS_HEADER constant
 - All text in English only
-- **Collected**: Category color border (dashed), tinted background
+- **Collected stamps only** - no uncollected/locked placeholder slots
+- **Chronological order**: Most recent stamp first (sorted by collectedAt descending)
+- **Category badge**: Small pill at top of each stamp showing category (DINING, HERITAGE, etc.)
+  - Category color as background
+  - White text, uppercase
+- **Stamp appearance**:
+  - Category color border (dashed)
+  - Tinted background (category color at low opacity)
   - Deterministic rotation transform (hash siteId)
-  - Category label, site name, municipality
+  - Site name, municipality
   - Date only: "JAN 14, 2027" format
   - Points and green check icon
-- **Uncollected**: Gray border (dashed), white background
-  - Lock icon (20px)
-  - Gray text, orange points badge
-  - No rotation
+- **Empty state** (0 stamps):
+  - Centered icon (map or compass)
+  - Title: "Start Your Journey!"
+  - Message: "Scan QR codes at partner sites to collect your first stamp."
+  - Encouraging and positive tone
 
 ### Stamp Slot Colors (from theme)
 
@@ -170,6 +194,8 @@ From design images but removed per product requirements:
    - "Petsa ng Pagkaloob" → "Issued"
    - "May Bisa Hanggang" → "Valid Through"
    - Bilingual labels use English half only
+9. ~~Uncollected/locked stamp slots~~ (show only collected stamps in chronological order)
+10. ~~Category grouping/sections~~ (stamps in chronological order with category badges instead)
 
 ## Interactive Behaviors
 
@@ -225,19 +251,20 @@ From design images but removed per product requirements:
 - [ ] Active Season badge shows only when promo is active
 - [ ] Identity Page shows all user details correctly
 - [ ] Identity Page uses English field labels only
-- [ ] Stamps are grouped by category in correct order
+- [ ] **Stamps shown in chronological order (most recent first)**
+- [ ] **Each stamp has category badge at the top**
+- [ ] **No uncollected/locked slots shown**
 - [ ] Collected stamps have deterministic rotation
 - [ ] Collected stamps show date only (no time)
-- [ ] Uncollected slots show lock icon
-- [ ] Festival section shows at least one slot
+- [ ] **Empty state shows when user has 0 stamps**
 - [ ] Toggle switches between views
 - [ ] "View Rewards" button navigates to /rewards
-- [ ] Scan a site, press Dismiss, open Passport tab, verify new stamp appears
+- [ ] Scan a site, press Dismiss, open Passport tab, verify new stamp appears at top
 - [ ] After collecting a stamp, verify stamp count and completion bar are updated
 - [ ] After collecting a stamp, verify header points match
 - [ ] Loading state shows while queries load
 - [ ] Error state shows with retry button
-- [ ] Empty state works (0 stamps, temporarily modified then reverted)
+- [ ] Empty state works (0 stamps, encouraging message)
 - [ ] No Filipino or Tagalog text appears anywhere (English only)
 - [ ] Android back button works
 - [ ] Safe areas respected

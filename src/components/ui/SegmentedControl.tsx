@@ -1,6 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, typography, radii } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface SegmentedControlOption {
   label: string;
@@ -65,13 +64,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.button,
     padding: spacing.xs,
-    height: 32,
   },
   option: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: 44, // Accessible touch target
   },
   optionFirst: {
