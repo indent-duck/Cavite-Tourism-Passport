@@ -6,7 +6,7 @@ The Passport screen displays the user's digital tourism passport with a summary 
 
 ## Tasks
 
-- [-] 1. Create data hooks, constants, and theme tokens for Passport
+- [x] 1. Create data hooks, constants, and theme tokens for Passport
   - Create `src/hooks/useStamps.ts` as a React Query hook wrapping getStamps from api.ts, returns stamps array with loading and error states
   - Create `src/hooks/useSites.ts` as a React Query hook wrapping getSites from api.ts, returns sites array with loading and error states
   - Create or reuse `src/hooks/useEvents.ts` as a React Query hook wrapping getEvents from api.ts (may already exist), returns events array with loading and error states
@@ -15,7 +15,7 @@ The Passport screen displays the user's digital tourism passport with a summary 
   - Update mock events in `src/data/mock-data.ts` to ensure at least one festival includes festivalStamp field with pointsBonus: 50 and available: true (event-001 already has it, verify it exists)
   - _Requirements: 1.1, 1.2_
 
-- [ ] 2. Create summary card component
+- [x] 2. Create summary card component
   - Create `src/components/passport/SummaryCard.tsx`
   - Display "Digital Passport" title with Ionicons 'book' icon on the left
   - Display green "Active Season" badge on the same line (right-aligned) when promo is active per usePromoPeriod, with green dot (6px diameter) and text
@@ -26,7 +26,7 @@ The Passport screen displays the user's digital tourism passport with a summary 
   - N = stamps.length, TOTAL = count of stamp slots (sites.length + festivals with stamps), POINTS = currentUser.points
   - _Requirements: 2.1, 2.2_
 
-- [ ] 3. Create shared segmented toggle component
+- [x] 3. Create shared segmented toggle component
   - Create `src/components/ui/SegmentedControl.tsx` as a reusable component
   - Props: options (array of { label: string, value: string }), selectedValue (string), onValueChange (callback), testID
   - Pill-shaped container with light gray background (theme token), 4px padding
@@ -35,7 +35,7 @@ The Passport screen displays the user's digital tourism passport with a summary 
   - OnPress calls onValueChange with selected value
   - _Requirements: 2.3_
 
-- [ ] 4. Create Identity Page card component
+- [x] 4. Create Identity Page card component
   - Create `src/components/passport/IdentityCard.tsx`
   - Navy blue header (colors.primary) with orange border bottom (colors.passportHeaderBorder), shield icon (Ionicons 'shield'), issuer line from PASSPORT_ISSUER_LINE constant on first line, PASSPORT_SUBTITLE constant on second line, and badge with PASSPORT_HEADER_LABEL constant on right
   - Cream tinted body (colors.passportCream) with plain tint background (no pattern)

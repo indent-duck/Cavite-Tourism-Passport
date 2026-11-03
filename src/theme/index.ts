@@ -28,8 +28,17 @@ export const colors = {
   border: '#E5E7EB',        // Dividers, input borders
   
   // Passport-specific colors
+  passportCream: '#FFFDF7',        // Passport body tint/background
+  passportHeaderBorder: '#F47B20', // Orange border on passport header (reuses accent)
   passportLeather: '#0B2A4A',
   passportFoil: '#F89C48',
+  
+  // Category stamp colors
+  categoryDining: '#00542A',       // Green for Dining stamps
+  categoryStaycation: '#004987',   // Navy blue for Staycation stamps (reuses primary)
+  categoryAdventure: '#6B7280',    // Gray for Adventure stamps (reuses textSecondary)
+  categoryHeritage: '#8B4513',     // Brown for Heritage stamps (one fixed color)
+  categoryFestival: '#F47B20',     // Orange for Festival stamps (reuses accent)
 } as const;
 
 // ============================================================================

@@ -54,3 +54,11 @@ export const SOCIAL_LINKS = {
   DOT_4A: 'https://example.com/dot-region4a', // TBD
   DILG_4A: 'https://example.com/dilg-region4a', // TBD
 };
+
+// Passport constants (TBD - pending Tourism Office confirmation)
+export const PASSPORT_ISSUER_LINE = 'Province of Cavite'; // TBD
+export const PASSPORT_SUBTITLE = 'Official Passport'; // TBD
+export const PASSPORT_HEADER_LABEL = 'PASSPORT'; // TBD
+export const PASSPORT_STAMPS_TITLE = 'Official Stamps'; // TBD
+export const PASSPORT_STAMPS_HEADER = 'OFFICIAL STAMP REGISTER'; // TBD
+export const PASSPORT_FOOTER = 'Cavite Tourism Passport'; // TBD
