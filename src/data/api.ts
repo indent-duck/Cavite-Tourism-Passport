@@ -1,8 +1,14 @@
-import { DEV_SKIP_LOCATION_CHECK, GEOFENCE_DISTANCE_METERS, parseSiteQr } from "@/lib/constants";
+import {
+    CLAIM_QR_EXPIRY_MINUTES,
+    DEV_SKIP_LOCATION_CHECK,
+    GEOFENCE_DISTANCE_METERS,
+    parseSiteQr
+} from "@/lib/constants";
 import { getDistanceMeters } from "@/lib/geo";
 import {
     currentMockStamps,
     currentMockUser,
+    mockActiveClaims,
     mockEvents,
     mockItineraries,
     mockPromoPeriod,
@@ -12,8 +18,8 @@ import {
     updateMockSettings
 } from "./mock-data";
 import {
+    ActiveClaim,
     Category,
-    ClaimQR,
     CollectStampResult,
     Event,
     Itinerary,
@@ -346,9 +352,12 @@ export async function getRewardById(id: string): Promise<Reward | null> {
 
 /**
  * Check if user is eligible for a specific reward
- * Eligibility requires:
- * 1. At least 700 points (or reward's point cost if higher)
- * 2. At least one stamp from each of: Dining, Staycation, Adventure, Heritage
+ * Eligibility requires ALL 6 conditions:
+ * 1. At least 700 points
+ * 2. At least reward's point cost
+ * 3. At least one stamp from each of: Dining, Staycation, Adventure, Heritage
+ * 4. User has not claimed a reward this promo period (hasClaimedThisPeriod)
+ * 5. Reward is available (not sold out)
  * Note: Festival stamps are bonus only and not required
  */
 export async function checkRewardEligibility(
@@ -361,7 +370,10 @@ export async function checkRewardEligibility(
     throw new Error("Reward not found");
   }
 
-  // Check if user has stamps from all 4 main categories
+  // Condition 1 & 2: Check points (at least 700 AND at least reward cost)
+  const hasEnoughPoints = currentMockUser.points >= 700 && currentMockUser.points >= reward.pointsCost;
+
+  // Condition 3: Check if user has stamps from all 4 main categories
   const stampCategories = new Set(
     currentMockStamps
       .filter((s) => s.siteCategory !== "Festival")
@@ -379,36 +391,241 @@ export async function checkRewardEligibility(
   );
 
   const hasAllCategories = missingCategories.length === 0;
-  const hasEnoughPoints = currentMockUser.points >= reward.pointsCost;
+
+  // Condition 4: User has not claimed a reward this promo period
+  const hasNotClaimedThisPeriod = !currentMockUser.hasClaimedThisPeriod;
+
+  // Condition 5: Reward is available (not sold out)
+  const isAvailable = reward.available && (!reward.limited || ((reward.remainingClaims ?? 0) > 0));
+
+  // All 6 conditions must be met
+  const eligible = hasEnoughPoints && hasAllCategories && hasNotClaimedThisPeriod && isAvailable;
 
   return {
-    eligible: hasAllCategories && hasEnoughPoints,
+    eligible: eligible,
     hasEnoughPoints,
     currentPoints: currentMockUser.points,
-    pointsNeeded: Math.max(0, reward.pointsCost - currentMockUser.points),
+    pointsNeeded: Math.max(0, Math.max(700, reward.pointsCost) - currentMockUser.points),
     hasAllCategories,
     missingCategories,
   };
 }
 
+// ============================================================================
+// Active Claims
+// ============================================================================
+
 /**
- * Generate a claim QR code for a reward
- * Mock: Generates a QR code that expires in 15 minutes
+ * Get active claim for a reward
+ * Returns active claim from mockActiveClaims Map, or null if none exists or expired
  */
-export async function generateClaimQR(rewardId: string): Promise<ClaimQR> {
+export async function getActiveClaim(rewardId: string): Promise<ActiveClaim | null> {
   await randomDelay();
 
-  // Mock: generates a claim QR that expires in 15 minutes
-  const expiryMinutes = 15;
-  const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
+  const activeClaim = mockActiveClaims.get(rewardId);
+  
+  if (!activeClaim) {
+    return null;
+  }
 
-  return {
+  // Check if claim is expired
+  if (activeClaim.expiresAt.getTime() <= Date.now()) {
+    // Remove expired claim
+    mockActiveClaims.delete(rewardId);
+    return null;
+  }
+
+  return activeClaim;
+}
+
+/**
+ * Generate claim QR for a reward
+ * Creates new ActiveClaim with claimId, qrPayload, rewardId, createdAt, expiresAt
+ * Stores in mockActiveClaims Map (overwrites any existing claim for this reward)
+ */
+export async function generateClaimQR(rewardId: string): Promise<ActiveClaim> {
+  await randomDelay();
+
+  // Generate unique claim ID
+  const claimId = `${rewardId}-${currentMockUser.id}-${Date.now()}`;
+  
+  // Generate random token
+  const token = Math.random().toString(36).substring(2, 15);
+  
+  // Create QR payload in format: cvt:claim:<claimId>:<token>
+  const qrPayload = `cvt:claim:${claimId}:${token}`;
+  
+  // Calculate expiry time
+  const createdAt = new Date();
+  const expiresAt = new Date(Date.now() + CLAIM_QR_EXPIRY_MINUTES * 60 * 1000);
+
+  const activeClaim: ActiveClaim = {
+    claimId,
+    qrPayload,
     rewardId,
-    userId: currentMockUser.id,
-    qrCode: `CLAIM-${rewardId}-${currentMockUser.id}-${Date.now()}`,
+    createdAt,
     expiresAt,
-    used: false,
   };
+
+  // Store in mockActiveClaims Map (overwrites any existing claim for this reward)
+  mockActiveClaims.set(rewardId, activeClaim);
+
+  return activeClaim;
+}
+
+/**
+ * Simulate officer scanning and claiming a reward (dev-only)
+ * Deducts points, sets hasClaimedThisPeriod flag, decrements remainingClaims if limited
+ */
+export async function simulateClaim(claimId: string, rewardId: string): Promise<void> {
+  await randomDelay();
+
+  // Find reward by rewardId
+  const reward = mockRewards.find((r) => r.id === rewardId);
+  if (!reward) {
+    throw new Error("Reward not found");
+  }
+
+  // Deduct reward.pointsCost from currentMockUser.points
+  currentMockUser.points -= reward.pointsCost;
+
+  // Set hasClaimedThisPeriod = true and claimedRewardId
+  currentMockUser.hasClaimedThisPeriod = true;
+  currentMockUser.claimedRewardId = rewardId;
+
+  // If reward.limited, decrement reward.remainingClaims
+  if (reward.limited && reward.remainingClaims !== undefined) {
+    reward.remainingClaims = Math.max(0, reward.remainingClaims - 1);
+    
+    // If remainingClaims reaches 0, mark as unavailable
+    if (reward.remainingClaims === 0) {
+      reward.available = false;
+    }
+  }
+
+  // Remove claim from mockActiveClaims Map
+  mockActiveClaims.delete(rewardId);
+}
+
+/**
+ * Set mock scenario for dev testing
+ * Updates currentMockUser and currentMockStamps based on scenario
+ */
+export function setMockScenario(scenario: 'default' | 'eligible' | 'claimed'): void {
+  // Import mock data to get access to original stamps
+  const { mockStamps, mockUser } = require('./mock-data');
+
+  switch (scenario) {
+    case 'default':
+      // 450 pts, stamps from Dining, Staycation, 2 Heritage, missing Adventure
+      currentMockUser.points = 450;
+      currentMockUser.hasClaimedThisPeriod = false;
+      currentMockUser.claimedRewardId = undefined;
+      
+      // Reset stamps to original default (Dining, Staycation, 2 Heritage)
+      currentMockStamps.length = 0;
+      currentMockStamps.push(
+        {
+          id: "stamp-001",
+          userId: "user-001",
+          siteId: "site-dining-001",
+          siteName: "Café Amadeo",
+          siteCategory: "Dining",
+          municipality: "Amadeo",
+          pointsEarned: 150,
+          collectedAt: new Date("2027-02-10T14:30:00"),
+        },
+        {
+          id: "stamp-002",
+          userId: "user-001",
+          siteId: "site-staycation-001",
+          siteName: "Tagaytay Highlands Resort",
+          siteCategory: "Staycation",
+          municipality: "Tagaytay",
+          pointsEarned: 200,
+          collectedAt: new Date("2027-02-15T10:00:00"),
+        },
+        {
+          id: "stamp-003",
+          userId: "user-001",
+          siteId: "site-heritage-001",
+          siteName: "Aguinaldo Shrine",
+          siteCategory: "Heritage",
+          municipality: "Kawit",
+          pointsEarned: 50,
+          collectedAt: new Date("2027-02-20T11:15:00"),
+        },
+        {
+          id: "stamp-004",
+          userId: "user-001",
+          siteId: "site-heritage-002",
+          siteName: "Fort San Felipe",
+          siteCategory: "Heritage",
+          municipality: "Cavite City",
+          pointsEarned: 50,
+          collectedAt: new Date("2027-02-25T15:45:00"),
+        }
+      );
+      break;
+
+    case 'eligible':
+      // 900 pts, stamps from all four categories
+      currentMockUser.points = 900;
+      currentMockUser.hasClaimedThisPeriod = false;
+      currentMockUser.claimedRewardId = undefined;
+      
+      // Add stamps from all 4 categories
+      currentMockStamps.length = 0;
+      currentMockStamps.push(
+        {
+          id: "stamp-001",
+          userId: "user-001",
+          siteId: "site-dining-001",
+          siteName: "Café Amadeo",
+          siteCategory: "Dining",
+          municipality: "Amadeo",
+          pointsEarned: 150,
+          collectedAt: new Date("2027-02-10T14:30:00"),
+        },
+        {
+          id: "stamp-002",
+          userId: "user-001",
+          siteId: "site-staycation-001",
+          siteName: "Tagaytay Highlands Resort",
+          siteCategory: "Staycation",
+          municipality: "Tagaytay",
+          pointsEarned: 200,
+          collectedAt: new Date("2027-02-15T10:00:00"),
+        },
+        {
+          id: "stamp-003",
+          userId: "user-001",
+          siteId: "site-heritage-001",
+          siteName: "Aguinaldo Shrine",
+          siteCategory: "Heritage",
+          municipality: "Kawit",
+          pointsEarned: 50,
+          collectedAt: new Date("2027-02-20T11:15:00"),
+        },
+        {
+          id: "stamp-005",
+          userId: "user-001",
+          siteId: "site-adventure-001",
+          siteName: "Mount Palay-Palay National Park",
+          siteCategory: "Adventure",
+          municipality: "Maragondon",
+          pointsEarned: 100,
+          collectedAt: new Date("2027-03-05T09:00:00"),
+        }
+      );
+      break;
+
+    case 'claimed':
+      // hasClaimedThisPeriod = true, claimedRewardId = 'reward-001'
+      currentMockUser.hasClaimedThisPeriod = true;
+      currentMockUser.claimedRewardId = 'reward-001';
+      break;
+  }
 }
 
 // ============================================================================

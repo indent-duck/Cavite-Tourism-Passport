@@ -11,6 +11,8 @@ export interface User {
   passportId: string; // Format: CVT-YYYY-NNNNNN
   points: number;
   createdAt: Date;
+  hasClaimedThisPeriod?: boolean; // User has claimed a reward this promo period
+  claimedRewardId?: string; // ID of the reward claimed (if hasClaimedThisPeriod is true)
 }
 
 // Category taxonomy
@@ -95,6 +97,7 @@ export interface Reward {
   description: string;
   pointsCost: number;
   imageUrl: string;
+  imageSource?: any; // Local placeholder image for expo-image
   available: boolean; // Overall availability
   limited: boolean; // Has participant limit
   remainingClaims?: number; // Only if limited
@@ -119,6 +122,15 @@ export interface ClaimQR {
   qrCode: string; // Generated QR code data
   expiresAt: Date;
   used: boolean;
+}
+
+// Active claim for QR generation and display
+export interface ActiveClaim {
+  claimId: string;
+  qrPayload: string; // Full QR payload in format "cvt:claim:<claimId>:<token>"
+  rewardId: string;
+  createdAt: Date;
+  expiresAt: Date;
 }
 
 // Promo period

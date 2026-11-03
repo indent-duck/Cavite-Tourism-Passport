@@ -520,6 +520,17 @@ export const mockPromoPeriod: PromoPeriod = {
 // Settings
 // ============================================================================
 
+// ============================================================================
+// Active Claims Storage
+// ============================================================================
+
+// In-memory storage for active claim QRs (key is rewardId)
+export const mockActiveClaims = new Map<string, import("./types").ActiveClaim>();
+
+// ============================================================================
+// Settings
+// ============================================================================
+
 // User settings (default: push notifications enabled)
 export let mockSettings: Settings = {
   pushNotificationsEnabled: true,

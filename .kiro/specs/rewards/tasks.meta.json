@@ -6,6 +6,236 @@
         "executionId": "8cd30960-ce86-4271-abd4-a8640f8a1fc6",
         "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
         "timestamp": 1793702909736
+      },
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703141204
+      }
+    ],
+    "1.1 Add constants to `src/lib/constants.ts`": [
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703080782
+      },
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703138935
+      }
+    ],
+    "1.2 Update User interface in `src/data/types.ts`": [
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703081422
+      },
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703139405
+      }
+    ],
+    "1.3 Add ActiveClaim interface to `src/data/types.ts`": [
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703082300
+      },
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703140249
+      }
+    ],
+    "1.4 Update Reward interface in `src/data/types.ts`": [
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703083040
+      },
+      {
+        "executionId": "3496d98d-31e1-434b-993c-8daa1036eb15",
+        "chatSessionId": "sess_f2d11b73-35c5-41a8-b3b7-28ecc175ac54",
+        "timestamp": 1793703141061
+      }
+    ],
+    "2.2 Add active claim storage to mock data": [
+      {
+        "executionId": "c3ace124-98c6-4118-a638-46f6d83ededa",
+        "chatSessionId": "sess_81e1319a-56ec-4d93-b717-884acb59dbf7",
+        "timestamp": 1793705357187
+      },
+      {
+        "executionId": "c3ace124-98c6-4118-a638-46f6d83ededa",
+        "chatSessionId": "sess_81e1319a-56ec-4d93-b717-884acb59dbf7",
+        "timestamp": 1793705362353
+      }
+    ],
+    "2.3 Add `getActiveClaim` function to `src/data/api.ts`": [
+      {
+        "executionId": "2f8bc71f-423c-45cb-8595-d7e3d673d5ea",
+        "chatSessionId": "sess_58d12586-b546-46cb-bff5-bb805d9b94f2",
+        "timestamp": 1793705422225
+      }
+    ],
+    "2.4 Add `generateClaimQR` function to `src/data/api.ts`": [
+      {
+        "executionId": "c321dc3b-da20-4c97-9842-0bc2f7357d33",
+        "chatSessionId": "sess_b5dde5ef-dd27-4393-bb34-58ff1a892a12",
+        "timestamp": 1793705599609
+      },
+      {
+        "executionId": "c321dc3b-da20-4c97-9842-0bc2f7357d33",
+        "chatSessionId": "sess_b5dde5ef-dd27-4393-bb34-58ff1a892a12",
+        "timestamp": 1793705864490
+      }
+    ],
+    "2.5 Add `simulateClaim` function to `src/data/api.ts`": [
+      {
+        "executionId": "c448d5ec-77d6-4bbb-aea0-8cb2621c8131",
+        "chatSessionId": "sess_26587916-2221-41f4-9b42-987e398d78b6",
+        "timestamp": 1793706447728
+      }
+    ],
+    "2.6 Add `setMockScenario` function to `src/data/api.ts`": [
+      {
+        "executionId": "c26ccbd3-0150-4d15-b213-b518e3ff9d4b",
+        "chatSessionId": "sess_8d48e9ed-00b1-4c99-8d98-bbcc201927c3",
+        "timestamp": 1793706654751
+      }
+    ],
+    "3. Create reward data hooks": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706954632
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708136655
+      }
+    ],
+    "3.1 Create `src/hooks/useRewards.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706960658
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708131656
+      }
+    ],
+    "3.2 Create `src/hooks/useRewardById.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706961177
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708132444
+      }
+    ],
+    "3.3 Create `src/hooks/useRewardEligibility.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706961984
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708133230
+      }
+    ],
+    "3.4 Create `src/hooks/useRewardsWithEligibility.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706962744
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708134083
+      }
+    ],
+    "3.5 Create `src/hooks/useActiveClaim.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706963599
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708134865
+      }
+    ],
+    "3.6 Create `src/hooks/useGenerateClaimQR.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706968297
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708135747
+      }
+    ],
+    "3.7 Create `src/hooks/useSimulateClaim.ts`": [
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793706968881
+      },
+      {
+        "executionId": "ed7d6083-0951-45be-90d6-0dbdd98d229c",
+        "chatSessionId": "sess_59959a41-d66b-4809-958b-ce982359ee2e",
+        "timestamp": 1793708136518
+      }
+    ],
+    "4.1 Create `src/components/rewards/PointsSummaryCard.tsx`": [
+      {
+        "executionId": "e672d510-a18b-433b-a5cc-9e62d5a41440",
+        "chatSessionId": "sess_b21f991b-677d-40e8-b54f-0772794700d9",
+        "timestamp": 1793708218714
+      },
+      {
+        "executionId": "e672d510-a18b-433b-a5cc-9e62d5a41440",
+        "chatSessionId": "sess_b21f991b-677d-40e8-b54f-0772794700d9",
+        "timestamp": 1793708314932
+      }
+    ],
+    "4.2 Create `src/components/rewards/RewardCard.tsx`": [
+      {
+        "executionId": "7ab21702-bced-4d18-8c1f-020c78c2fe6f",
+        "chatSessionId": "sess_0e1e30fa-c3a9-4205-9281-f1c00e359f6f",
+        "timestamp": 1793708368970
+      },
+      {
+        "executionId": "dc064c13-4e23-4d82-b5c1-b258ad641dea",
+        "chatSessionId": "sess_0e1e30fa-c3a9-4205-9281-f1c00e359f6f",
+        "timestamp": 1793709090912
+      }
+    ],
+    "4.3 Create `src/components/rewards/RewardRequirements.tsx`": [
+      {
+        "executionId": "167828ac-6739-4e89-b545-477da10366d3",
+        "chatSessionId": "sess_7f828013-8738-45c5-9db1-eca190ce9daf",
+        "timestamp": 1793709127037
+      },
+      {
+        "executionId": "167828ac-6739-4e89-b545-477da10366d3",
+        "chatSessionId": "sess_7f828013-8738-45c5-9db1-eca190ce9daf",
+        "timestamp": 1793709535617
       }
     ]
   }

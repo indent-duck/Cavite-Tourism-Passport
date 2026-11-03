@@ -6,49 +6,49 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
 
 ## Tasks
 
-- [-] 1. Add reward constants and update types
-  - [ ] 1.1 Add constants to `src/lib/constants.ts`
+- [x] 1. Add reward constants and update types
+  - [x] 1.1 Add constants to `src/lib/constants.ts`
     - `CLAIM_QR_FORMAT = "cvt:claim:<claimId>:<token>" // TBD`
     - `CLAIM_QR_EXPIRY_MINUTES = 15 // TBD`
     - `REDEMPTION_LOCATION = "Provincial Tourism Center, Trece Martires" // TBD`
     - _Requirements: Design Differences and Omissions #4, QR Code Generation_
   
-  - [ ] 1.2 Update User interface in `src/data/types.ts`
+  - [x] 1.2 Update User interface in `src/data/types.ts`
     - Add `hasClaimedThisPeriod?: boolean` - User has claimed a reward this promo period
     - Add `claimedRewardId?: string` - ID of the reward claimed (if hasClaimedThisPeriod is true)
     - _Requirements: Mock Reward Rules (user-level one prize per period)_
   
-  - [ ] 1.3 Add ActiveClaim interface to `src/data/types.ts`
+  - [x] 1.3 Add ActiveClaim interface to `src/data/types.ts`
     - `{ claimId: string, qrPayload: string, rewardId: string, createdAt: Date, expiresAt: Date }`
     - _Requirements: QR Code Generation, Timer Logic_
   
-  - [ ] 1.4 Update Reward interface in `src/data/types.ts`
+  - [x] 1.4 Update Reward interface in `src/data/types.ts`
     - Add `imageSource?: any` for local placeholder images (expo-image)
     - _Requirements: Design Differences and Omissions #8_
 
-- [ ] 2. Extend API layer with claim and eligibility functions
-  - [ ] 2.1 Read and update `checkRewardEligibility` in `src/data/api.ts`
+- [x] 2. Extend API layer with claim and eligibility functions
+  - [x] 2.1 Read and update `checkRewardEligibility` in `src/data/api.ts`
     - Enforce all 6 conditions: at least 700 points, at least reward cost, at least one stamp in each of Dining/Staycation/Adventure/Heritage (Festival never counts), not already claimed this period (check user.hasClaimedThisPeriod), and reward is available (not sold out)
     - _Requirements: Mock Reward Rules (Eligibility Requirements)_
   
-  - [ ] 2.2 Add active claim storage to mock data
+  - [x] 2.2 Add active claim storage to mock data
     - Create `mockActiveClaims: Map<string, ActiveClaim>` in `mock-data.ts` (key is rewardId)
     - Export as mutable for in-memory updates
     - _Requirements: Mock Reward Rules (Active claim QRs stored at user level)_
   
-  - [ ] 2.3 Add `getActiveClaim` function to `src/data/api.ts`
+  - [x] 2.3 Add `getActiveClaim` function to `src/data/api.ts`
     - Function signature: `async function getActiveClaim(rewardId: string): Promise<ActiveClaim | null>`
     - Returns active claim for reward from mockActiveClaims Map, or null if none exists or expired
     - _Requirements: Viewing Reward Detail - QR Generated State #5_
   
-  - [ ] 2.4 Add `generateClaimQR` function to `src/data/api.ts`
+  - [x] 2.4 Add `generateClaimQR` function to `src/data/api.ts`
     - Function signature: `async function generateClaimQR(rewardId: string): Promise<ActiveClaim>`
     - Creates new ActiveClaim with claimId, qrPayload (format from CLAIM_QR_FORMAT), rewardId, createdAt (now), expiresAt (now + CLAIM_QR_EXPIRY_MINUTES)
     - Stores in mockActiveClaims Map (overwrites any existing claim for this reward)
     - Returns the new ActiveClaim
     - _Requirements: Viewing Reward Detail - Eligible State #6, QR Code Generation_
   
-  - [ ] 2.5 Add `simulateClaim` function to `src/data/api.ts`
+  - [x] 2.5 Add `simulateClaim` function to `src/data/api.ts`
     - Function signature: `async function simulateClaim(claimId: string, rewardId: string): Promise<void>`
     - Find reward by rewardId in mockRewards
     - Deduct reward.pointsCost from currentMockUser.points
@@ -57,7 +57,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Remove claim from mockActiveClaims Map
     - _Requirements: Dev-Only Testing Features (Simulate Officer Scan)_
   
-  - [ ] 2.6 Add `setMockScenario` function to `src/data/api.ts`
+  - [x] 2.6 Add `setMockScenario` function to `src/data/api.ts`
     - Function signature: `function setMockScenario(scenario: 'default' | 'eligible' | 'claimed'): void`
     - Updates currentMockUser and currentMockStamps based on scenario:
       - 'default': 450 pts, stamps from Dining, Staycation, 2 Heritage, hasClaimedThisPeriod = false
@@ -66,48 +66,48 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Export function for use by dev scenario switcher component
     - _Requirements: Dev-Only Testing Features (Dev Scenario Switcher), Mock User (Dev Scenarios)_
 
-- [ ] 3. Create reward data hooks
-  - [ ] 3.1 Create `src/hooks/useRewards.ts`
+- [x] 3. Create reward data hooks
+  - [x] 3.1 Create `src/hooks/useRewards.ts`
     - React Query hook wrapping `getRewards` from api.ts
     - Query key: `['rewards']`
     - _Requirements: Browsing Rewards_
   
-  - [ ] 3.2 Create `src/hooks/useRewardById.ts`
+  - [x] 3.2 Create `src/hooks/useRewardById.ts`
     - React Query hook wrapping `getRewardById` from api.ts
     - Query key: `['reward', id]`
     - _Requirements: Viewing Reward Detail states_
   
-  - [ ] 3.3 Create `src/hooks/useRewardEligibility.ts`
+  - [x] 3.3 Create `src/hooks/useRewardEligibility.ts`
     - React Query hook wrapping `checkRewardEligibility` from api.ts
     - Query key: `['rewardEligibility', rewardId]`
     - Enabled only when rewardId is provided
     - _Requirements: Viewing Reward Detail states_
   
-  - [ ] 3.4 Create `src/hooks/useRewardsWithEligibility.ts`
+  - [x] 3.4 Create `src/hooks/useRewardsWithEligibility.ts`
     - Combines useRewards with eligibility checks for all rewards
     - Returns rewards array with eligibility data for each reward (for displaying on reward cards)
     - Single hook to avoid one query per card
     - _Requirements: Browsing Rewards (List Screen)_
   
-  - [ ] 3.5 Create `src/hooks/useActiveClaim.ts`
+  - [x] 3.5 Create `src/hooks/useActiveClaim.ts`
     - React Query hook wrapping `getActiveClaim` from api.ts
     - Query key: `['activeClaim', rewardId]`
     - Returns active claim or null
     - _Requirements: Viewing Reward Detail - QR Generated State_
   
-  - [ ] 3.6 Create `src/hooks/useGenerateClaimQR.ts`
+  - [x] 3.6 Create `src/hooks/useGenerateClaimQR.ts`
     - React Query mutation hook wrapping `generateClaimQR` from api.ts
     - On success: invalidate `['activeClaim', rewardId]` query
     - _Requirements: Viewing Reward Detail - Eligible State #6_
   
-  - [ ] 3.7 Create `src/hooks/useSimulateClaim.ts`
+  - [x] 3.7 Create `src/hooks/useSimulateClaim.ts`
     - React Query mutation hook wrapping `simulateClaim` from api.ts
     - On success: invalidate queries `['currentUser']`, `['rewards']`, `['reward', id]`, `['rewardEligibility', id]`, `['activeClaim', id]`
     - Dev-only hook (should only be called when `__DEV__` is true)
     - _Requirements: Dev-Only Testing Features (Simulate Officer Scan)_
 
 - [ ] 4. Create reward UI components
-  - [ ] 4.1 Create `src/components/rewards/PointsSummaryCard.tsx`
+  - [x] 4.1 Create `src/components/rewards/PointsSummaryCard.tsx`
     - Props: `{ points: number, stampCategories: Category[], testID?: string }`
     - Layout: White card, 16px padding/radius
     - Top: "TOTAL BALANCE" label, large points display, subtext "Earned across 4 Cavite Passport categories"
@@ -117,7 +117,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Use theme category colors
     - _Requirements: Browsing Rewards, Design Differences #1_
   
-  - [ ] 4.2 Create `src/components/rewards/RewardCard.tsx`
+  - [x] 4.2 Create `src/components/rewards/RewardCard.tsx`
     - Props: `{ reward: Reward, onPress: () => void, eligibility?: RewardEligibility, testID?: string }`
     - Layout: Card with local placeholder image at top (neutral tinted background with gift icon via expo-image using reward.imageSource)
     - Image overlays: "Limited: N left" badge (top-left, orange), points badge (bottom-right, navy)
@@ -127,7 +127,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Pressable with scale animation
     - _Requirements: Browsing Rewards, Design Differences #8_
   
-  - [ ] 4.3 Create `src/components/rewards/RewardRequirements.tsx`
+  - [x] 4.3 Create `src/components/rewards/RewardRequirements.tsx`
     - Props: `{ eligibility: RewardEligibility, pointsCost: number, testID?: string }`
     - Layout: White card, 16px padding/radius
     - Points Progress section: current/target, progress bar, "Current Balance" / "TARGET REACHED" labels
@@ -137,7 +137,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Use theme category colors
     - _Requirements: Viewing Reward Detail - Locked State, Design Differences #1_
   
-  - [ ] 4.4 Create `src/components/rewards/ClaimQRView.tsx`
+  - [x] 4.4 Create `src/components/rewards/ClaimQRView.tsx`
     - Props: `{ activeClaim: ActiveClaim, rewardTitle: string, rewardPoints: number, onDone: () => void, testID?: string }`
     - Layout: Summary card (reward icon, title, points, location from REDEMPTION_LOCATION constant), QR card, button
     - QR card: "Single-Use Pass • Valid for MM:SS" with countdown (computed from activeClaim.expiresAt using Date.now()), QR code (200px, from activeClaim.qrPayload), "TICKET REFERENCE ID" with claim ID as plain text (no copy icon), instructions (one paragraph, no "Present your digital passport..." text, no "SECURITY VERIFIED" divider)
@@ -146,7 +146,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - "Done ✓" button (primary blue)
     - _Requirements: Viewing Reward Detail - QR Generated State, Timer Logic, QR Code Generation, Design Differences #5-7_
 
-- [ ] 5. Implement rewards list screen
+- [~] 5. Implement rewards list screen
   - [ ] 5.1 Replace placeholder in `src/app/rewards/index.tsx`
     - Use `ScreenContainer` with `scrollable={true}`, back arrow in header, title "Reward Details"
     - Use `useCurrentUser` for current points

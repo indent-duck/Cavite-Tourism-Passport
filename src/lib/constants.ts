@@ -5,6 +5,10 @@ export const CLAIM_QR_EXPIRY_MINUTES = 15; // TBD
 
 export const SITE_QR_FORMAT = 'CAVITE-SITE-{siteId}'; // TBD, placeholder format
 
+export const CLAIM_QR_FORMAT = 'cvt:claim:<claimId>:<token>'; // TBD
+
+export const REDEMPTION_LOCATION = 'Provincial Tourism Center, Trece Martires'; // TBD
+
 // Scanner constants
 // Only true in __DEV__
 export const DEV_SKIP_LOCATION_CHECK = true;
