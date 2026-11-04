@@ -168,7 +168,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Use `useGenerateClaimQR` mutation, `useSimulateClaim` mutation (dev only)
     - _Requirements: Viewing Reward Detail states_
   
-  - [ ] 6.2 Implement state determination logic
+  - [x] 6.2 Implement state determination logic
     - If `user.hasClaimedThisPeriod`: Already Claimed state
     - If `!reward.available && reward.limited && reward.remainingClaims === 0`: No Longer Available state
     - If `activeClaim && activeClaim.expiresAt > Date.now()`: QR Generated state
@@ -177,7 +177,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Else: Locked state
     - _Requirements: Mock Reward Rules (user-level one prize per period), state logic_
   
-  - [ ] 6.3 Render Locked state
+  - [~] 6.3 Render Locked state
     - Local placeholder image (neutral background + gift icon, reward.imageSource), title, description, location (REDEMPTION_LOCATION constant, no hours)
     - RewardRequirements component
     - Disabled button "Reward Locked (Requirements Incomplete)"

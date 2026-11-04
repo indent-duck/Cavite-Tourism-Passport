@@ -99,7 +99,45 @@ export default function RewardDetailScreen() {
     );
   }
 
-  // TODO: Implement state determination logic (task 6.2)
+  // State determination logic (task 6.2)
+  // Determines which of the six reward states to display based on user data, reward availability, and active claims
+  
+  type RewardState = 'locked' | 'eligible' | 'qr-generated' | 'expired' | 'already-claimed' | 'no-longer-available';
+  
+  const determineRewardState = (): RewardState => {
+    // Priority 1: User has already claimed a reward this promo period (affects all rewards)
+    if (user?.hasClaimedThisPeriod) {
+      return 'already-claimed';
+    }
+    
+    // Priority 2: Reward is no longer available (sold out limited reward)
+    if (!reward.available && reward.limited && reward.remainingClaims === 0) {
+      return 'no-longer-available';
+    }
+    
+    // Priority 3: Active claim exists - check if QR is generated or expired
+    if (activeClaim) {
+      const now = Date.now();
+      const expiresAt = activeClaim.expiresAt.getTime();
+      
+      if (expiresAt > now) {
+        return 'qr-generated';
+      } else {
+        return 'expired';
+      }
+    }
+    
+    // Priority 4: Check eligibility
+    if (eligibility?.eligible) {
+      return 'eligible';
+    }
+    
+    // Default: Locked state
+    return 'locked';
+  };
+  
+  const rewardState = determineRewardState();
+  
   // TODO: Render different states based on state determination (tasks 6.3-6.9)
 
   return (
@@ -122,7 +160,10 @@ export default function RewardDetailScreen() {
           <View style={styles.devInfo}>
             <Text style={styles.devInfoTitle}>Dev Info:</Text>
             <Text style={styles.devInfoText}>
-              - Reward loaded: {reward.title}
+              - Current State: {rewardState.toUpperCase()}
+            </Text>
+            <Text style={styles.devInfoText}>
+              - Reward: {reward.title}
             </Text>
             <Text style={styles.devInfoText}>
               - Eligibility: {eligibility?.eligible ? 'Eligible' : 'Not Eligible'}
@@ -130,12 +171,25 @@ export default function RewardDetailScreen() {
             <Text style={styles.devInfoText}>
               - Active Claim: {activeClaim ? 'Yes' : 'No'}
             </Text>
+            {activeClaim && (
+              <Text style={styles.devInfoText}>
+                - QR Expires: {new Date(activeClaim.expiresAt).toLocaleTimeString()}
+              </Text>
+            )}
             <Text style={styles.devInfoText}>
               - User Points: {user?.points ?? 0}
             </Text>
             <Text style={styles.devInfoText}>
               - Has Claimed: {user?.hasClaimedThisPeriod ? 'Yes' : 'No'}
             </Text>
+            <Text style={styles.devInfoText}>
+              - Reward Available: {reward.available ? 'Yes' : 'No'}
+            </Text>
+            {reward.limited && (
+              <Text style={styles.devInfoText}>
+                - Remaining Claims: {reward.remainingClaims}
+              </Text>
+            )}
           </View>
         )}
       </View>
@@ -189,7 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: spacing.sm,
   },
   devInfoTitle: {
-    ...typography.titleSmall,
+    ...typography.titleMedium,
     color: colors.text,
     marginBottom: spacing.sm,
   },
