@@ -160,7 +160,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - _Requirements: Browsing Rewards, Design Differences #3_
 
 - [ ] 6. Implement reward detail screen with all states
-  - [ ] 6.1 Set up reward detail screen structure
+  - [x] 6.1 Set up reward detail screen structure
     - Replace placeholder in `src/app/rewards/[id].tsx`
     - Use `ScreenContainer` with `scrollable={true}`, back arrow in header, title "Reward Details"
     - Use `useLocalSearchParams` to get reward id
