@@ -14,25 +14,32 @@ import QRCode from 'react-native-qrcode-svg';
  * The QR code expires after a set time (CLAIM_QR_EXPIRY_MINUTES), and the timer
  * stays accurate even after app backgrounding by computing from Date.now() on each tick.
  * 
+ * Supports two display modes:
+ * 1. QR Generated state (default): Shows active QR with countdown and "Done" button
+ * 2. Expired state: Shows "Expired" text, grayed-out QR, and "Generate New QR" button
+ * 
  * Props:
  * - activeClaim: Active claim object with QR payload and expiration time
  * - rewardTitle: Title of the reward being claimed
  * - rewardPoints: Points cost of the reward
- * - onDone: Callback when user dismisses the QR view
+ * - onDone: Callback when user dismisses the QR view (QR Generated state)
+ * - isExpired: Whether the claim is expired (switches to Expired state)
+ * - onGenerateNewQR: Callback for generating new QR (Expired state only)
+ * - isGeneratingNewQR: Loading state for Generate New QR mutation (Expired state only)
  * - testID: Optional test identifier
  * 
  * Layout:
  * - Summary card with reward icon, title, points, and location
  * - QR card with countdown timer, QR code, ticket reference ID, and instructions
- * - Done button at bottom
+ * - Action button at bottom (Done or Generate New QR depending on state)
  * 
  * Timer Logic:
  * - Computed from activeClaim.expiresAt using Date.now() on each tick
  * - Updates every second
  * - Stays correct after app backgrounding
- * - When timer reaches 0, parent component handles transition to Expired state
+ * - Shows "Expired" when isExpired prop is true
  * 
- * Validates: Requirements 6.5 (QR Generated State), Timer Logic, QR Code Generation
+ * Validates: Requirements 6.5 (QR Generated State), 6.6 (Expired State), Timer Logic, QR Code Generation
  */
 
 export interface ClaimQRViewProps {
@@ -44,6 +51,12 @@ export interface ClaimQRViewProps {
   rewardPoints: number;
   /** Callback when Done button is pressed */
   onDone: () => void;
+  /** Whether the claim is expired (for Expired state rendering) */
+  isExpired?: boolean;
+  /** Callback when Generate New QR button is pressed (Expired state only) */
+  onGenerateNewQR?: () => void;
+  /** Whether Generate New QR mutation is loading (Expired state only) */
+  isGeneratingNewQR?: boolean;
   /** Optional test identifier */
   testID?: string;
 }
@@ -53,6 +66,9 @@ export function ClaimQRView({
   rewardTitle,
   rewardPoints,
   onDone,
+  isExpired = false,
+  onGenerateNewQR,
+  isGeneratingNewQR = false,
   testID,
 }: ClaimQRViewProps) {
   // Calculate remaining time in milliseconds
@@ -87,7 +103,7 @@ export function ClaimQRView({
   };
 
   const claimId = extractClaimId(activeClaim.qrPayload);
-  const timeDisplay = formatTime(remainingMs);
+  const timeDisplay = isExpired ? 'Expired' : formatTime(remainingMs);
 
   return (
     <View style={styles.container} testID={testID}>
@@ -134,12 +150,24 @@ export function ClaimQRView({
 
         {/* QR Code */}
         <View style={styles.qrCodeContainer}>
-          <QRCode
-            value={activeClaim.qrPayload}
-            size={200}
-            color={colors.primary}
-            backgroundColor={colors.background}
-          />
+          {isExpired ? (
+            /* Expired: Gray out QR code */
+            <View style={{ opacity: 0.3 }}>
+              <QRCode
+                value={activeClaim.qrPayload}
+                size={200}
+                color={colors.textSecondary}
+                backgroundColor={colors.background}
+              />
+            </View>
+          ) : (
+            <QRCode
+              value={activeClaim.qrPayload}
+              size={200}
+              color={colors.primary}
+              backgroundColor={colors.background}
+            />
+          )}
         </View>
 
         {/* Ticket Reference ID */}
@@ -163,14 +191,25 @@ export function ClaimQRView({
         </View>
       </View>
 
-      {/* Done Button */}
-      <Button
-        title="Done ✓"
-        onPress={onDone}
-        variant="primary"
-        fullWidth
-        testID={testID ? `${testID}-done-button` : undefined}
-      />
+      {/* Action Button */}
+      {isExpired ? (
+        <Button
+          title="Generate New QR"
+          onPress={onGenerateNewQR || (() => {})}
+          variant="accent"
+          fullWidth
+          loading={isGeneratingNewQR}
+          testID={testID ? `${testID}-generate-new-qr-button` : undefined}
+        />
+      ) : (
+        <Button
+          title="Done ✓"
+          onPress={onDone}
+          variant="primary"
+          fullWidth
+          testID={testID ? `${testID}-done-button` : undefined}
+        />
+      )}
     </View>
   );
 }
@@ -251,6 +290,9 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     backgroundColor: colors.background,
     borderRadius: radii.md,
+  },
+  qrPlaceholder: {
+    // Container for grayed-out QR code in expired state
   },
   ticketSection: {
     alignItems: 'center',

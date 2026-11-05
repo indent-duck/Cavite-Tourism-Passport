@@ -159,7 +159,7 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Bottom padding for safe area
     - _Requirements: Browsing Rewards, Design Differences #3_
 
-- [ ] 6. Implement reward detail screen with all states
+- [x] 6. Implement reward detail screen with all states
   - [x] 6.1 Set up reward detail screen structure
     - Replace placeholder in `src/app/rewards/[id].tsx`
     - Use `ScreenContainer` with `scrollable={true}`, back arrow in header, title "Reward Details"
@@ -177,13 +177,13 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Else: Locked state
     - _Requirements: Mock Reward Rules (user-level one prize per period), state logic_
   
-  - [~] 6.3 Render Locked state
+  - [x] 6.3 Render Locked state
     - Local placeholder image (neutral background + gift icon, reward.imageSource), title, description, location (REDEMPTION_LOCATION constant, no hours)
     - RewardRequirements component
     - Disabled button "Reward Locked (Requirements Incomplete)"
     - _Requirements: Viewing Reward Detail - Locked State, Design Differences #4_
   
-  - [ ] 6.4 Render Eligible state
+  - [x] 6.4 Render Eligible state
     - "READY TO CLAIM" chip (success background), "Limited: N left" badge if applicable
     - Image, title, description, location
     - RewardRequirements (all complete)
@@ -192,12 +192,12 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - Note: "Generating a code is optional. You can keep collecting points toward higher rewards."
     - _Requirements: Viewing Reward Detail - Eligible State, Design Differences #2_
   
-  - [ ] 6.5 Render QR Generated state
+  - [x] 6.5 Render QR Generated state
     - ClaimQRView component with activeClaim, reward info, onDone callback
     - onDone navigates back to rewards list
     - _Requirements: Viewing Reward Detail - QR Generated State_
   
-  - [ ] 6.6 Render Expired state
+  - [x] 6.6 Render Expired state
     - Same layout as QR Generated, but:
     - Timer shows "Expired"
     - QR code grayed out or hidden
@@ -205,19 +205,19 @@ The Rewards feature implements the complete reward redemption UI for the Cavite 
     - onPress: calls generateClaimQR mutation, transitions to QR Generated state
     - _Requirements: Viewing Reward Detail - Expired State, Timer Logic_
   
-  - [ ] 6.7 Render Already Claimed state
+  - [x] 6.7 Render Already Claimed state
     - Same layout as Locked: image, title, description, location
     - Message card: "You've already claimed a prize this promo period"
     - Disabled button "Already Claimed"
     - _Requirements: Viewing Reward Detail - Already Claimed State_
   
-  - [ ] 6.8 Render No Longer Available state
+  - [x] 6.8 Render No Longer Available state
     - Same layout as Locked: image, title, description, location
     - Message card: "This reward is no longer available"
     - Disabled button "No Longer Available"
     - _Requirements: Viewing Reward Detail - No Longer Available State_
   
-  - [ ] 6.9 Add dev-only testing features
+  - [x] 6.9 Add dev-only testing features
     - Dev scenario switcher: renders only when `__DEV__`, calls `setMockScenario` from api.ts, invalidates all queries
     - Three scenarios: Default, Eligible, Already Claimed
     - Simulate officer scan button: only visible when `__DEV__` AND in QR Generated state, calls useSimulateClaim, shows success message, navigates back to list
