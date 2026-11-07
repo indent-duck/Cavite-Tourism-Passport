@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { useEvents } from '@/hooks/useEvents';
+import { useExpressways } from '@/hooks/useExpressways';
 import { getEventStatus } from '@/lib/event-utils';
 import { colors, spacing, typography } from '@/theme';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 export default function DiscoverScreen() {
   const [selectedView, setSelectedView] = useState<'events' | 'about'>('events');
   const eventsQuery = useEvents();
+  const expresswaysQuery = useExpressways();
 
   return (
     <ScreenContainer
@@ -44,7 +46,10 @@ export default function DiscoverScreen() {
       {selectedView === 'events' ? (
         <EventsView query={eventsQuery} />
       ) : (
-        <AboutCaviteContent onEventPress={(id) => router.push(`/events/${id}`)} />
+        <AboutCaviteView
+          eventsQuery={eventsQuery}
+          expresswaysQuery={expresswaysQuery}
+        />
       )}
     </ScreenContainer>
   );
@@ -113,11 +118,55 @@ function EventsView({ query }: EventsViewProps) {
   );
 }
 
+interface AboutCaviteViewProps {
+  eventsQuery: ReturnType<typeof useEvents>;
+  expresswaysQuery: ReturnType<typeof useExpressways>;
+}
+
+function AboutCaviteView({ eventsQuery, expresswaysQuery }: AboutCaviteViewProps) {
+  // Loading state
+  if (eventsQuery.isLoading || expresswaysQuery.isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Error state
+  if (eventsQuery.isError || expresswaysQuery.isError) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Unable to load content</Text>
+        <Button
+          title="Retry"
+          onPress={() => {
+            eventsQuery.refetch();
+            expresswaysQuery.refetch();
+          }}
+          variant="primary"
+        />
+      </View>
+    );
+  }
+
+  const events = eventsQuery.data || [];
+  const expressways = expresswaysQuery.data || [];
+
+  return (
+    <AboutCaviteContent
+      expressways={expressways}
+      events={events}
+      onEventPress={(id) => router.push(`/events/${id}`)}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   segmentedControlContainer: {
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+    paddingTop: 0,
+    paddingBottom: spacing.sm,
   },
   centerContainer: {
     flex: 1,
@@ -139,7 +188,7 @@ const styles = StyleSheet.create({
   },
   eventsContainer: {
     paddingHorizontal: spacing.base,
-    gap: spacing.xl,
+    gap: spacing.base,
   },
   headingSection: {
     gap: spacing.xs,
