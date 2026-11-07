@@ -1,7 +1,7 @@
-import { colors, radii, shadows, spacing, typography } from '@/theme';
 import type { Event } from '@/data/types';
 import { POINTS_PER_CATEGORY } from '@/data/types';
-import { getEventStatus, formatDateBadge } from '@/lib/event-utils';
+import { formatDateBadge, getEventStatus } from '@/lib/event-utils';
+import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.sm,
@@ -118,6 +118,8 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.headlineMedium,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.sm,
   },

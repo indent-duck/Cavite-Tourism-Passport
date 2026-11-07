@@ -309,5 +309,273 @@ Login → push → Forgot Email → push → Forgot Verify → push → Forgot N
 
 ---
 
+## Segmented Control with Icons
+
+**Design Pattern:**
+Segmented controls can include icons alongside text labels for better visual hierarchy and clarity.
+
+**Implementation:**
+
+The `SegmentedControl` component supports an optional `icon` prop in each option:
+
+```typescript
+interface SegmentedControlOption {
+  label: string;
+  value: string;
+  icon?: ReactNode; // Optional icon to display before label
+}
+```
+
+**Example Usage (Discover Screen):**
+
+```typescript
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors } from '@/theme';
+
+<SegmentedControl
+  options={[
+    {
+      label: 'Events',
+      value: 'events',
+      icon: (
+        <MaterialCommunityIcons
+          name="party-popper"
+          size={14}
+          color={selectedView === 'events' ? colors.background : colors.textSecondary}
+        />
+      ),
+    },
+    {
+      label: 'About Cavite',
+      value: 'about',
+      icon: (
+        <MaterialCommunityIcons
+          name="map"
+          size={14}
+          color={selectedView === 'about' ? colors.background : colors.textSecondary}
+        />
+      ),
+    },
+  ]}
+  selectedValue={selectedView}
+  onValueChange={(value) => setSelectedView(value as 'events' | 'about')}
+/>
+```
+
+**Key Design Details:**
+- **Icon size:** 14px (matches design reference)
+- **Icon color:** 
+  - Active state: `colors.background` (white)
+  - Inactive state: `colors.textSecondary` (gray)
+- **Layout:** Icons appear before text labels with `spacing.xs` gap
+- **Height:** Reduced from 44px to 36px for a thinner, more compact appearance
+- **Font size:** Uses `typography.labelSmall` instead of `labelMedium`
+
+**Visual Reference:**
+From `design/screens/08-discover/discover_cavite_full_view_events.html`:
+- Events button uses Material Symbol "celebration" (party popper icon)
+- About Cavite button uses Material Symbol "map" (map icon)
+- Pills are smaller and more compact than standard buttons
+
+**Component Files:**
+- `src/components/ui/SegmentedControl.tsx`: Core component with icon support
+- `src/app/(tabs)/discover.tsx`: Example implementation
+
+**Related Design Patterns:**
+- Used in Discover screen for Events/About Cavite toggle
+- Can be applied to Explore screen for Sites/Itineraries toggle if icons are added in the future
+
+---
+
+## Section Headings Typography
+
+**Design Pattern:**
+Section headings for major content areas should use Inter Bold (font weight 700) for stronger visual hierarchy.
+
+**Implementation:**
+
+Override the `fontWeight` in the heading style:
+
+```typescript
+heading: {
+  ...typography.headlineLarge,
+  color: colors.text,
+  fontWeight: '700', // Inter Bold
+},
+```
+
+**Example Usage:**
+
+```typescript
+<Text style={styles.heading}>Provincial Festivals & Events</Text>
+```
+
+**Key Design Details:**
+- **Font weight:** 700 (Inter Bold)
+- **Base style:** `typography.headlineLarge` (provides size and line height)
+- **Color:** `colors.text` (primary text color #1B2A49)
+
+**Visual Reference:**
+From `design/screens/08-discover/discover_cavite_full_view_events.html`:
+- "Provincial Festivals & Events" heading uses `font-bold` (weight 700)
+
+**Applies To:**
+- Major section headings on tab screens
+- Content category titles
+- Any heading that needs strong emphasis
+
+**Related Files:**
+- `src/app/(tabs)/discover.tsx`: Events section heading
+
+---
+
+## Screen Container Horizontal Margins
+
+**Design Pattern:**
+Maintain consistent horizontal spacing across all screens by avoiding redundant padding at the content container level.
+
+**Implementation:**
+
+**Rule:** Content containers within scrollable screens should NOT add their own horizontal padding. Horizontal margins are handled by the `ScreenContainer` component via safe area insets.
+
+**Correct Pattern:**
+```typescript
+// ❌ WRONG - Do not add horizontal padding to content containers
+const styles = StyleSheet.create({
+  contentContainer: {
+    paddingHorizontal: spacing.base, // Don't do this!
+    gap: spacing.base,
+  },
+});
+
+// ✅ CORRECT - Let ScreenContainer handle horizontal spacing
+const styles = StyleSheet.create({
+  contentContainer: {
+    gap: spacing.base, // Only vertical spacing and gaps
+  },
+});
+```
+
+**Screen Structure:**
+```typescript
+<ScreenContainer
+  scrollable={true}
+  edges={['left', 'right']} // Safe area insets provide horizontal spacing
+  withTabBarPadding={true}
+>
+  <View style={styles.segmentedControlContainer}>
+    {/* Segmented control - can have its own padding if needed */}
+  </View>
+  
+  <View style={styles.contentContainer}>
+    {/* Content cards, lists, etc. - no horizontal padding here */}
+  </View>
+</ScreenContainer>
+```
+
+**When Individual Padding IS Needed:**
+- Segmented controls or header elements that need to be inset from edges
+- Individual cards or components that need internal padding
+- Never on the main content wrapper
+
+**Reference Implementation:**
+- `src/app/(tabs)/discover.tsx`: Both Events and About Cavite views have no horizontal padding on their content containers
+- `src/components/discover/AboutCaviteContent.tsx`: ScrollView contentContainer has no horizontal padding
+- Cards and sections within these views handle their own internal spacing
+
+**Key Points:**
+- **Consistency:** All tab screens should follow this pattern
+- **Safe areas:** The `ScreenContainer` with `edges={['left', 'right']}` handles device-specific safe areas
+- **Cards:** Individual cards can have their own padding, margins, or border radius
+- **Do not double-pad:** Adding padding at both the container and content level creates inconsistent spacing
+
+**Applies To:**
+- All tab screens (Explore, Passport, Discover, Account)
+- Stack screens that use ScreenContainer with scrollable content
+- Any full-width content layout
+
+---
+
+## Using Inter Bold 700 Font Weight
+
+**Design Pattern:**
+When instructed to use "Inter Bold 700" for text elements, this means using the explicitly loaded bold font family variant, not just setting `fontWeight: '700'`.
+
+**Problem:**
+In React Native with custom fonts loaded via `@expo-google-fonts`, setting `fontWeight: '700'` alone does not apply the bold variant. The font family name must explicitly reference the loaded weight variant.
+
+**Solution:**
+Use `fontFamily: 'Inter_700Bold'` instead of `fontWeight: '700'`.
+
+**Implementation:**
+
+**❌ WRONG - Does not work with custom fonts:**
+```typescript
+const styles = StyleSheet.create({
+  heading: {
+    ...typography.headlineLarge,
+    color: colors.text,
+    fontWeight: '700', // This won't apply the bold font
+  },
+});
+```
+
+**✅ CORRECT - Uses the loaded font variant:**
+```typescript
+const styles = StyleSheet.create({
+  heading: {
+    ...typography.headlineLarge,
+    color: colors.text,
+    fontFamily: 'Inter_700Bold', // This applies the bold font
+  },
+});
+```
+
+**Available Inter Font Variants:**
+The following Inter fonts are loaded in `src/app/_layout.tsx`:
+- `Inter_400Regular` - Regular weight (400)
+- `Inter_500Medium` - Medium weight (500)
+- `Inter_600SemiBold` - SemiBold weight (600)
+- `Inter_700Bold` - Bold weight (700)
+
+**When to Use:**
+- Section headings that need strong emphasis
+- Header titles in navigation bars
+- Primary content titles
+- Any text that the design specifies as "Inter Bold 700"
+
+**Key Points:**
+- The `fontWeight` property works for system fonts, but NOT for custom loaded fonts
+- Always use the explicit `fontFamily` property with the weight variant name
+- The typography theme tokens provide `fontWeight` values, but these may need to be overridden with `fontFamily` for custom fonts
+- Can be combined with other typography properties like `fontSize`, `lineHeight`, `color`
+
+**Example Usage:**
+```typescript
+// Header title
+<Text style={[typography.headlineSmall, { fontFamily: 'Inter_700Bold' }]}>
+  Event Information
+</Text>
+
+// Festival name
+const styles = StyleSheet.create({
+  festivalName: {
+    ...typography.headlineLarge,
+    color: colors.text,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: spacing.md,
+  },
+});
+```
+
+**Files Modified:**
+- `src/components/ui/ScreenContainer.tsx`: Header title uses `Inter_700Bold`
+- `src/app/events/[id].tsx`: Festival name title uses `Inter_700Bold`
+
+**Related Issues:**
+- Task: Make Event Information header and festival name use Inter Bold 700
+
+---
+
 ## [Future patterns will be added here as they're discovered]
 

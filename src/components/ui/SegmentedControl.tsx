@@ -1,9 +1,11 @@
 import { colors, radii, spacing, typography } from '@/theme';
+import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface SegmentedControlOption {
   label: string;
   value: string;
+  icon?: ReactNode;
 }
 
 export interface SegmentedControlProps {
@@ -42,6 +44,11 @@ export function SegmentedControl({
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={option.label}
           >
+            {option.icon && (
+              <View style={styles.iconContainer}>
+                {option.icon}
+              </View>
+            )}
             <Text
               style={[
                 styles.optionText,
@@ -67,11 +74,13 @@ const styles = StyleSheet.create({
   },
   option: {
     flex: 1,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minHeight: 44, // Accessible touch target
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    minHeight: 36, // Reduced from 44 for a thinner appearance
   },
   optionFirst: {
     borderTopLeftRadius: radii.button,
@@ -88,8 +97,12 @@ const styles = StyleSheet.create({
   optionPressed: {
     opacity: 0.7,
   },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   optionText: {
-    ...typography.labelMedium,
+    ...typography.labelSmall,
     color: colors.textSecondary,
   },
   optionTextActive: {

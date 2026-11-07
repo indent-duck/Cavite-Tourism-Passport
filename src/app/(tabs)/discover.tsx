@@ -7,6 +7,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useExpressways } from '@/hooks/useExpressways';
 import { getEventStatus } from '@/lib/event-utils';
 import { colors, spacing, typography } from '@/theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -33,8 +34,28 @@ export default function DiscoverScreen() {
       <View style={styles.segmentedControlContainer}>
         <SegmentedControl
           options={[
-            { label: 'Events', value: 'events' },
-            { label: 'About Cavite', value: 'about' },
+            {
+              label: 'Events',
+              value: 'events',
+              icon: (
+                <MaterialCommunityIcons
+                  name="party-popper"
+                  size={14}
+                  color={selectedView === 'events' ? colors.background : colors.textSecondary}
+                />
+              ),
+            },
+            {
+              label: 'About Cavite',
+              value: 'about',
+              icon: (
+                <MaterialCommunityIcons
+                  name="map"
+                  size={14}
+                  color={selectedView === 'about' ? colors.background : colors.textSecondary}
+                />
+              ),
+            },
           ]}
           selectedValue={selectedView}
           onValueChange={(value) => setSelectedView(value as 'events' | 'about')}
@@ -187,7 +208,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   eventsContainer: {
-    paddingHorizontal: spacing.base,
     gap: spacing.base,
   },
   headingSection: {
@@ -196,6 +216,7 @@ const styles = StyleSheet.create({
   heading: {
     ...typography.headlineLarge,
     color: colors.text,
+    fontFamily: 'Inter_700Bold',
   },
   subtitle: {
     ...typography.bodyMedium,

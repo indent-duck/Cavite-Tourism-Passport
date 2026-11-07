@@ -76,8 +76,10 @@ export interface Event {
   title: string;
   startDate: string; // ISO format
   endDate?: string; // ISO format, for multi-day events
+  time: string; // e.g., "8:00 AM – 9:00 PM PST"
+  venue: string; // Venue name (short)
   municipality: string;
-  address: string;
+  address: string; // Full address
   latitude: number;
   longitude: number;
   description: string;

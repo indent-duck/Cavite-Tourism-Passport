@@ -182,6 +182,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     ...typography.headlineSmall,
     color: colors.text,
+    fontFamily: 'Inter_700Bold',
   },
   scrollView: {
     flex: 1,

@@ -7,7 +7,7 @@ import { useEventById } from '@/hooks/useEventById';
 import { formatEventDate, getEventStatus } from '@/lib/event-utils';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Linking, StyleSheet, Text, View } from 'react-native';
 
 /**
@@ -101,6 +101,7 @@ export default function EventDetailScreen() {
       scrollable={true}
       showHeader={true}
       headerTitle="Event Information"
+      onBackPress={() => router.back()}
       testID="event-detail-screen"
     >
       {/* Photo area */}
@@ -181,23 +182,25 @@ export default function EventDetailScreen() {
           </View>
         )}
 
-        {/* Date & Time section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>DATE & TIME</Text>
-          <View style={styles.sectionContent}>
-            <Ionicons name="calendar-outline" size={20} color={colors.text} />
-            <Text style={styles.sectionText}>
+        {/* Date & Time card */}
+        <View style={styles.detailCard}>
+          <Ionicons name="calendar-outline" size={24} color={colors.text} />
+          <View style={styles.detailCardContent}>
+            <Text style={styles.detailCardHeading}>DATE & TIME</Text>
+            <Text style={styles.detailCardText}>
               {formatEventDate(event.startDate, event.endDate)}
             </Text>
+            <Text style={styles.detailCardText}>{event.time}</Text>
           </View>
         </View>
 
-        {/* Venue Address section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>VENUE ADDRESS</Text>
-          <View style={styles.sectionContent}>
-            <Ionicons name="location-outline" size={20} color={colors.text} />
-            <Text style={styles.sectionText}>{event.address}</Text>
+        {/* Venue Address card */}
+        <View style={styles.detailCard}>
+          <Ionicons name="location-outline" size={24} color={colors.text} />
+          <View style={styles.detailCardContent}>
+            <Text style={styles.detailCardHeading}>VENUE ADDRESS</Text>
+            <Text style={styles.detailCardText}>{event.venue}</Text>
+            {event.address && <Text style={styles.detailCardText}>{event.address}</Text>}
           </View>
         </View>
 
@@ -240,7 +243,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: {
-    paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
     paddingBottom: spacing.xxl,
   },
@@ -258,6 +260,7 @@ const styles = StyleSheet.create({
   title: {
     ...typography.headlineLarge,
     color: colors.text,
+    fontFamily: 'Inter_700Bold',
     marginBottom: spacing.md,
   },
   locationRow: {
@@ -288,7 +291,31 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textSecondary,
   },
+  detailCard: {
+    flexDirection: 'row',
+    padding: spacing.base,
+    backgroundColor: colors.background,
+    borderRadius: radii.card,
+    gap: spacing.md,
+    marginBottom: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.surface,
+  },
+  detailCardContent: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  detailCardHeading: {
+    ...typography.labelLarge,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  detailCardText: {
+    ...typography.bodyMedium,
+    color: colors.text,
+  },
   section: {
+    marginTop: spacing.lg,
     marginBottom: spacing.xl,
   },
   sectionHeading: {
