@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ResultSheet } from './ResultSheet';
+import { type SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * Success Result Sheet

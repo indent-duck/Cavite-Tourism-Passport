@@ -68,7 +68,7 @@ export const AlreadyScannedSheet = forwardRef<SimpleModalSheetRef, AlreadyScanne
     };
 
     return (
-      <ResultSheet ref={ref} snapPoints={['60%']}>
+      <ResultSheet ref={ref} heightPercentage={60}>
         <View style={styles.container}>
           {/* Info Icon */}
           <View style={styles.iconContainer}>

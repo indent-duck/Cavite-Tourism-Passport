@@ -8,8 +8,10 @@ import { getDistanceMeters } from "@/lib/geo";
 import {
     currentMockStamps,
     currentMockUser,
+    mockAboutCavite,
     mockActiveClaims,
     mockEvents,
+    mockExpressways,
     mockItineraries,
     mockPromoPeriod,
     mockRewards,
@@ -18,10 +20,12 @@ import {
     updateMockSettings
 } from "./mock-data";
 import {
+    AboutCaviteContent,
     ActiveClaim,
     Category,
     CollectStampResult,
     Event,
+    Expressway,
     Itinerary,
     POINTS_PER_CATEGORY,
     PromoPeriod,
@@ -324,10 +328,31 @@ export async function getEvents(): Promise<Event[]> {
 
 /**
  * Get a single event by ID
+ * Throws if event is not found
  */
-export async function getEventById(id: string): Promise<Event | null> {
+export async function getEventById(id: string): Promise<Event> {
   await randomDelay();
-  return mockEvents.find((event) => event.id === id) || null;
+  const event = mockEvents.find((e) => e.id === id);
+  if (!event) {
+    throw new Error(`Event not found: ${id}`);
+  }
+  return event;
+}
+
+/**
+ * Get all expressways
+ */
+export async function getExpressways(): Promise<Expressway[]> {
+  await randomDelay();
+  return mockExpressways;
+}
+
+/**
+ * Get About Cavite content
+ */
+export async function getAboutCavite(): Promise<AboutCaviteContent> {
+  await randomDelay();
+  return mockAboutCavite;
 }
 
 // ============================================================================

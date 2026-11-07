@@ -6,7 +6,7 @@ The Discover feature provides the Events calendar, About Cavite information, and
 
 ## Tasks
 
-- [ ] 1. Data layer (types, mock data, utility, API, hooks)
+- [x] 1. Data layer (types, mock data, utility, API, hooks)
   - [x] 1.1 Add types to src/data/types.ts
     - Event interface with startDate, endDate (ISO strings), municipality, address, coordinates, description, category ('Festival' | 'Cultural'), optional festivalStamp
     - Remove status and imageUrl fields, rename date to startDate, rename location to municipality
@@ -36,39 +36,39 @@ The Discover feature provides the Events calendar, About Cavite information, and
     - All descriptions: "Placeholder: awaiting Tourism Office content"
     - _Requirements: 6.2, 6.4_
 
-  - [ ] 1.4 Add mockAboutCavite in src/data/mock-data.ts
+  - [x] 1.4 Add mockAboutCavite in src/data/mock-data.ts
     - Three sections: "Historical and Topographical Riches", "Culinary Delights", "Cultural Immersions"
     - All content: "Placeholder: awaiting Tourism Office content"
     - _Requirements: 6.3, 6.4_
 
-  - [ ] 1.5 Create src/lib/event-utils.ts
+  - [x] 1.5 Create src/lib/event-utils.ts
     - getEventStatus(event): compute "happening" | "upcoming" | "past" from startDate and endDate (ISO strings), day-level comparison
     - formatEventDate(startDate, endDate?): format as "MMMM DD, YYYY" or "MMMM DD–DD, YYYY"
     - formatDateBadge(startDate, endDate?): format as "FEB 12" or "FEB 12-14"
     - Parse ISO strings with new Date()
     - _Requirements: 3.3, 5.2_
 
-  - [ ] 1.6 Add API functions to src/data/api.ts
+  - [x] 1.6 Add API functions to src/data/api.ts
     - getEventById(id): find in mockEvents, throw if not found, add artificial delay
     - getExpressways(): return mockExpressways with delay
     - getAboutCavite(): return mockAboutCavite with delay
     - _Requirements: 8.2_
 
-  - [ ] 1.7 Create hooks in src/hooks/
+  - [x] 1.7 Create hooks in src/hooks/
     - useEventById(id): React Query hook wrapping getEventById, query key ['events', id], staleTime 1 hour, enabled if id exists
     - useExpressways(): React Query hook wrapping getExpressways, query key ['expressways'], staleTime Infinity
     - useAboutCavite(): React Query hook wrapping getAboutCavite, query key ['about-cavite'], staleTime Infinity
     - _Requirements: 8.1_
 
-- [ ] 2. Components (CaviteMap placeholder, EventCard, ExpresswayCard, AboutCaviteContent)
-  - [ ] 2.1 Create src/components/map/CaviteMap.tsx
+- [x] 2. Components (CaviteMap placeholder, EventCard, ExpresswayCard, AboutCaviteContent)
+  - [x] 2.1 Create src/components/map/CaviteMap.tsx
     - Placeholder: rounded rectangle (radii.card), surface background, border
     - Props: height, selectedLabel, plus future props (pins, expressways, selectedId, onPinPress, interactive) unused
     - Content: map icon (Ionicons "map-outline", 48px, textSecondary), "Map coming soon" text (bodyMedium), selectedLabel if provided (labelLarge, primary color)
     - Comment at top: "Placeholder. Replace the body with a MapLibre implementation later and keep the props."
     - _Requirements: 7.4_
 
-  - [ ] 2.2 Create src/components/discover/EventCard.tsx
+  - [x] 2.2 Create src/components/discover/EventCard.tsx
     - Props: event, onPress
     - Card wrapper: white background, shadows.card, radii.card, pressable with feedback
     - Photo area: aspect ratio 16:9, surface background with calendar icon (local placeholder, not expo-image)
@@ -82,18 +82,7 @@ The Discover feature provides the Events calendar, About Cavite information, and
     - Festival stamp chip: outlined, primary color, labelMedium, text derived from POINTS_PER_CATEGORY.Festival (e.g., "+50 pts"), only if festivalStamp.available
     - _Requirements: 3.2, 7.1_
 
-  - [ ] 2.3 Create src/components/discover/ExpresswayCard.tsx
-    - Props: expressway, selected, onPress
-    - Card wrapper: white background, border (1px, gray; 2px primary if selected), radii.card, pressable
-    - Selected state: primary border, primary background with 5% opacity
-    - Icon: Ionicons "git-network-outline", 24px, textSecondary
-    - Name: headlineMedium, text color
-    - Location span: bodySmall, textSecondary
-    - Description: bodyMedium, textSecondary, 2 lines max with ellipsis
-    - Padding: spacing.base, gap: spacing.sm
-    - _Requirements: 4.5, 7.2_
-
-  - [ ] 2.4 Create src/components/discover/AboutCaviteContent.tsx
+  - [x] 2.3 Create src/components/discover/AboutCaviteContent.tsx
     - Props: onEventPress
     - Local state: selectedExpresswayId (string | null)
     - Vertical layout with spacing.xxl between major sections
@@ -108,8 +97,8 @@ The Discover feature provides the Events calendar, About Cavite information, and
     - Pass selectedLabel to CaviteMap: `Selected: ${expressway.name}`
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 7.3_
 
-- [ ] 3. Discover tab screen
-  - [ ] 3.1 Replace src/app/(tabs)/discover.tsx placeholder
+- [x] 3. Discover tab screen
+  - [x] 3.1 Replace src/app/(tabs)/discover.tsx placeholder
     - ScreenContainer with scrollable, withTabBarPadding, edges=['left', 'right']
     - Local state: selectedView ('events' | 'about'), default 'events'
     - SegmentedControl at top: options "Events" and "About Cavite", onValueChange updates selectedView
@@ -124,8 +113,8 @@ The Discover feature provides the Events calendar, About Cavite information, and
     - Use useEvents hook for event data
     - _Requirements: 2.1, 3.1, 3.2, 3.3, 3.4, 4.1-4.5, 9.1, 9.2_
 
-- [ ] 4. Event Information screen
-  - [ ] 4.1 Replace src/app/events/[id].tsx placeholder
+- [x] 4. Event Information screen
+  - [x] 4.1 Replace src/app/events/[id].tsx placeholder
     - ScreenContainer with scrollable, showHeader, headerTitle "Event Information", default edges
     - Use useLocalSearchParams to get id, useEventById(id) for data
     - Loading state: show ActivityIndicator while event loads
@@ -145,7 +134,7 @@ The Discover feature provides the Events calendar, About Cavite information, and
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 9.3_
 
 - [ ] 5. Checkpoint (testing, validation, DIFFERENCES.md)
-  - [ ] 5.1 Run lint and TypeScript
+  - [x] 5.1 Run lint and TypeScript
     - npx expo lint (must pass)
     - npx tsc --noEmit (must pass)
     - Fix any errors before proceeding

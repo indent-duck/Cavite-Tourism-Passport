@@ -4,6 +4,7 @@ import { InvalidQrSheet } from '@/components/scanner/InvalidQrSheet';
 import { LocationFailedSheet } from '@/components/scanner/LocationFailedSheet';
 import { NoInternetSheet } from '@/components/scanner/NoInternetSheet';
 import { ScannerViewfinder } from '@/components/scanner/ScannerViewfinder';
+import { type SimpleModalSheetRef } from '@/components/scanner/SimpleModalSheet';
 import { SuccessSheet } from '@/components/scanner/SuccessSheet';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';

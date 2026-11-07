@@ -30,7 +30,7 @@ export interface LocationFailedSheetProps {
 export const LocationFailedSheet = forwardRef<SimpleModalSheetRef, LocationFailedSheetProps>(
   ({ targetSiteName, targetMunicipality, onRetry, onDismiss }, ref) => {
     return (
-      <ResultSheet ref={ref} snapPoints={['70%']}>
+      <ResultSheet ref={ref} heightPercentage={70}>
         <View style={styles.container}>
           {/* Warning Icon */}
           <View style={styles.iconContainer}>

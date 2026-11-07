@@ -1,4 +1,5 @@
 import {
+    AboutCaviteContent,
     Event,
     Expressway,
     FAQ,
@@ -458,6 +459,24 @@ export const mockExpressways: Expressway[] = [
     description: "Placeholder: awaiting Tourism Office content",
   },
 ];
+
+// About Cavite content
+export const mockAboutCavite: AboutCaviteContent = {
+  sections: [
+    {
+      heading: "Historical and Topographical Riches",
+      content: "Placeholder: awaiting Tourism Office content",
+    },
+    {
+      heading: "Culinary Delights",
+      content: "Placeholder: awaiting Tourism Office content",
+    },
+    {
+      heading: "Cultural Immersions",
+      content: "Placeholder: awaiting Tourism Office content",
+    },
+  ],
+};
 
 // Rewards catalog
 // Note: Juan has 450 pts with stamps from Dining, Staycation, and Heritage only (missing Adventure).

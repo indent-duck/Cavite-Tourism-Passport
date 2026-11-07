@@ -26,7 +26,7 @@ export interface InvalidQrSheetProps {
 export const InvalidQrSheet = forwardRef<SimpleModalSheetRef, InvalidQrSheetProps>(
   ({ onTryAgain, onCancel }, ref) => {
     return (
-      <ResultSheet ref={ref} snapPoints={['70%']}>
+      <ResultSheet ref={ref} heightPercentage={70}>
         <View style={styles.container}>
           {/* Error Icon */}
           <View style={styles.iconContainer}>

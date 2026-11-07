@@ -28,7 +28,7 @@ export interface NoInternetSheetProps {
 export const NoInternetSheet = forwardRef<SimpleModalSheetRef, NoInternetSheetProps>(
   ({ onRetry, onClose }, ref) => {
     return (
-      <ResultSheet ref={ref} snapPoints={['60%']}>
+      <ResultSheet ref={ref} heightPercentage={60}>
         <View style={styles.container}>
           {/* Offline Icon */}
           <View style={styles.iconContainer}>
