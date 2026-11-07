@@ -1,5 +1,6 @@
 import {
     Event,
+    Expressway,
     FAQ,
     Itinerary,
     PromoPeriod,
@@ -346,83 +347,115 @@ export const mockItineraries: Itinerary[] = [
 ];
 
 // Events
+// Event dates are relative to now for testing status computation
 export const mockEvents: Event[] = [
+  // Happening now (started yesterday, ends tomorrow)
   {
     id: "event-001",
-    title: "Cavite City Charter Day",
-    date: new Date("2027-03-10"),
-    endDate: new Date("2027-03-12"),
-    location: "Cavite City Plaza",
-    address: "Plaza Soledad, Cavite City",
-    latitude: 14.4791,
-    longitude: 120.8973,
-    description:
-      "Three-day celebration of Cavite City's charter anniversary with cultural programs, street dancing, and food festivals",
-    imageUrl: "https://picsum.photos/seed/event1/800/600",
-    status: "happening",
+    title: "Sample Town Festival - Amadeo",
+    startDate: new Date(Date.now() - 86400000).toISOString(), // Started yesterday
+    endDate: new Date(Date.now() + 86400000).toISOString(), // Ends tomorrow
+    municipality: "Amadeo",
+    address: "Amadeo Municipal Plaza, Amadeo, Cavite",
+    latitude: 14.1719,
+    longitude: 120.9236,
+    description: "Placeholder: awaiting Tourism Office content",
+    category: "Festival",
     festivalStamp: {
       pointsBonus: 50,
       available: true,
     },
   },
+  // Upcoming festival (~30 days from now)
   {
     id: "event-002",
-    title: "Regada Water Festival",
-    date: new Date("2027-05-14"),
-    endDate: new Date("2027-05-15"),
-    location: "Cavite City",
-    address: "Streets of Cavite City",
-    latitude: 14.4791,
-    longitude: 120.8973,
-    description:
-      "Traditional water-splashing festival celebrating San Roque, featuring street processions and water battles",
-    imageUrl: "https://picsum.photos/seed/event2/800/600",
-    status: "upcoming",
+    title: "Sample Town Festival - Maragondon",
+    startDate: new Date(Date.now() + 86400000 * 30).toISOString(),
+    municipality: "Maragondon",
+    address: "Maragondon Town Plaza, Maragondon, Cavite",
+    latitude: 14.2675,
+    longitude: 120.7361,
+    description: "Placeholder: awaiting Tourism Office content",
+    category: "Festival",
     festivalStamp: {
       pointsBonus: 50,
       available: true,
     },
   },
+  // Upcoming festival (~60 days from now, multi-day)
   {
     id: "event-003",
-    title: "Pahimis Festival",
-    date: new Date("2027-08-20"),
-    endDate: new Date("2027-08-22"),
-    location: "Kawit",
-    address: "Kawit Municipal Hall",
-    latitude: 14.4444,
-    longitude: 120.9028,
-    description:
-      "Harvest festival showcasing local agricultural products, crafts, and traditional performances",
-    imageUrl: "https://picsum.photos/seed/event3/800/600",
-    status: "upcoming",
+    title: "Sample Town Festival - Cavite City",
+    startDate: new Date(Date.now() + 86400000 * 60).toISOString(),
+    endDate: new Date(Date.now() + 86400000 * 62).toISOString(), // 3-day event
+    municipality: "Cavite City",
+    address: "Plaza Soledad, Cavite City, Cavite",
+    latitude: 14.4791,
+    longitude: 120.8973,
+    description: "Placeholder: awaiting Tourism Office content",
+    category: "Festival",
+    festivalStamp: {
+      pointsBonus: 50,
+      available: true,
+    },
   },
+  // Upcoming festival (~90 days from now)
   {
     id: "event-004",
-    title: "Tagaytay Arts & Crafts Fair",
-    date: new Date("2027-04-15"),
-    endDate: new Date("2027-04-17"),
-    location: "People's Park",
-    address: "People's Park in the Sky, Tagaytay City",
-    latitude: 14.1095,
-    longitude: 120.9745,
-    description:
-      "Annual showcase of local artisans, painters, and craftspeople with live demonstrations",
-    imageUrl: "https://picsum.photos/seed/event4/800/600",
-    status: "upcoming",
-  },
-  {
-    id: "event-005",
-    title: "Independence Day Commemoration",
-    date: new Date("2027-06-12"),
-    location: "Aguinaldo Shrine",
-    address: "Emilio Aguinaldo Highway, Kawit, Cavite",
+    title: "Sample Town Festival - Kawit",
+    startDate: new Date(Date.now() + 86400000 * 90).toISOString(),
+    municipality: "Kawit",
+    address: "Emilio Aguinaldo Shrine, Kawit, Cavite",
     latitude: 14.4444,
     longitude: 120.9028,
-    description:
-      "Annual flag-raising ceremony and cultural program at the birthplace of Philippine independence",
-    imageUrl: "https://picsum.photos/seed/event5/800/600",
-    status: "upcoming",
+    description: "Placeholder: awaiting Tourism Office content",
+    category: "Festival",
+  },
+  // Upcoming cultural event (~120 days from now)
+  {
+    id: "event-005",
+    title: "Sample Cultural Event - General Trias",
+    startDate: new Date(Date.now() + 86400000 * 120).toISOString(),
+    municipality: "General Trias",
+    address: "General Trias City Hall, General Trias, Cavite",
+    latitude: 14.3859,
+    longitude: 120.8812,
+    description: "Placeholder: awaiting Tourism Office content",
+    category: "Cultural",
+  },
+  // Upcoming cultural event (~150 days from now)
+  {
+    id: "event-006",
+    title: "Sample Cultural Event - Tagaytay City",
+    startDate: new Date(Date.now() + 86400000 * 150).toISOString(),
+    municipality: "Tagaytay City",
+    address: "People's Park in the Sky, Tagaytay City, Cavite",
+    latitude: 14.1095,
+    longitude: 120.9745,
+    description: "Placeholder: awaiting Tourism Office content",
+    category: "Cultural",
+  },
+];
+
+// Expressways
+export const mockExpressways: Expressway[] = [
+  {
+    id: "expressway-001",
+    name: "CAVITEX",
+    locationSpan: "placeholder, to be confirmed",
+    description: "Placeholder: awaiting Tourism Office content",
+  },
+  {
+    id: "expressway-002",
+    name: "CAVITEX C5 Link",
+    locationSpan: "placeholder, to be confirmed",
+    description: "Placeholder: awaiting Tourism Office content",
+  },
+  {
+    id: "expressway-003",
+    name: "CALAX",
+    locationSpan: "placeholder, to be confirmed",
+    description: "Placeholder: awaiting Tourism Office content",
   },
 ];
 

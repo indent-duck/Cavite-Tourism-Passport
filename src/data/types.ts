@@ -74,20 +74,46 @@ export interface Itinerary {
 export interface Event {
   id: string;
   title: string;
-  date: Date;
-  endDate?: Date; // For multi-day festivals
-  location: string;
+  startDate: string; // ISO format
+  endDate?: string; // ISO format, for multi-day events
+  municipality: string;
   address: string;
   latitude: number;
   longitude: number;
   description: string;
-  imageUrl: string;
-  status: "upcoming" | "happening" | "past";
+  category: 'Festival' | 'Cultural';
   festivalStamp?: {
     // Only for festivals offering stamps
     pointsBonus: number;
     available: boolean;
   };
+}
+
+// Expressway info
+export interface Expressway {
+  id: string;
+  name: string;
+  locationSpan: string; // e.g., "placeholder, to be confirmed"
+  description: string;
+}
+
+// About Cavite content
+export interface AboutCaviteSection {
+  heading: string;
+  content: string;
+}
+
+export interface AboutCaviteContent {
+  sections: AboutCaviteSection[];
+}
+
+// Map pin (stub for future map implementation)
+export interface MapPin {
+  id: string;
+  category: 'partner' | 'heritage' | 'signature-food';
+  latitude: number;
+  longitude: number;
+  label: string;
 }
 
 // Reward
