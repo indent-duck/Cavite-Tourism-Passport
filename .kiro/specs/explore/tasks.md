@@ -137,14 +137,14 @@ The Explore feature provides the primary discovery interface for browsing partne
 
 - [ ] 5. Itinerary Detail screen
 
-  - [ ] 5.1 Create itineraries/[id] route
+  - [x] 5.1 Create itineraries/[id] route
 
     - Check design image `itinerary_detail.png` for visible tab bar
     - If tab bar is visible, create route as `src/app/(tabs)/itineraries/[id].tsx`, else create as `src/app/itineraries/[id].tsx`
     - Use default export (required by Expo Router)
     - *Requirements: 4.1*
 
-  - [ ] 5.2 Implement header and progress card
+  - [x] 5.2 Implement header and progress card
 
     - Get id from useLocalSearchParams, call useItineraryById(id), useStamps(), useSites()
     - Derive stop sites from itinerary.siteIds, calculate stampedCount, totalStops (siteIds.length), pointsAvailable, pointsCollected, percentage, pointsRemaining
@@ -153,7 +153,7 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Render ItineraryProgressCard with derived values
     - *Requirements: 4.2.1, 4.2.2*
 
-  - [ ] 5.3 Implement timeline with stops
+  - [x] 5.3 Implement timeline with stops
 
     - Map stop sites to TimelineStopCard components
     - Pass site, stopNumber, isStamped (from stamps), points (from POINTS_PER_CATEGORY), onPress
@@ -161,7 +161,7 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Wire stop card onPress to router.push(`/sites/${site.id}`)
     - *Requirements: 4.2.3*
 
-  - [ ] 5.4 Add states and styles
+  - [x] 5.4 Add states and styles
 
     - Add loading/error/not-found states with ActivityIndicator, icon, message, retry button
     - Use ScreenContainer with default top/left/right edges plus bottom inset
