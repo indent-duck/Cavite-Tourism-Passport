@@ -1,53 +1,213 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { OperatingHoursCard } from '@/components/explore/OperatingHoursCard';
+import { SiteDescription } from '@/components/explore/SiteDescription';
+import { SiteHeader } from '@/components/explore/SiteHeader';
+import { CaviteMap } from '@/components/map/CaviteMap';
+import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
+import { useSiteById } from '@/hooks/useSiteById';
+import { useStamps } from '@/hooks/useStamps';
+import { openInMaps } from '@/lib/open-maps';
 import { colors, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 
 /**
- * Site Information Panel (Placeholder)
+ * Site Information Panel
  * 
- * Detail screen showing complete site information.
- * Implemented in Sites spec.
+ * Detail screen showing complete site information including:
+ * - Header with visited badge, name, category, points, address
+ * - Single placeholder photo
+ * - Description section
+ * - Operating hours
+ * 
+ * Validates: Requirements 3.2
  */
 export default function SiteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: site, isLoading: siteLoading, error: siteError, refetch: refetchSite } = useSiteById(id);
+  const { data: stamps, isLoading: stampsLoading } = useStamps();
 
+  // Derive visited state from stamps
+  const isVisited = React.useMemo(() => {
+    if (!stamps || !site) return false;
+    return stamps.some(stamp => stamp.siteId === site.id);
+  }, [stamps, site]);
+
+  const isLoading = siteLoading || stampsLoading;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            title: 'Site Information',
+            headerShown: true,
+            headerBackTitle: 'Back',
+          }}
+        />
+        <ScreenContainer
+          scrollable={false}
+          edges={['top', 'left', 'right', 'bottom']}
+          testID="site-detail-screen"
+        >
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        </ScreenContainer>
+      </>
+    );
+  }
+
+  // Error state
+  if (siteError) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            title: 'Site Information',
+            headerShown: true,
+            headerBackTitle: 'Back',
+          }}
+        />
+        <ScreenContainer
+          scrollable={false}
+          edges={['top', 'left', 'right', 'bottom']}
+          testID="site-detail-screen"
+        >
+          <View style={styles.centerContainer}>
+            <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+            <Text style={styles.errorTitle}>Unable to load site</Text>
+            <Text style={styles.errorMessage}>{siteError.message}</Text>
+            <Button title="Retry" onPress={() => refetchSite()} variant="primary" />
+          </View>
+        </ScreenContainer>
+      </>
+    );
+  }
+
+  // Not found state
+  if (!site) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            title: 'Site Information',
+            headerShown: true,
+            headerBackTitle: 'Back',
+          }}
+        />
+        <ScreenContainer
+          scrollable={false}
+          edges={['top', 'left', 'right', 'bottom']}
+          testID="site-detail-screen"
+        >
+          <View style={styles.centerContainer}>
+            <Ionicons name="location-outline" size={48} color={colors.textSecondary} />
+            <Text style={styles.emptyTitle}>Site not found</Text>
+            <Text style={styles.emptyMessage}>
+              The site you&apos;re looking for could not be found.
+            </Text>
+          </View>
+        </ScreenContainer>
+      </>
+    );
+  }
+
+  // Main content
   return (
-    <ScreenContainer
-      scrollable={true}
-      edges={['left', 'right']}
-      testID="site-detail-screen"
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>Site Detail</Text>
-        <Text style={styles.subtitle}>Site ID: {id}</Text>
-        <Text style={styles.description}>Site information panel coming soon</Text>
-      </View>
-    </ScreenContainer>
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Site Information',
+          headerShown: true,
+          headerBackTitle: 'Back',
+        }}
+      />
+      <ScreenContainer
+        scrollable={true}
+        edges={['top', 'left', 'right', 'bottom']}
+        testID="site-detail-screen"
+      >
+        {/* Single placeholder photo */}
+        <Image
+          source={require('@/assets/images/react-logo.png')}
+          style={styles.photo}
+          resizeMode="cover"
+        />
+
+        {/* Site header with visited badge, name, category, points, address */}
+        <SiteHeader site={site} isVisited={isVisited} />
+
+        {/* Description section */}
+        <SiteDescription category={site.category} description={site.description} />
+
+        {/* Operating hours card */}
+        <OperatingHoursCard operatingHours={site.operatingHours} />
+
+        {/* Location map and button */}
+        <View style={styles.locationSection}>
+          <CaviteMap height={200} />
+          <Text style={styles.coordinates}>
+            {site.latitude.toFixed(6)}, {site.longitude.toFixed(6)}
+          </Text>
+          <Button
+            title="Open in Maps"
+            onPress={() => openInMaps(site.latitude, site.longitude, site.name)}
+            variant="primary"
+            fullWidth
+          />
+        </View>
+      </ScreenContainer>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.base,
   },
-  title: {
-    ...typography.headlineLarge,
+  photo: {
+    width: '100%',
+    height: 240,
+    backgroundColor: colors.surface,
+  },
+  errorTitle: {
+    ...typography.headlineMedium,
     color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    ...typography.bodyMedium,
-    color: colors.primary,
+    marginTop: spacing.md,
     marginBottom: spacing.xs,
-    fontWeight: '600',
+    textAlign: 'center',
   },
-  description: {
+  errorMessage: {
     ...typography.bodyMedium,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  emptyTitle: {
+    ...typography.headlineMedium,
+    color: colors.text,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    ...typography.bodyMedium,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  locationSection: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+  coordinates: {
+    ...typography.bodySmall,
     color: colors.textSecondary,
     textAlign: 'center',
   },

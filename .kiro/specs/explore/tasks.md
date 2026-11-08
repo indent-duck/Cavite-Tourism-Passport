@@ -103,14 +103,14 @@ The Explore feature provides the primary discovery interface for browsing partne
 
 - [ ] 4. Site Information screen
 
-  - [ ] 4.1 Create or replace sites/[id] route
+  - [x] 4.1 Create or replace sites/[id] route
 
     - Check design image `site_information_full_view.png` for visible tab bar
     - If tab bar is visible, create route as `src/app/(tabs)/sites/[id].tsx`, else create as `src/app/sites/[id].tsx`
     - Use default export (required by Expo Router)
     - *Requirements: 3.1*
 
-  - [ ] 4.2 Implement Site Information layout
+  - [x] 4.2 Implement Site Information layout
 
     - Get id from useLocalSearchParams, call useSiteById(id) and useStamps()
     - Derive isVisited from stamps
@@ -121,14 +121,14 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Render OperatingHoursCard component (hours from site.operatingHours only, no "closed days")
     - *Requirements: 3.2*
 
-  - [ ] 4.3 Add location map and button
+  - [x] 4.3 Add location map and button
 
     - Render CaviteMap placeholder at fixed height
     - Display coordinates below map
     - Render "Open in Maps" button, import openInMaps from `@/lib/open-maps`, call with site.latitude, site.longitude, site.name
     - *Requirements: 3.2.5*
 
-  - [ ] 4.4 Add states and styles
+  - [x] 4.4 Add states and styles
 
     - Add loading/error/not-found states with ActivityIndicator, icon, message, retry button
     - Use ScreenContainer with default top/left/right edges plus bottom inset
