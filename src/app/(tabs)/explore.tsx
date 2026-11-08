@@ -126,15 +126,37 @@ export default function ExploreScreen() {
     >
       <View style={styles.content}>
         {/* SegmentedControl Toggle (Requirement 2.1, 7.1) */}
-        <SegmentedControl
-          options={[
-            { label: 'Sites', value: 'Sites' },
-            { label: 'Itineraries', value: 'Itineraries' },
-          ]}
-          selectedValue={activeView}
-          onValueChange={(value) => setActiveView(value as 'Sites' | 'Itineraries')}
-          testID="explore-segmented-control"
-        />
+        <View style={styles.segmentedControlWrapper}>
+          <SegmentedControl
+            options={[
+              {
+                label: 'Sites',
+                value: 'Sites',
+                icon: (
+                  <Ionicons
+                    name="location"
+                    size={16}
+                    color={activeView === 'Sites' ? colors.background : colors.textSecondary}
+                  />
+                ),
+              },
+              {
+                label: 'Itineraries',
+                value: 'Itineraries',
+                icon: (
+                  <Ionicons
+                    name="map-outline"
+                    size={16}
+                    color={activeView === 'Itineraries' ? colors.background : colors.textSecondary}
+                  />
+                ),
+              },
+            ]}
+            selectedValue={activeView}
+            onValueChange={(value) => setActiveView(value as 'Sites' | 'Itineraries')}
+            testID="explore-segmented-control"
+          />
+        </View>
         
         {/* Sites View */}
         {activeView === 'Sites' && (
@@ -285,6 +307,9 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingTop: spacing.sm,
+  },
+  segmentedControlWrapper: {
+    marginBottom: spacing.md,
   },
   chipsScrollView: {
     marginTop: spacing.md,

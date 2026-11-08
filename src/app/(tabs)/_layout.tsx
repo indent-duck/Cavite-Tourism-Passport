@@ -129,8 +129,8 @@ export default function TabsLayout() {
   const pathname = usePathname();
   const { data: user } = useCurrentUser();
 
-  // Show PromoChip only on Explore and Passport tabs
-  const showPromoChip = pathname === '/explore' || pathname === '/passport';
+  // Show PromoChip only on Explore, Passport, and Discover tabs
+  const showPromoChip = pathname === '/explore' || pathname === '/passport' || pathname === '/discover';
 
   const handlePointsPress = () => {
     router.push('/rewards' as any);

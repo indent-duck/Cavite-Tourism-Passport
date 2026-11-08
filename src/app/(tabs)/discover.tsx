@@ -31,7 +31,7 @@ export default function DiscoverScreen() {
       testID="discover-screen"
     >
       {/* Segmented control */}
-      <View style={styles.segmentedControlContainer}>
+      <View style={styles.segmentedControlWrapper}>
         <SegmentedControl
           options={[
             {
@@ -40,7 +40,7 @@ export default function DiscoverScreen() {
               icon: (
                 <MaterialCommunityIcons
                   name="party-popper"
-                  size={14}
+                  size={16}
                   color={selectedView === 'events' ? colors.background : colors.textSecondary}
                 />
               ),
@@ -51,7 +51,7 @@ export default function DiscoverScreen() {
               icon: (
                 <MaterialCommunityIcons
                   name="map"
-                  size={14}
+                  size={16}
                   color={selectedView === 'about' ? colors.background : colors.textSecondary}
                 />
               ),
@@ -184,10 +184,8 @@ function AboutCaviteView({ eventsQuery, expresswaysQuery }: AboutCaviteViewProps
 }
 
 const styles = StyleSheet.create({
-  segmentedControlContainer: {
-    paddingHorizontal: spacing.base,
-    paddingTop: 0,
-    paddingBottom: spacing.sm,
+  segmentedControlWrapper: {
+    marginBottom: spacing.md,
   },
   centerContainer: {
     flex: 1,
