@@ -67,13 +67,13 @@ The Explore feature provides the primary discovery interface for browsing partne
 
 - [ ] 3. Explore tab screen
 
-  - [~] 3.1 Replace explore placeholder
+  - [x] 3.1 Replace explore placeholder
 
     - Read `src/app/(tabs)/explore.tsx`, replace placeholder content
     - Add local state: activeView ("Sites" | "Itineraries", default "Sites"), searchQuery (string, default ""), selectedCategory ("All" | Category, default "All"), isMapView (boolean, default false)
     - *Requirements: 2.1*
 
-  - [ ] 3.2 Implement Sites view
+  - [x] 3.2 Implement Sites view
 
     - Call useSites(), useStamps()
     - Filter sites client-side by searchQuery (name, address, municipality, case-insensitive) and selectedCategory
@@ -84,7 +84,7 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Wire site card onPress to router.push(`/sites/${site.id}`)
     - *Requirements: 2.2, 7.2*
 
-  - [ ] 3.3 Implement Itineraries view
+  - [x] 3.3 Implement Itineraries view
 
     - Call useItineraries(), useStamps(), useSites()
     - Derive progress for each itinerary: stampedCount, totalStops (from siteIds.length), pointsAvailable, percentage
@@ -93,7 +93,7 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Wire itinerary card onPress to router.push(`/itineraries/${itinerary.id}`)
     - *Requirements: 2.3, 7.2*
 
-  - [ ] 3.4 Add SegmentedControl and styles
+  - [x] 3.4 Add SegmentedControl and styles
 
     - Import SegmentedControl from `@/components/ui`, options ["Sites", "Itineraries"], bind to activeView
     - Use ScreenContainer with scrollable, tab bar padding, left and right edges
