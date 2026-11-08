@@ -319,6 +319,7 @@ const styles = StyleSheet.create({
   },
   chipsContainer: {
     gap: spacing.sm,
+    paddingRight: spacing.base * 2, // Extra padding for last chip to have proper right margin
   },
   viewSwitchRow: {
     alignItems: 'flex-end',
