@@ -107,28 +107,40 @@ export function PointsSummaryCard({
                 key={category}
                 style={[
                   styles.chip,
-                  { borderColor: isCollected ? categoryColor : colors.border },
+                  {
+                    borderWidth: isCollected ? 0 : 1,
+                    borderColor: isCollected ? "transparent" : colors.border,
+                    backgroundColor: isCollected
+                      ? colors.successLight
+                      : "#FFF3E0",
+                  },
                 ]}
               >
                 {/* Category Icon */}
                 <Ionicons
                   name={categoryIcon}
                   size={16}
-                  color={categoryColor}
+                  color={isCollected ? colors.successDark : colors.accent}
                   style={styles.chipIcon}
                 />
 
                 {/* Category Info */}
                 <View style={styles.chipContent}>
-                  <Text style={styles.chipName}>{category}</Text>
+                  <Text
+                    style={[
+                      styles.chipName,
+                      {
+                        color: isCollected ? colors.successDark : colors.accent,
+                      },
+                    ]}
+                  >
+                    {category}
+                  </Text>
                   <Text
                     style={[
                       styles.chipStatus,
                       {
-                        color: isCollected ? colors.success : "#92400E",
-                        backgroundColor: isCollected
-                          ? "transparent"
-                          : "#FEF3C7",
+                        color: isCollected ? colors.successDark : colors.accent,
                       },
                     ]}
                   >
@@ -142,7 +154,7 @@ export function PointsSummaryCard({
                 <Ionicons
                   name={isCollected ? "checkmark-circle" : "alert-circle"}
                   size={18}
-                  color={isCollected ? colors.success : "#D97706"}
+                  color={isCollected ? colors.successDark : colors.accent}
                   style={styles.statusIcon}
                 />
               </View>
@@ -172,17 +184,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   balanceLabel: {
-    ...typography.labelSmall,
-    fontSize: 11,
-    fontWeight: "600",
+    ...typography.labelMedium,
+    fontFamily: "Inter_700Bold",
     color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   pointsRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
   },
   pointsNumber: {
     fontSize: 34,
@@ -219,7 +230,7 @@ const styles = StyleSheet.create({
   milestonesLabel: {
     ...typography.labelMedium,
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
     color: colors.primary,
   },
   badge: {
@@ -266,7 +277,7 @@ const styles = StyleSheet.create({
   chipName: {
     ...typography.labelMedium,
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
     color: colors.text,
     marginBottom: 2,
   },

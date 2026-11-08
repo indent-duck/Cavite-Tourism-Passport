@@ -1,15 +1,14 @@
-import { colors, radii, shadows, spacing, typography } from '@/theme';
-import { POINTS_PER_CATEGORY, type Category, type Site } from '@/data/types';
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { POINTS_PER_CATEGORY, type Category, type Site } from "@/data/types";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * SiteCard Component
- * 
+ *
  * Displays site summary with visited indicator.
  * Used in Explore tab Sites view.
- * 
+ *
  * Validates: Requirements 2.2.4, 5.2
  */
 
@@ -60,7 +59,7 @@ export function SiteCard({ site, isVisited, onPress, testID }: SiteCardProps) {
       {/* Photo with overlays */}
       <View style={styles.photoContainer}>
         <Image
-          source={require('@/assets/images/react-logo.png')}
+          source={require("@/assets/images/react-logo.png")}
           style={styles.photo}
           resizeMode="cover"
         />
@@ -73,7 +72,11 @@ export function SiteCard({ site, isVisited, onPress, testID }: SiteCardProps) {
         {/* Visited indicator overlay (bottom-left) */}
         {isVisited && (
           <View style={styles.visitedBadge}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+            <Ionicons
+              name="checkmark-circle"
+              size={16}
+              color={colors.success}
+            />
             <Text style={styles.visitedText}>Visited</Text>
           </View>
         )}
@@ -110,7 +113,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
     borderRadius: radii.card,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: spacing.md,
     ...shadows.card,
   },
@@ -118,16 +121,16 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   photoContainer: {
-    width: '100%',
+    width: "100%",
     height: 200,
-    position: 'relative',
+    position: "relative",
   },
   photo: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   categoryTag: {
-    position: 'absolute',
+    position: "absolute",
     top: spacing.sm,
     left: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -137,15 +140,15 @@ const styles = StyleSheet.create({
   categoryText: {
     ...typography.labelSmall,
     color: colors.background,
-    fontFamily: 'Inter_700Bold',
-    textTransform: 'uppercase',
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase",
   },
   visitedBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: spacing.sm,
     left: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.background,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -155,10 +158,10 @@ const styles = StyleSheet.create({
   visitedText: {
     ...typography.labelMedium,
     color: colors.success,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
   },
   pointsBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: spacing.sm,
     right: spacing.sm,
     backgroundColor: colors.accent,
@@ -169,7 +172,7 @@ const styles = StyleSheet.create({
   pointsText: {
     ...typography.labelMedium,
     color: colors.background,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
   },
   content: {
     padding: spacing.base,
@@ -177,12 +180,12 @@ const styles = StyleSheet.create({
   name: {
     ...typography.titleMedium,
     color: colors.text,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
     marginBottom: spacing.xs,
   },
   addressRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   addressIcon: {
     marginTop: 2,
@@ -191,7 +194,7 @@ const styles = StyleSheet.create({
   address: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: "Inter_400Regular",
     flex: 1,
   },
 });

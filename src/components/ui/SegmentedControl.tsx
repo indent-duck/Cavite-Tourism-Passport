@@ -1,6 +1,6 @@
-import { colors, radii, spacing, typography } from '@/theme';
-import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, radii, spacing, typography } from "@/theme";
+import { ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export interface SegmentedControlOption {
   label: string;
@@ -45,15 +45,10 @@ export function SegmentedControl({
             accessibilityLabel={option.label}
           >
             {option.icon && (
-              <View style={styles.iconContainer}>
-                {option.icon}
-              </View>
+              <View style={styles.iconContainer}>{option.icon}</View>
             )}
             <Text
-              style={[
-                styles.optionText,
-                isSelected && styles.optionTextActive,
-              ]}
+              style={[styles.optionText, isSelected && styles.optionTextActive]}
               numberOfLines={1}
             >
               {option.label}
@@ -67,16 +62,16 @@ export function SegmentedControl({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.surface,
     borderRadius: radii.button,
     padding: spacing.xs,
   },
   option: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -91,15 +86,15 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radii.button,
   },
   optionActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
     borderRadius: radii.button,
   },
   optionPressed: {
     opacity: 0.7,
   },
   iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   optionText: {
     ...typography.labelSmall,

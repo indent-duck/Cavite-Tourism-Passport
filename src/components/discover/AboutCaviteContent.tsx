@@ -250,8 +250,8 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: {
     ...typography.labelMedium,
-    fontFamily: 'Inter_700Bold',
     color: '#FFB800',
+    fontFamily: 'Inter_700Bold',
     letterSpacing: 1,
   },
   heroTitle: {

@@ -1,21 +1,21 @@
-import { colors, radii, spacing, typography } from '@/theme';
-import * as Haptics from 'expo-haptics';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, radii, spacing, typography } from "@/theme";
+import * as Haptics from "expo-haptics";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export interface ChipProps {
   label: string;
   selected?: boolean;
   onPress?: () => void;
   icon?: React.ReactNode;
-  size?: 'default' | 'small';
+  size?: "default" | "small";
   testID?: string;
 }
 
 /**
  * Chip Component
- * 
+ *
  * A pill-shaped button used for filters, categories, and toggles.
- * 
+ *
  * Visual specifications:
  * - Height: 36px (default), 32px (small)
  * - Border radius: 16px (pill shape)
@@ -23,18 +23,18 @@ export interface ChipProps {
  * - Selected: primary blue background, white text, no border
  * - Padding: 12px horizontal (default), 8px horizontal (small)
  * - Icon spacing: 6px from text
- * 
+ *
  * Note: When providing an icon, ensure it uses the appropriate color:
  * - Unselected state: colors.primary
  * - Selected state: colors.background (white)
- * 
+ *
  * Usage:
  * ```tsx
  * <Chip label="Dining" selected onPress={() => {}} />
- * <Chip 
- *   label="Heritage" 
- *   icon={<Ionicons name="restaurant" size={16} color={colors.primary} />} 
- *   size="small" 
+ * <Chip
+ *   label="Heritage"
+ *   icon={<Ionicons name="restaurant" size={16} color={colors.primary} />}
+ *   size="small"
  * />
  * ```
  */
@@ -43,7 +43,7 @@ export function Chip({
   selected = false,
   onPress,
   icon,
-  size = 'default',
+  size = "default",
   testID,
 }: ChipProps) {
   const handlePress = () => {
@@ -53,7 +53,7 @@ export function Chip({
     }
   };
 
-  const isSmall = size === 'small';
+  const isSmall = size === "small";
   const textColor = selected ? colors.background : colors.primary;
 
   return (
@@ -71,11 +71,7 @@ export function Chip({
       accessibilityState={{ selected }}
       accessibilityLabel={label}
     >
-      {icon && (
-        <View style={styles.iconContainer}>
-          {icon}
-        </View>
-      )}
+      {icon && <View style={styles.iconContainer}>{icon}</View>}
       <Text
         style={[
           styles.label,
@@ -92,9 +88,9 @@ export function Chip({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: radii.chip,
   },
   containerDefault: {
@@ -111,7 +107,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   containerSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
     borderWidth: 0,
   },
   containerPressed: {
@@ -122,7 +118,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.labelLarge,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   labelSmall: {
     ...typography.labelMedium,

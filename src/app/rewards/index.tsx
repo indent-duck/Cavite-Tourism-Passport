@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.headlineMedium,
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: "Inter_700Bold",
     color: colors.text,
     letterSpacing: -0.3,
   },

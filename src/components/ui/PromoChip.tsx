@@ -1,7 +1,6 @@
-import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { colors, radii, spacing, typography } from '@/theme';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
+import { colors, radii, spacing, typography } from '@/theme';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 /**
  * PromoChip Component
@@ -71,9 +70,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
-    backgroundColor: colors.background,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: radii.chip,
   },
   dot: {
@@ -85,6 +84,7 @@ const styles = StyleSheet.create({
   },
   text: {
     ...typography.bodySmall,
-    color: colors.text,
+    color: colors.background,
+    fontWeight: '500',
   },
 });

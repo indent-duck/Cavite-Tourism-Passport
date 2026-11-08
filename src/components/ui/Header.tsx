@@ -1,16 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, shadows, spacing, typography } from '@/theme';
+import { colors, shadows, spacing, typography } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Header Component
- * 
+ *
  * Displays user name and points with optional right slot for additional content.
  * Applied at the top of tab screens with safe area handling.
- * 
+ *
  * Validates: Requirements 1.2.7 (Header Component)
  */
 
@@ -84,24 +84,26 @@ export function Header({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.base,
-    backgroundColor: colors.background,
+    backgroundColor: colors.primary,
     ...shadows.tabBar,
   },
   leftContent: {
     flex: 1,
   },
   userName: {
-    ...typography.titleMedium,
-    color: colors.text,
+    ...typography.headlineLarge,
+    color: colors.background,
+    fontFamily: "Inter_700Bold",
+    fontSize: 18,
   },
   pointsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 2,
   },
   pointsText: {
@@ -111,5 +113,6 @@ const styles = StyleSheet.create({
   },
   rightSlot: {
     marginLeft: spacing.md,
+    marginTop: spacing.sm,
   },
 });

@@ -1,38 +1,43 @@
-import { OperatingHoursCard } from '@/components/explore/OperatingHoursCard';
-import { SiteDescription } from '@/components/explore/SiteDescription';
-import { SiteHeader } from '@/components/explore/SiteHeader';
-import { CaviteMap } from '@/components/map/CaviteMap';
-import { Button } from '@/components/ui/Button';
-import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { useSiteById } from '@/hooks/useSiteById';
-import { useStamps } from '@/hooks/useStamps';
-import { openInMaps } from '@/lib/open-maps';
-import { colors, spacing, typography } from '@/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import React from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { OperatingHoursCard } from "@/components/explore/OperatingHoursCard";
+import { SiteDescription } from "@/components/explore/SiteDescription";
+import { SiteHeader } from "@/components/explore/SiteHeader";
+import { CaviteMap } from "@/components/map/CaviteMap";
+import { Button } from "@/components/ui/Button";
+import { ScreenContainer } from "@/components/ui/ScreenContainer";
+import { useSiteById } from "@/hooks/useSiteById";
+import { useStamps } from "@/hooks/useStamps";
+import { openInMaps } from "@/lib/open-maps";
+import { colors, spacing, typography } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import React from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 
 /**
  * Site Information Panel
- * 
+ *
  * Detail screen showing complete site information including:
  * - Header with visited badge, name, category, points, address
  * - Single placeholder photo
  * - Description section
  * - Operating hours
- * 
+ *
  * Validates: Requirements 3.2
  */
 export default function SiteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: site, isLoading: siteLoading, error: siteError, refetch: refetchSite } = useSiteById(id);
+  const {
+    data: site,
+    isLoading: siteLoading,
+    error: siteError,
+    refetch: refetchSite,
+  } = useSiteById(id);
   const { data: stamps, isLoading: stampsLoading } = useStamps();
 
   // Derive visited state from stamps
   const isVisited = React.useMemo(() => {
     if (!stamps || !site) return false;
-    return stamps.some(stamp => stamp.siteId === site.id);
+    return stamps.some((stamp) => stamp.siteId === site.id);
   }, [stamps, site]);
 
   const isLoading = siteLoading || stampsLoading;
@@ -42,7 +47,7 @@ export default function SiteDetailScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)/explore');
+      router.replace("/(tabs)/explore");
     }
   };
 
@@ -54,7 +59,7 @@ export default function SiteDetailScreen() {
         headerTitle="Site Information"
         onBackPress={handleBackPress}
         scrollable={false}
-        edges={['top', 'left', 'right', 'bottom']}
+        edges={["top", "left", "right", "bottom"]}
         testID="site-detail-screen"
       >
         <View style={styles.centerContainer}>
@@ -72,14 +77,22 @@ export default function SiteDetailScreen() {
         headerTitle="Site Information"
         onBackPress={handleBackPress}
         scrollable={false}
-        edges={['top', 'left', 'right', 'bottom']}
+        edges={["top", "left", "right", "bottom"]}
         testID="site-detail-screen"
       >
         <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={colors.error}
+          />
           <Text style={styles.errorTitle}>Unable to load site</Text>
           <Text style={styles.errorMessage}>{siteError.message}</Text>
-          <Button title="Retry" onPress={() => refetchSite()} variant="primary" />
+          <Button
+            title="Retry"
+            onPress={() => refetchSite()}
+            variant="primary"
+          />
         </View>
       </ScreenContainer>
     );
@@ -93,11 +106,15 @@ export default function SiteDetailScreen() {
         headerTitle="Site Information"
         onBackPress={handleBackPress}
         scrollable={false}
-        edges={['top', 'left', 'right', 'bottom']}
+        edges={["top", "left", "right", "bottom"]}
         testID="site-detail-screen"
       >
         <View style={styles.centerContainer}>
-          <Ionicons name="location-outline" size={48} color={colors.textSecondary} />
+          <Ionicons
+            name="location-outline"
+            size={48}
+            color={colors.textSecondary}
+          />
           <Text style={styles.emptyTitle}>Site not found</Text>
           <Text style={styles.emptyMessage}>
             The site you&apos;re looking for could not be found.
@@ -114,12 +131,12 @@ export default function SiteDetailScreen() {
       headerTitle="Site Information"
       onBackPress={handleBackPress}
       scrollable={true}
-      edges={['top', 'left', 'right', 'bottom']}
+      edges={["top", "left", "right", "bottom"]}
       testID="site-detail-screen"
     >
       {/* Single placeholder photo */}
       <Image
-        source={require('@/assets/images/react-logo.png')}
+        source={require("@/assets/images/react-logo.png")}
         style={styles.photo}
         resizeMode="cover"
       />
@@ -128,7 +145,10 @@ export default function SiteDetailScreen() {
       <SiteHeader site={site} isVisited={isVisited} />
 
       {/* Description section */}
-      <SiteDescription category={site.category} description={site.description} />
+      <SiteDescription
+        category={site.category}
+        description={site.description}
+      />
 
       {/* Operating hours card */}
       <OperatingHoursCard operatingHours={site.operatingHours} />
@@ -153,12 +173,12 @@ export default function SiteDetailScreen() {
 const styles = StyleSheet.create({
   centerContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing.base,
   },
   photo: {
-    width: '100%',
+    width: "100%",
     height: 240,
     backgroundColor: colors.surface,
   },
@@ -167,25 +187,25 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorMessage: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
     marginBottom: spacing.lg,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyTitle: {
     ...typography.headlineMedium,
     color: colors.text,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyMessage: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   locationSection: {
     marginTop: spacing.lg,
@@ -194,6 +214,6 @@ const styles = StyleSheet.create({
   coordinates: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

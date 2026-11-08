@@ -42,6 +42,7 @@ The Explore feature provides the primary discovery interface for browsing partne
 
     - Create `src/components/explore/SearchBar.tsx`: TextInput with search icon, clear button when value present, props value/onChangeText/placeholder/onClear
     - Create `src/components/explore/ListMapSwitch.tsx`: button with icon and label, toggles between "Map"/"List" and map/list icons
+    - **Layout note:** SearchBar and ListMapSwitch are rendered in the same horizontal row (flexDirection: 'row') with gap between them. SearchBar takes flex: 1, ListMapSwitch has fixed width.
     - Use existing Chip component from `@/components/ui` for category chips (no new CategoryChips component)
     - *Requirements: 2.2.1, 5.1*
 

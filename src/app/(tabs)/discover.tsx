@@ -30,48 +30,50 @@ export default function DiscoverScreen() {
       withTabBarPadding={true}
       testID="discover-screen"
     >
-      {/* Segmented control */}
-      <View style={styles.segmentedControlWrapper}>
-        <SegmentedControl
-          options={[
-            {
-              label: 'Events',
-              value: 'events',
-              icon: (
-                <MaterialCommunityIcons
-                  name="party-popper"
-                  size={16}
-                  color={selectedView === 'events' ? colors.background : colors.textSecondary}
-                />
-              ),
-            },
-            {
-              label: 'About Cavite',
-              value: 'about',
-              icon: (
-                <MaterialCommunityIcons
-                  name="map"
-                  size={16}
-                  color={selectedView === 'about' ? colors.background : colors.textSecondary}
-                />
-              ),
-            },
-          ]}
-          selectedValue={selectedView}
-          onValueChange={(value) => setSelectedView(value as 'events' | 'about')}
-          testID="discover-segmented-control"
-        />
-      </View>
+      <View style={styles.container}>
+        {/* Segmented control */}
+        <View style={styles.segmentedControlWrapper}>
+          <SegmentedControl
+            options={[
+              {
+                label: 'Events',
+                value: 'events',
+                icon: (
+                  <MaterialCommunityIcons
+                    name="party-popper"
+                    size={16}
+                    color={selectedView === 'events' ? colors.background : colors.textSecondary}
+                  />
+                ),
+              },
+              {
+                label: 'About Cavite',
+                value: 'about',
+                icon: (
+                  <MaterialCommunityIcons
+                    name="map"
+                    size={16}
+                    color={selectedView === 'about' ? colors.background : colors.textSecondary}
+                  />
+                ),
+              },
+            ]}
+            selectedValue={selectedView}
+            onValueChange={(value) => setSelectedView(value as 'events' | 'about')}
+            testID="discover-segmented-control"
+          />
+        </View>
 
-      {/* Conditional render based on selected view */}
-      {selectedView === 'events' ? (
-        <EventsView query={eventsQuery} />
-      ) : (
-        <AboutCaviteView
-          eventsQuery={eventsQuery}
-          expresswaysQuery={expresswaysQuery}
-        />
-      )}
+        {/* Conditional render based on selected view */}
+        {selectedView === 'events' ? (
+          <EventsView query={eventsQuery} />
+        ) : (
+          <AboutCaviteView
+            eventsQuery={eventsQuery}
+            expresswaysQuery={expresswaysQuery}
+          />
+        )}
+      </View>
     </ScreenContainer>
   );
 }
@@ -184,6 +186,9 @@ function AboutCaviteView({ eventsQuery, expresswaysQuery }: AboutCaviteViewProps
 }
 
 const styles = StyleSheet.create({
+  container: {
+    // No top padding
+  },
   segmentedControlWrapper: {
     marginBottom: spacing.md,
   },
