@@ -24,10 +24,10 @@ Explore tab with Sites/Itineraries toggle, site information, and itinerary detai
 
 | File | Stitch Screen ID | Route |
 |------|-----------------|-------|
-| `explore_cavite_full_view_sites.png/html` | TBD | `app/(tabs)/explore.tsx` (Sites view) |
-| `explore_itineraries_full_view.png/html` | TBD | `app/(tabs)/explore.tsx` (Itineraries view) |
-| `site_information_full_view.png/html` | TBD | `app/sites/[id].tsx` |
-| `itinerary_detail.png/html` | TBD | `app/itineraries/[id].tsx` |
+| `explore_cavite_full_view_sites.png/html` | Not yet generated | `app/(tabs)/explore.tsx` (Sites view) |
+| `explore_itineraries_full_view.png/html` | Not yet generated | `app/(tabs)/explore.tsx` (Itineraries view) |
+| `site_information_full_view.png/html` | Not yet generated | `app/sites/[id].tsx` |
+| `itinerary_detail.png/html` | Not yet generated | `app/itineraries/[id].tsx` |
 
 ### 05-passport/
 **Note:** Passport is a scrollable screen (identity section at top, then stamps below), not a page-turn booklet.

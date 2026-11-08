@@ -101,12 +101,9 @@ Screens (routes)
 - `onChangeText: (text: string) => void`
 - `placeholder?: string`
 - `onClear?: () => void`
-- `showFilter?: boolean`
-- `onFilterPress?: () => void`
 
 **Behavior:**
 - Shows clear button (X) when text is present
-- Optional filter icon on right
 - Dismisses keyboard on scroll
 - Does not prevent card taps when open
 
@@ -118,7 +115,7 @@ Screens (routes)
 - `onPress: () => void`
 
 **Layout:**
-- Photo (tall aspect, fills width)
+- Local placeholder photo (tall aspect, fills width)
 - Category tag overlay (top-left)
 - Visited indicator overlay (bottom-left, conditional)
 - Name (below photo)
@@ -135,7 +132,7 @@ Screens (routes)
 - `onPress: () => void`
 
 **Layout:**
-- Thumbnail
+- Local placeholder thumbnail
 - Tour type and stop count badges (overlays)
 - Title and description
 - Points available
@@ -153,7 +150,7 @@ Screens (routes)
 **Layout:**
 - Circle with number or green check
 - Stop badge, category, status tag
-- Thumbnail
+- Local placeholder thumbnail
 - Name, description
 - Operating hours with icon
 
@@ -210,9 +207,6 @@ Returns all sites, optionally filtered by category.
 
 #### getSiteById(id: string): Promise<Site | null>
 Returns single site or null if not found.
-
-#### searchSites(query: string): Promise<Site[]>
-Filters sites by name, address, or municipality (case-insensitive).
 
 #### getItineraries(): Promise<Itinerary[]>
 Returns all itineraries (4 total).
@@ -314,6 +308,8 @@ const getItineraryProgress = (
     sites.find(s => s.id === id)
   ).filter(Boolean) as Site[];
   
+  const totalStops = stops.length;
+  
   const stampedCount = stops.filter(stop => 
     stamps.some(stamp => stamp.siteId === stop.id)
   ).length;
@@ -326,12 +322,12 @@ const getItineraryProgress = (
     .filter(stop => stamps.some(stamp => stamp.siteId === stop.id))
     .reduce((sum, stop) => sum + POINTS_PER_CATEGORY[stop.category], 0);
   
-  const percentage = Math.round((stampedCount / stops.length) * 100);
+  const percentage = Math.round((stampedCount / totalStops) * 100);
   const pointsRemaining = pointsAvailable - pointsCollected;
   
   return {
     stampedCount,
-    totalStops: stops.length,
+    totalStops,
     pointsAvailable,
     pointsCollected,
     percentage,
@@ -339,6 +335,8 @@ const getItineraryProgress = (
   };
 };
 ```
+
+Note: Total stops is derived from siteIds.length, not stored in the itinerary type.
 
 ### Stop Status
 ```typescript
@@ -487,8 +485,8 @@ For detail screens:
 - No virtualization needed in this phase
 
 ### Image Loading
-- Use local placeholders
-- No remote image optimization needed
+- Use local placeholders only
+- No remote images in this spec
 
 ## Testing Strategy
 
@@ -554,3 +552,5 @@ For detail screens:
 - Stamps auto-update screens via React Query invalidation.
 - The design images show 5 site cards in the list, but the mock data may have more or fewer sites. The UI should adapt to the actual data count.
 - Festival stamps (50 pts bonus) do not appear in the Site category filter or in itinerary stop calculations for this spec.
+- Timeline dashed connector is drawn with react-native-svg (Line with strokeDasharray), not CSS borders.
+- All images are local placeholders. No imageUrl field in Site or Itinerary types.

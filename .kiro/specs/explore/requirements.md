@@ -25,7 +25,6 @@ Each site must have:
 - `latitude` (number): GPS coordinate
 - `longitude` (number): GPS coordinate
 - `operatingHours` (string): Operating hours text (optional)
-- `imageUrl` (string): Placeholder image URL
 
 **Constraints:**
 - At least 3 sites per category (Dining, Staycation, Adventure, Heritage)
@@ -39,8 +38,6 @@ Each itinerary must have:
 - `type` ("Day Tour" | "Overnight Tour"): Tour type
 - `description` (string): Short description (optional)
 - `siteIds` (string[]): Ordered array of site IDs
-- `stops` (number): Count of stops (derived from siteIds.length)
-- `imageUrl` (string): Placeholder thumbnail
 - `duration` (string): Duration text (optional)
 
 **Constraints:**
@@ -76,10 +73,8 @@ The Explore screen renders:
 #### 2.2.1 Search Bar
 - Text input with search icon
 - Clear button (X) when text is present
-- Filter icon on the right
 - Searches site name, address, and municipality (case-insensitive)
 - Client-side filtering over useSites data
-- No API call on every keystroke
 - Keyboard dismisses on scroll without covering list
 - Taps on cards work while keyboard is open
 
@@ -142,11 +137,8 @@ Four cards shown (from useItineraries):
 
 ### 3.2 Content
 
-#### 3.2.1 Photo Gallery
+#### 3.2.1 Photo
 - Single local placeholder photo
-- Photo counter "1 / 4" (if design shows gallery)
-- Left/right navigation arrows (if multiple photos)
-- Thumbnail rail below main photo (if design shows it)
 
 #### 3.2.2 Header Info
 - "Visited" indicator (green badge, derived from useStamps) if stamped
@@ -162,17 +154,10 @@ Four cards shown (from useItineraries):
 #### 3.2.4 Operating Hours
 - Clock icon, "Operating Hours" heading
 - Hours text from site.operatingHours
-- Closed days if shown in design (e.g., "Closed on Mondays" in red)
 
-#### 3.2.5 Amenities Grid (Optional)
-- Only if design shows it
-- 2x2 grid of info cards (Admission, Guided Tours, Dress Code, Parking)
-- Generic placeholder content
-
-#### 3.2.6 Location Map & Button
-- Only if design shows map preview
+#### 3.2.5 Location Map & Button
 - CaviteMap placeholder (fixed height)
-- Coordinates display (if shown)
+- Coordinates display
 - "Open in Maps" button using shared handler
 
 **States:**
@@ -185,6 +170,8 @@ Four cards shown (from useItineraries):
 - No contact details
 - No save/bookmark button
 - No profile icons
+- No photo gallery with multiple images
+- No amenities grid
 
 ## 4. Itinerary Detail Screen Requirements
 
@@ -216,7 +203,7 @@ Shows:
 **No "Circuit Stamp" or completion bonus mentioned**
 
 #### 4.2.3 Timeline
-Vertical list of stops with dashed connector:
+Vertical list of stops with dashed connector (drawn with react-native-svg Line using strokeDasharray):
 - Stop number or green check circle
 - Stop card for each site:
   - "Stop N" badge
@@ -251,19 +238,19 @@ Vertical list of stops with dashed connector:
 - Keyboard dismiss on scroll
 
 ### 5.2 Site Card Component
-- Photo, category tag, name, address, points badge
+- Local placeholder photo, category tag, name, address, points badge
 - Visited indicator (conditional)
 - Pressable wrapper
 
 ### 5.3 Itinerary Card Component
-- Thumbnail, tour type/stop count badges
+- Local placeholder thumbnail, tour type/stop count badges
 - Title, description, points
 - Progress bar and percentage
 
 ### 5.4 Itinerary Timeline Stop Card
 - Number or check circle
 - Stop info with status tag
-- Thumbnail, name, description, hours
+- Local placeholder thumbnail, name, description, hours
 - Pressable wrapper
 
 ### 5.5 Itinerary Progress Card
@@ -283,10 +270,11 @@ Vertical list of stops with dashed connector:
 All functions in `src/data/api.ts`:
 - `getSites(category?)`: Returns sites, optionally filtered
 - `getSiteById(id)`: Returns site or null
-- `searchSites(query)`: Filters by name, address, municipality
 - `getItineraries()`: Returns all itineraries
 - `getItineraryById(id)`: Returns itinerary or null
 - `getStamps()`: Returns user stamps
+
+Note: Search is client-side only, no API function needed.
 
 All return mock data after artificial delay. Screens never import mock-data or api directly.
 
@@ -356,11 +344,13 @@ From design HTML:
 
 ### 9.3 Omissions
 List in DIFFERENCES.md at checkpoint:
-- Operating hours (if not in data)
+- Photo gallery with multiple images, navigation arrows, thumbnails
+- Amenities grid (Admission, Guided Tours, Dress Code, Parking)
+- Closed days indicator in operating hours
 - Prices, ratings, reviews
 - Contact details
 - Travel times, distances
-- Completion bonuses
+- Completion bonuses or "Circuit Stamp" mentions
 - Any decorative elements from design not in docs/app.md
 
 ## 10. Constraints

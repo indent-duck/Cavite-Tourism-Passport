@@ -40,7 +40,6 @@ export interface Site {
   municipality: string;
   address: string;
   description: string;
-  imageUrl: string;
   latitude: number;
   longitude: number;
   operatingHours?: string;
@@ -63,11 +62,9 @@ export interface Itinerary {
   id: string;
   title: string;
   type: "Day Tour" | "Overnight Tour";
-  description: string;
-  duration: string; // e.g., "8 hours", "2 days"
-  imageUrl: string;
+  description?: string;
+  duration?: string; // e.g., "8 hours", "2 days"
   siteIds: string[]; // Ordered list of site IDs
-  stops: number; // Derived from siteIds.length
 }
 
 // Event/festival

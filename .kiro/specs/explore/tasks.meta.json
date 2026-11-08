@@ -1,0 +1,50 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Update types and mock data": [
+      {
+        "executionId": "8a46b964-55bd-44b0-be0f-588f1c11a356",
+        "chatSessionId": "sess_c8b63c3b-270e-4079-85c5-a82bf0c89c18",
+        "timestamp": 1794102435081
+      }
+    ],
+    "1.2 Add API functions and hooks": [
+      {
+        "executionId": "048dbef0-99bc-47d3-a039-00da4ce28b9d",
+        "chatSessionId": "sess_c0c38539-33a5-4557-9b19-fe05ecb67f18",
+        "timestamp": 1794102543807
+      },
+      {
+        "executionId": "048dbef0-99bc-47d3-a039-00da4ce28b9d",
+        "chatSessionId": "sess_c0c38539-33a5-4557-9b19-fe05ecb67f18",
+        "timestamp": 1794103027485
+      }
+    ],
+    "2.1 Search bar and list controls": [
+      {
+        "executionId": "83b73de9-ed56-4ec4-8ab4-6d5e303ba775",
+        "chatSessionId": "sess_070e46a8-97bb-494f-adb7-1ac372bffc78",
+        "timestamp": 1794103489522
+      },
+      {
+        "executionId": "83b73de9-ed56-4ec4-8ab4-6d5e303ba775",
+        "chatSessionId": "sess_070e46a8-97bb-494f-adb7-1ac372bffc78",
+        "timestamp": 1794103616273
+      }
+    ],
+    "2.2 Site and itinerary cards": [
+      {
+        "executionId": "31b45e99-f3ae-4e77-9c5a-5a6c5cfc0c78",
+        "chatSessionId": "sess_b49083d1-ce73-4a60-ac7d-03c3f114f632",
+        "timestamp": 1794104693995
+      }
+    ],
+    "2.4 Site information section components": [
+      {
+        "executionId": "5db08176-9cce-440a-8065-ced3d20c1064",
+        "chatSessionId": "sess_9ff47a8b-8a9a-4f0e-952e-4bdc12e48cab",
+        "timestamp": 1794105224287
+      }
+    ]
+  }
+}

@@ -5,10 +5,11 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { POINTS_PER_CATEGORY } from '@/data/types';
 import { useEventById } from '@/hooks/useEventById';
 import { formatEventDate, getEventStatus } from '@/lib/event-utils';
+import { openInMaps } from '@/lib/open-maps';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Linking, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Event Information Panel
@@ -82,15 +83,7 @@ export default function EventDetailScreen() {
   const statusColor = status === 'happening' ? colors.success : colors.primary;
 
   const handleOpenMaps = async () => {
-    const geoUri = `geo:${event.latitude},${event.longitude}?q=${encodeURIComponent(event.title)}`;
-    const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`;
-
-    try {
-      await Linking.openURL(geoUri);
-    } catch {
-      // Fallback to Google Maps
-      await Linking.openURL(fallbackUrl);
-    }
+    await openInMaps(event.latitude, event.longitude, event.title);
   };
 
   // Truncate address for button label (first part before comma)
