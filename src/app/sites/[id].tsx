@@ -9,7 +9,7 @@ import { useStamps } from '@/hooks/useStamps';
 import { openInMaps } from '@/lib/open-maps';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 
@@ -37,131 +37,116 @@ export default function SiteDetailScreen() {
 
   const isLoading = siteLoading || stampsLoading;
 
+  // Handle back navigation
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/explore');
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: 'Site Information',
-            headerShown: true,
-            headerBackTitle: 'Back',
-          }}
-        />
-        <ScreenContainer
-          scrollable={false}
-          edges={['top', 'left', 'right', 'bottom']}
-          testID="site-detail-screen"
-        >
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        </ScreenContainer>
-      </>
+      <ScreenContainer
+        showHeader
+        headerTitle="Site Information"
+        onBackPress={handleBackPress}
+        scrollable={false}
+        edges={['top', 'left', 'right', 'bottom']}
+        testID="site-detail-screen"
+      >
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </ScreenContainer>
     );
   }
 
   // Error state
   if (siteError) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: 'Site Information',
-            headerShown: true,
-            headerBackTitle: 'Back',
-          }}
-        />
-        <ScreenContainer
-          scrollable={false}
-          edges={['top', 'left', 'right', 'bottom']}
-          testID="site-detail-screen"
-        >
-          <View style={styles.centerContainer}>
-            <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
-            <Text style={styles.errorTitle}>Unable to load site</Text>
-            <Text style={styles.errorMessage}>{siteError.message}</Text>
-            <Button title="Retry" onPress={() => refetchSite()} variant="primary" />
-          </View>
-        </ScreenContainer>
-      </>
+      <ScreenContainer
+        showHeader
+        headerTitle="Site Information"
+        onBackPress={handleBackPress}
+        scrollable={false}
+        edges={['top', 'left', 'right', 'bottom']}
+        testID="site-detail-screen"
+      >
+        <View style={styles.centerContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+          <Text style={styles.errorTitle}>Unable to load site</Text>
+          <Text style={styles.errorMessage}>{siteError.message}</Text>
+          <Button title="Retry" onPress={() => refetchSite()} variant="primary" />
+        </View>
+      </ScreenContainer>
     );
   }
 
   // Not found state
   if (!site) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: 'Site Information',
-            headerShown: true,
-            headerBackTitle: 'Back',
-          }}
-        />
-        <ScreenContainer
-          scrollable={false}
-          edges={['top', 'left', 'right', 'bottom']}
-          testID="site-detail-screen"
-        >
-          <View style={styles.centerContainer}>
-            <Ionicons name="location-outline" size={48} color={colors.textSecondary} />
-            <Text style={styles.emptyTitle}>Site not found</Text>
-            <Text style={styles.emptyMessage}>
-              The site you&apos;re looking for could not be found.
-            </Text>
-          </View>
-        </ScreenContainer>
-      </>
+      <ScreenContainer
+        showHeader
+        headerTitle="Site Information"
+        onBackPress={handleBackPress}
+        scrollable={false}
+        edges={['top', 'left', 'right', 'bottom']}
+        testID="site-detail-screen"
+      >
+        <View style={styles.centerContainer}>
+          <Ionicons name="location-outline" size={48} color={colors.textSecondary} />
+          <Text style={styles.emptyTitle}>Site not found</Text>
+          <Text style={styles.emptyMessage}>
+            The site you&apos;re looking for could not be found.
+          </Text>
+        </View>
+      </ScreenContainer>
     );
   }
 
   // Main content
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'Site Information',
-          headerShown: true,
-          headerBackTitle: 'Back',
-        }}
+    <ScreenContainer
+      showHeader
+      headerTitle="Site Information"
+      onBackPress={handleBackPress}
+      scrollable={true}
+      edges={['top', 'left', 'right', 'bottom']}
+      testID="site-detail-screen"
+    >
+      {/* Single placeholder photo */}
+      <Image
+        source={require('@/assets/images/react-logo.png')}
+        style={styles.photo}
+        resizeMode="cover"
       />
-      <ScreenContainer
-        scrollable={true}
-        edges={['top', 'left', 'right', 'bottom']}
-        testID="site-detail-screen"
-      >
-        {/* Single placeholder photo */}
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={styles.photo}
-          resizeMode="cover"
+
+      {/* Site header with visited badge, name, category, points, address */}
+      <SiteHeader site={site} isVisited={isVisited} />
+
+      {/* Description section */}
+      <SiteDescription category={site.category} description={site.description} />
+
+      {/* Operating hours card */}
+      <OperatingHoursCard operatingHours={site.operatingHours} />
+
+      {/* Location map and button */}
+      <View style={styles.locationSection}>
+        <CaviteMap height={200} />
+        <Text style={styles.coordinates}>
+          {site.latitude.toFixed(6)}, {site.longitude.toFixed(6)}
+        </Text>
+        <Button
+          title="Open in Maps"
+          onPress={() => openInMaps(site.latitude, site.longitude, site.name)}
+          variant="primary"
+          fullWidth
         />
-
-        {/* Site header with visited badge, name, category, points, address */}
-        <SiteHeader site={site} isVisited={isVisited} />
-
-        {/* Description section */}
-        <SiteDescription category={site.category} description={site.description} />
-
-        {/* Operating hours card */}
-        <OperatingHoursCard operatingHours={site.operatingHours} />
-
-        {/* Location map and button */}
-        <View style={styles.locationSection}>
-          <CaviteMap height={200} />
-          <Text style={styles.coordinates}>
-            {site.latitude.toFixed(6)}, {site.longitude.toFixed(6)}
-          </Text>
-          <Button
-            title="Open in Maps"
-            onPress={() => openInMaps(site.latitude, site.longitude, site.name)}
-            variant="primary"
-            fullWidth
-          />
-        </View>
-      </ScreenContainer>
-    </>
+      </View>
+    </ScreenContainer>
   );
 }
 
