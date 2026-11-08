@@ -1,10 +1,10 @@
-<!DOCTYPE html><html class="h-full bg-background-canvas" lang="en" style=""><head>
+<!DOCTYPE html><html class="h-auto bg-[#faf9ff]" lang="en"><head>
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
 <title>Explore Cavite - Tourism Passport</title>
 <!-- Material Symbols & Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
@@ -88,79 +88,75 @@
     }
   </style>
 </head>
-<body class="flex flex-col font-sans text-on-surface bg-background-canvas max-w-[430px] mx-auto shadow-2xl relative select-none">
-<!-- TOP HEADER (Fixed on Android) -->
-<header class="top-0 inset-x-0 max-w-[430px] mx-auto z-40 bg-white border-b border-[#E5E7EB]">
+<body class="flex flex-col font-sans text-on-surface bg-[#faf9ff] max-w-[430px] mx-auto min-h-screen relative select-none">
+<!-- TOP HEADER -->
+<header class="w-full bg-[#faf9ff]">
 <!-- Android Status Bar Mock -->
-<div class="flex items-center justify-between px-4 pt-2 pb-1 text-on-surface font-semibold text-xs tracking-tight bg-white">
-<span class="">9:41</span>
-<div class="flex items-center gap-1.5 opacity-80">
+<div class="flex items-center justify-between px-5 pt-3 pb-1 text-[#0a1b39] font-semibold text-xs tracking-tight bg-transparent">
+<span class="font-bold text-[13px]">9:41</span>
+<div class="flex items-center gap-1.5 opacity-90">
 <span class="material-symbols-outlined text-[15px]">signal_cellular_4_bar</span>
 <span class="material-symbols-outlined text-[15px]">wifi</span>
 <span class="material-symbols-outlined text-[16px]">battery_std</span>
 </div>
 </div>
 <!-- User Header Row -->
-<div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#E5E7EB]">
+<div class="px-4 pt-2 pb-2.5 flex items-center justify-between">
 <div class="flex flex-col">
-<span class="text-base font-bold text-[#1B2A49] leading-tight tracking-tight">Juan Dela Cruz</span>
-<button class="inline-flex items-center gap-1.5 mt-0.5 text-left focus:outline-none group">
-<span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#F47B20]/15 text-[#F47B20]">
-<svg class="w-3 h-3 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-</svg>
-</span>
+<span class="text-[17px] font-bold text-[#0a1b39] leading-tight tracking-tight">Juan Dela Cruz</span>
+<div class="inline-flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[#F47B20] text-[15px]" style="font-variation-settings: 'FILL' 1;">star</span>
 <span class="text-sm font-bold text-[#F47B20] tracking-tight">450 pts</span>
-</button>
 </div>
-<div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#F4F6FA] border border-[#E5E7EB] text-xs font-semibold text-[#1B2A49] shadow-sm">
-<span class="w-1.5 h-1.5 rounded-full bg-[#2E9E5B]"></span>
-<span class="">Promo: Jan 1 - Mar 31, 2027</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f1f3ff] border border-border-divider text-[11px] font-semibold text-[#0a1b39] shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+<span class="leading-none">Promo: Jan 1 - Mar 31, 2027</span>
 </div>
 </div>
 <!-- Segmented Toggle: Sites / Itineraries -->
-<div class="px-4 py-3 bg-white">
-<div class="grid grid-cols-2 p-1 rounded-xl bg-surface-card border border-border-divider/50 shadow-inner" id="viewToggleGroup" role="tablist">
+<div class="px-4 py-1.5">
+<div class="grid grid-cols-2 p-1 rounded-xl bg-surface-card border border-border-divider/70 shadow-inner" id="viewToggleGroup" role="tablist">
 <button class="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white text-primary font-bold text-xs shadow-sm transition-all" id="tabSites" onclick="switchMainTab('sites')" type="button">
 <span class="material-symbols-outlined text-[16px]">location_on</span>
-<span class="">Sites</span>
+<span>Sites</span>
 </button>
 <button class="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-text-secondary hover:text-on-surface font-semibold text-xs transition-all" id="tabItineraries" onclick="switchMainTab('itineraries')" type="button">
 <span class="material-symbols-outlined text-[16px]">route</span>
-<span class="">Itineraries</span>
+<span>Itineraries</span>
 </button>
 </div>
 </div>
 </header>
-<!-- SCROLLABLE MAIN CONTENT -->
-<main class="px-4 pt-3 pb-24" id="mainContent">
+<!-- SCROLLABLE / FULL MAIN CONTENT -->
+<main class="px-4 pt-2 pb-6 flex-1" id="mainContent">
 <!-- ==================== SITES VIEW ==================== -->
 <section class="space-y-3" id="sitesView">
 <!-- Search Bar & List/Map Toggle -->
 <div class="flex items-center gap-2">
-<div class="flex-1 flex items-center h-10 px-3 rounded-xl bg-surface-card border border-border-divider focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<div class="flex-1 flex items-center h-10 px-3 rounded-xl bg-white border border-border-divider focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-sm transition-all">
 <span class="material-symbols-outlined text-outline text-[18px] mr-2">search</span>
 <input class="w-full bg-transparent text-xs text-on-surface placeholder:text-outline border-none focus:outline-none p-0 focus:ring-0" placeholder="Search partner sites, towns..." type="text">
-<button aria-label="Filter options" class="text-outline hover:text-primary transition-colors" type="button">
+<button aria-label="Filter options" class="text-outline hover:text-primary transition-colors flex items-center" type="button">
 <span class="material-symbols-outlined text-[18px]">tune</span>
 </button>
 </div>
 <!-- List / Map Toggle Switch -->
-<button class="h-10 px-3 flex items-center gap-1.5 rounded-xl bg-surface-card border border-border-divider text-primary font-semibold text-xs hover:bg-surface-container active:scale-95 transition-all shrink-0" id="mapListToggle" onclick="toggleMapListView()" type="button">
+<button class="h-10 px-3 flex items-center gap-1.5 rounded-xl bg-white border border-border-divider text-primary font-semibold text-xs shadow-sm hover:bg-surface-container active:scale-95 transition-all shrink-0" id="mapListToggle" onclick="toggleMapListView()" type="button">
 <span class="material-symbols-outlined text-[18px]" id="mapListIcon">map</span>
-<span class="" id="mapListText">Map</span>
+<span id="mapListText">Map</span>
 </button>
 </div>
 <!-- Category Filter Chips (Horizontal Scroll) -->
 <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 py-1" id="categoryChips">
-<button class="category-chip px-3.5 py-1.5 rounded-full bg-primary text-white text-xs font-semibold whitespace-nowrap shadow-sm" onclick="selectChip(this)" type="button">All</button>
-<button class="category-chip px-3.5 py-1.5 rounded-full bg-surface-card border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap" onclick="selectChip(this)" type="button">Dining</button>
-<button class="category-chip px-3.5 py-1.5 rounded-full bg-surface-card border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap" onclick="selectChip(this)" type="button">Staycation</button>
-<button class="category-chip px-3.5 py-1.5 rounded-full bg-surface-card border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap" onclick="selectChip(this)" type="button">Adventure</button>
-<button class="category-chip px-3.5 py-1.5 rounded-full bg-surface-card border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap" onclick="selectChip(this)" type="button">Heritage</button>
+<button class="category-chip px-4 py-1.5 rounded-full bg-[#003260] text-white text-xs font-semibold whitespace-nowrap shadow-sm" onclick="selectChip(this)" type="button">All</button>
+<button class="category-chip px-4 py-1.5 rounded-full bg-white border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap shadow-sm" onclick="selectChip(this)" type="button">Dining</button>
+<button class="category-chip px-4 py-1.5 rounded-full bg-white border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap shadow-sm" onclick="selectChip(this)" type="button">Staycation</button>
+<button class="category-chip px-4 py-1.5 rounded-full bg-white border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap shadow-sm" onclick="selectChip(this)" type="button">Adventure</button>
+<button class="category-chip px-4 py-1.5 rounded-full bg-white border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap shadow-sm" onclick="selectChip(this)" type="button">Heritage</button>
 </div>
 <!-- Site Cards Container -->
-<div class="space-y-3 pt-1" id="sitesCardsList">
+<div class="space-y-3.5 pt-1" id="sitesCardsList">
 <!-- Site 1: Aguinaldo Shrine, Kawit -->
 <article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm hover:shadow transition-shadow">
 <div class="relative w-full h-44 bg-surface-card overflow-hidden">
@@ -169,24 +165,24 @@
 <!-- Category & Points Badge -->
 <div class="absolute top-2.5 left-2.5">
 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 backdrop-blur-md text-white text-[11px] font-bold shadow">
-                Heritage · 50 pts
-              </span>
+              Heritage · 50 pts
+            </span>
 </div>
 <!-- Visited Indicator (Green Check) -->
 <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container text-white text-[11px] font-semibold shadow-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#00542a] text-white text-[11px] font-semibold shadow-sm">
 <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                Visited · Stamp collected
-              </span>
-<span class="w-6 h-6 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-secondary-container shadow">
+              Visited · Stamp collected
+            </span>
+<span class="w-6 h-6 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-[#F47B20] shadow">
 <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">stars</span>
 </span>
 </div>
 </div>
 <div class="p-3.5">
 <div class="flex items-start justify-between gap-2">
-<h3 class="font-bold text-sm text-primary leading-tight">Aguinaldo Shrine</h3>
-<span class="text-xs font-bold text-secondary-container shrink-0">+50 pts</span>
+<h3 class="font-bold text-sm text-[#003260] leading-tight">Aguinaldo Shrine</h3>
+<span class="text-xs font-bold text-[#F47B20] shrink-0">+50 pts</span>
 </div>
 <div class="flex items-center gap-1 text-text-secondary mt-1">
 <span class="material-symbols-outlined text-[15px] shrink-0 text-outline">location_on</span>
@@ -202,24 +198,24 @@
 <!-- Category & Points Badge -->
 <div class="absolute top-2.5 left-2.5">
 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 backdrop-blur-md text-white text-[11px] font-bold shadow">
-                Heritage · 50 pts
-              </span>
+              Heritage · 50 pts
+            </span>
 </div>
 <!-- Visited Indicator (Green Check) -->
 <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container text-white text-[11px] font-semibold shadow-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#00542a] text-white text-[11px] font-semibold shadow-sm">
 <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                Visited · Stamp collected
-              </span>
-<span class="w-6 h-6 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-secondary-container shadow">
+              Visited · Stamp collected
+            </span>
+<span class="w-6 h-6 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-[#F47B20] shadow">
 <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">stars</span>
 </span>
 </div>
 </div>
 <div class="p-3.5">
 <div class="flex items-start justify-between gap-2">
-<h3 class="font-bold text-sm text-primary leading-tight">Sample Ancestral House</h3>
-<span class="text-xs font-bold text-secondary-container shrink-0">+50 pts</span>
+<h3 class="font-bold text-sm text-[#003260] leading-tight">Sample Ancestral House</h3>
+<span class="text-xs font-bold text-[#F47B20] shrink-0">+50 pts</span>
 </div>
 <div class="flex items-center gap-1 text-text-secondary mt-1">
 <span class="material-symbols-outlined text-[15px] shrink-0 text-outline">location_on</span>
@@ -235,15 +231,15 @@
 <!-- Category & Points Badge -->
 <div class="absolute top-2.5 left-2.5">
 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 backdrop-blur-md text-white text-[11px] font-bold shadow">
-                Adventure · 100 pts
-              </span>
+              Adventure · 100 pts
+            </span>
 </div>
 <!-- Unvisited Indicator -->
 <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-on-surface-variant text-[11px] font-semibold shadow-sm">
 <span class="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
-                Unvisited
-              </span>
+              Unvisited
+            </span>
 <span class="w-6 h-6 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-outline shadow">
 <span class="material-symbols-outlined text-[15px]">bookmark_border</span>
 </span>
@@ -251,8 +247,8 @@
 </div>
 <div class="p-3.5">
 <div class="flex items-start justify-between gap-2">
-<h3 class="font-bold text-sm text-primary leading-tight">Picnic Grove</h3>
-<span class="text-xs font-bold text-secondary-container shrink-0">+100 pts</span>
+<h3 class="font-bold text-sm text-[#003260] leading-tight">Picnic Grove</h3>
+<span class="text-xs font-bold text-[#F47B20] shrink-0">+100 pts</span>
 </div>
 <div class="flex items-center gap-1 text-text-secondary mt-1">
 <span class="material-symbols-outlined text-[15px] shrink-0 text-outline">location_on</span>
@@ -268,24 +264,24 @@
 <!-- Category & Points Badge -->
 <div class="absolute top-2.5 left-2.5">
 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 backdrop-blur-md text-white text-[11px] font-bold shadow">
-                Dining · 150 pts
-              </span>
+              Dining · 150 pts
+            </span>
 </div>
 <!-- Visited Indicator (Green Check) -->
 <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container text-white text-[11px] font-semibold shadow-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#00542a] text-white text-[11px] font-semibold shadow-sm">
 <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                Visited · Stamp collected
-              </span>
-<span class="w-6 h-6 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-secondary-container shadow">
+              Visited · Stamp collected
+            </span>
+<span class="w-6 h-6 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-[#F47B20] shadow">
 <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">stars</span>
 </span>
 </div>
 </div>
 <div class="p-3.5">
 <div class="flex items-start justify-between gap-2">
-<h3 class="font-bold text-sm text-primary leading-tight">Sample Bulalo House</h3>
-<span class="text-xs font-bold text-secondary-container shrink-0">+150 pts</span>
+<h3 class="font-bold text-sm text-[#003260] leading-tight">Sample Bulalo House</h3>
+<span class="text-xs font-bold text-[#F47B20] shrink-0">+150 pts</span>
 </div>
 <div class="flex items-center gap-1 text-text-secondary mt-1">
 <span class="material-symbols-outlined text-[15px] shrink-0 text-outline">location_on</span>
@@ -301,24 +297,24 @@
 <!-- Category & Points Badge -->
 <div class="absolute top-2.5 left-2.5">
 <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/90 backdrop-blur-md text-white text-[11px] font-bold shadow">
-                Staycation · 200 pts
-              </span>
+              Staycation · 200 pts
+            </span>
 </div>
 <!-- Visited Indicator (Green Check) -->
 <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container text-white text-[11px] font-semibold shadow-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#00542a] text-white text-[11px] font-semibold shadow-sm">
 <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                Visited · Stamp collected
-              </span>
-<span class="w-6 h-6 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-secondary-container shadow">
+              Visited · Stamp collected
+            </span>
+<span class="w-6 h-6 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-[#F47B20] shadow">
 <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">stars</span>
 </span>
 </div>
 </div>
 <div class="p-3.5">
 <div class="flex items-start justify-between gap-2">
-<h3 class="font-bold text-sm text-primary leading-tight">Sample Ridge Resort</h3>
-<span class="text-xs font-bold text-secondary-container shrink-0">+200 pts</span>
+<h3 class="font-bold text-sm text-[#003260] leading-tight">Sample Ridge Resort</h3>
+<span class="text-xs font-bold text-[#F47B20] shrink-0">+200 pts</span>
 </div>
 <div class="flex items-center gap-1 text-text-secondary mt-1">
 <span class="material-symbols-outlined text-[15px] shrink-0 text-outline">location_on</span>
@@ -377,11 +373,11 @@
 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-secondary-container text-white text-[10px] font-bold shadow">
-              Day tour
-            </span>
+            Day tour
+          </span>
 <span class="px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur text-primary text-[10px] font-bold">
-              4 stops
-            </span>
+            4 stops
+          </span>
 </div>
 </div>
 <div class="p-3.5 space-y-2.5">
@@ -392,136 +388,60 @@
 </div>
 <span class="text-xs font-bold text-secondary-container shrink-0">+350 pts</span>
 </div>
-<!-- Progress Bar -->
 <div class="space-y-1">
 <div class="flex items-center justify-between text-[11px]">
 <span class="text-tertiary-container font-bold flex items-center gap-1">
 <span class="material-symbols-outlined text-[13px]">task_alt</span>
-                2 of 4 stops stamped
-              </span>
+              2 of 4 stops stamped
+            </span>
 <span class="text-text-secondary font-semibold">50%</span>
 </div>
 <div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
 <div class="h-full bg-tertiary-container rounded-full" style="width: 50%;"></div>
-</div>
-</div>
-</div>
-</article>
-<!-- Card 2: Day Tour B -->
-<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
-<div class="relative w-full h-36 overflow-hidden">
-<img alt="Amadeo Cavite coffee and farm trail" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDnukrEZS9nDH36Mr9f4hOcQeFDoLOJJ970wdp66vkxx746upDdwg1JEHmm1xhUSSVwbrIzin4FgiGX8FnxN_G_4Ky-19SI664l9QBpEyjzAQHfH6YUDBIRHquIftqROQC_iNZmEs8j4QFEsNQPpbxstP8-SAekjHxHwARPyNikfnnlOMLkGYg_ih0x4DYDGDb7hDBAR1PYoyGSayp01FFrAeJWYkE9r_l09G2X4erq8A5UCyDqjDi-g">
-<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-<div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-<span class="px-2.5 py-0.5 rounded-full bg-secondary-container text-white text-[10px] font-bold shadow">
-              Day tour
-            </span>
-<span class="px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur text-primary text-[10px] font-bold">
-              3 stops
-            </span>
-</div>
-</div>
-<div class="p-3.5 space-y-2.5">
-<div class="flex items-start justify-between gap-2">
-<div>
-<h3 class="font-bold text-sm text-primary leading-snug">Day Tour B: Agro-Coffee Trail</h3>
-<p class="text-xs text-text-secondary mt-0.5">Discover Amadeo's artisanal roasters, bee farms, and organic farm-to-table lunch.</p>
-</div>
-<span class="text-xs font-bold text-secondary-container shrink-0">+280 pts</span>
-</div>
-<!-- Progress Bar -->
-<div class="space-y-1">
-<div class="flex items-center justify-between text-[11px]">
-<span class="text-text-secondary font-semibold flex items-center gap-1">
-<span class="material-symbols-outlined text-[13px]">pending</span>
-                0 of 3 stops stamped
-              </span>
-<span class="text-text-secondary font-semibold">0%</span>
-</div>
-<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
-<div class="h-full bg-tertiary-container rounded-full" style="width: 0%;"></div>
-</div>
-</div>
-</div>
-</article>
-<!-- Card 3: Overnight Tour A -->
-<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
-<div class="relative w-full h-36 overflow-hidden">
-<img alt="Ridge and glamping in Alfonso Cavite" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQyZJadH03N8-pm9Gp5BFe2RhPRX2OstLhQ2BDZmkQBCEmQYW0X2_6RRE0SjWxh-huVJJq0I6_4XJ1SoiWoYxfQ6jC8PBRBtu1JVsG-en2bfTzfItMLSMr1AtiTYG3KfzepxC3ljO-7Rlt7AHuYQkAAZ-5nifoSHsZ2AWqJbP-nLoUzsQOiX8VAbKMBZpg9map8Wkf7JDcKg9oCQ98N40NkWvFTgkcEZ32Vy5NaMZ4QpwFTLjediXgYg">
-<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-<div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-<span class="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold shadow">
-              Overnight
-            </span>
-<span class="px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur text-primary text-[10px] font-bold">
-              6 stops
-            </span>
-</div>
-</div>
-<div class="p-3.5 space-y-2.5">
-<div class="flex items-start justify-between gap-2">
-<div>
-<h3 class="font-bold text-sm text-primary leading-snug">Overnight Tour A: Ridge &amp; Valley Escape</h3>
-<p class="text-xs text-text-secondary mt-0.5">Two-day scenic getaway with lakeside staycation, dining hotspots, and sunrise meditation.</p>
-</div>
-<span class="text-xs font-bold text-secondary-container shrink-0">+500 pts</span>
-</div>
-<!-- Progress Bar -->
-<div class="space-y-1">
-<div class="flex items-center justify-between text-[11px]">
-<span class="text-tertiary-container font-bold flex items-center gap-1">
-<span class="material-symbols-outlined text-[13px]">task_alt</span>
-                3 of 6 stops stamped
-              </span>
-<span class="text-text-secondary font-semibold">50%</span>
-</div>
-<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
-<div class="h-full bg-tertiary-container rounded-full" style="width: 50%;"></div>
-</div>
-</div>
-</div>
-</article>
-<!-- Card 4: Overnight Tour B -->
-<article class="rounded-2xl bg-white border border-border-divider overflow-hidden shadow-sm">
-<div class="relative w-full h-36 overflow-hidden">
-<img alt="Corregidor and Coastal Forts in Cavite" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvalMhVyIqnu3X3ogsHqQsCcRM8wccdyo1h3QKZRLmkfZApAUw9kl0jFIHB6ievHuSUP_yxchypw8TfdK2V1Hf3bT0faV1XiG-ABi9hL_0ESb1BwaMviUjSs_MekxEOrn7UysYevLIizs9BxldVmNxDu--sxiTJIRE3u54-sVU87R8M_0NrnYUGD1Gvq0b8RsxtLDGPYmwDYQWuTR1SmihArhoJsuXEQaQeTRwo4d__AcqRTrYjN1vVg">
-<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-<div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-<span class="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold shadow">
-              Overnight
-            </span>
-<span class="px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur text-primary text-[10px] font-bold">
-              5 stops
-            </span>
-</div>
-</div>
-<div class="p-3.5 space-y-2.5">
-<div class="flex items-start justify-between gap-2">
-<div>
-<h3 class="font-bold text-sm text-primary leading-snug">Overnight Tour B: Coastal Heritage &amp; Forts</h3>
-<p class="text-xs text-text-secondary mt-0.5">Historical coastal fortifications, seaside fresh seafood banquet, and heritage lighthouse trek.</p>
-</div>
-<span class="text-xs font-bold text-secondary-container shrink-0">+450 pts</span>
-</div>
-<!-- Progress Bar -->
-<div class="space-y-1">
-<div class="flex items-center justify-between text-[11px]">
-<span class="text-tertiary-container font-bold flex items-center gap-1">
-<span class="material-symbols-outlined text-[13px]">task_alt</span>
-                1 of 5 stops stamped
-              </span>
-<span class="text-text-secondary font-semibold">20%</span>
-</div>
-<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
-<div class="h-full bg-tertiary-container rounded-full" style="width: 20%;"></div>
 </div>
 </div>
 </div>
 </article>
 </section>
 </main>
-<!-- BOTTOM NAVIGATION BAR (Android 5-Tab Material Bar with Raised Center Scan Button) -->
-<nav class="fixed bottom-0 inset-x-0 max-w-[430px] mx-auto z-50 bg-white border-t border-border-divider shadow-lg"><div class="relative flex items-center justify-around h-16 px-2"><a aria-current="page" class="flex flex-col items-center justify-center flex-1 h-full text-primary font-bold" href="#"><span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">explore</span><span class="text-[10px] tracking-tight mt-0.5">Explore</span></a><a class="flex flex-col items-center justify-center flex-1 h-full text-text-secondary hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_22}}"><span class="material-symbols-outlined text-[24px]">menu_book</span><span class="text-[10px] font-medium tracking-tight mt-0.5">Passport</span></a><div class="relative flex flex-col items-center justify-center flex-1 h-full"><a class="absolute -top-5 w-13 h-13 rounded-full bg-secondary-container text-white flex items-center justify-center shadow-[0_4px_16px_rgba(252,129,39,0.5)] active:scale-95 transition-transform border-4 border-white" href="{{DATA:SCREEN:SCREEN_20}}"><span class="material-symbols-outlined text-[26px]">qr_code_scanner</span></a><span class="text-[10px] font-medium tracking-tight text-text-secondary mt-7">Scan</span></div><a class="flex flex-col items-center justify-center flex-1 h-full text-text-secondary hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_18}}"><span class="material-symbols-outlined text-[24px]">local_activity</span><span class="text-[10px] font-medium tracking-tight mt-0.5">Discover</span></a><a class="flex flex-col items-center justify-center flex-1 h-full text-text-secondary hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_4}}"><span class="material-symbols-outlined text-[24px]">person</span><span class="text-[10px] font-medium tracking-tight mt-0.5">Account</span></a></div><div class="flex items-center justify-around h-5 pb-1 px-12 text-on-surface-variant/40 bg-white"><span class="material-symbols-outlined text-[14px]">arrow_back</span><span class="material-symbols-outlined text-[13px]">radio_button_unchecked</span><span class="material-symbols-outlined text-[13px]">crop_square</span></div></nav>
+<!-- BOTTOM NAVIGATION BAR (Solid pure white with top border, perfectly matching SCREEN_76) -->
+<nav class="w-full max-w-[430px] mx-auto bg-white border-t border-[#E5E7EB] shrink-0 mt-auto">
+<div class="relative flex items-center justify-between h-16 px-2">
+<!-- 1. Explore (Active Navy) -->
+<a aria-current="page" class="flex flex-col items-center justify-center flex-1 h-full text-[#003260] font-bold" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="text-[11px] font-bold tracking-tight mt-0.5">Explore</span>
+</a>
+<!-- 2. Passport -->
+<a class="flex flex-col items-center justify-center flex-1 h-full text-[#424750] hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_22}}">
+<span class="material-symbols-outlined text-[24px]">menu_book</span>
+<span class="text-[11px] font-medium tracking-tight mt-0.5">Passport</span>
+</a>
+<!-- 3. Raised Orange Scan Button (#F47B20) -->
+<div class="relative flex flex-col items-center justify-center flex-1 h-full">
+<a class="absolute -top-5 w-14 h-14 rounded-full bg-[#F47B20] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(244,123,32,0.45)] active:scale-95 transition-transform border-[3px] border-white" href="{{DATA:SCREEN:SCREEN_20}}">
+<span class="material-symbols-outlined text-[28px]">qr_code_scanner</span>
+</a>
+<span class="text-[11px] font-medium tracking-tight text-[#424750] mt-7">Scan</span>
+</div>
+<!-- 4. Discover -->
+<a class="flex flex-col items-center justify-center flex-1 h-full text-[#424750] hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_18}}">
+<span class="material-symbols-outlined text-[24px]">local_activity</span>
+<span class="text-[11px] font-medium tracking-tight mt-0.5">Discover</span>
+</a>
+<!-- 5. Account -->
+<a class="flex flex-col items-center justify-center flex-1 h-full text-[#424750] hover:text-primary transition-colors" href="{{DATA:SCREEN:SCREEN_4}}">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="text-[11px] font-medium tracking-tight mt-0.5">Account</span>
+</a>
+</div>
+<!-- Android 3-Button Nav Bar Mock -->
+<div class="flex items-center justify-around h-6 pb-1 px-14 text-neutral-300 bg-white">
+<span class="material-symbols-outlined text-[15px]">arrow_back</span>
+<span class="material-symbols-outlined text-[13px]">radio_button_unchecked</span>
+<span class="material-symbols-outlined text-[13px]">crop_square</span>
+</div>
+</nav>
 <!-- Interactive JavaScript logic -->
 <script>
     function switchMainTab(target) {
@@ -566,11 +486,9 @@
     function selectChip(button) {
       const chips = document.querySelectorAll('.category-chip');
       chips.forEach(c => {
-        c.className = "category-chip px-3.5 py-1.5 rounded-full bg-surface-card border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap";
+        c.className = "category-chip px-4 py-1.5 rounded-full bg-white border border-border-divider text-on-surface-variant hover:bg-surface-container text-xs font-medium whitespace-nowrap shadow-sm";
       });
-      button.className = "category-chip px-3.5 py-1.5 rounded-full bg-primary text-white text-xs font-semibold whitespace-nowrap shadow-sm";
+      button.className = "category-chip px-4 py-1.5 rounded-full bg-[#003260] text-white text-xs font-semibold whitespace-nowrap shadow-sm";
     }
-  </script>
-
-
+</script>
 </body></html>

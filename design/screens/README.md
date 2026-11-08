@@ -20,29 +20,14 @@ Authentication flows including login, signup (3 steps), and forgot password (3 s
 | `forgot-new-password.png/html` | `0e9c2ca799aa415aac40fb4d2647e633` | `app/(auth)/forgot/new-password.tsx` |
 
 ### 02-explore/
-Main explore screen with Sites/Itineraries toggle and list view.
+Explore tab with Sites/Itineraries toggle, site information, and itinerary detail screens.
 
 | File | Stitch Screen ID | Route |
 |------|-----------------|-------|
-| `explore.png/html` | `1756fcfe5dac4008934353c72f8d46db` | `app/(tabs)/explore.tsx` (initial viewport) |
-| `explore-sites-full.png/html` | `875ca68a7f444df5aa849dc84b9a6756` or `aa138f0e3bc948e5ae2c33972bd706de` | `app/(tabs)/explore.tsx` (Sites, full scroll) |
-| `explore-itineraries-full.png/html` | `2f9030794cf5411695f0e9d288a1804e` or `3ec268f10213403eb619851d712c42b9` | `app/(tabs)/explore.tsx` (Itineraries, full scroll) |
-
-### 03-sites/
-Site detail screens showing information panels.
-
-| File | Stitch Screen ID | Route |
-|------|-----------------|-------|
-| `site-detail.png/html` | `edde2cc5c93648fc83d38fc32f5e02fe` | `app/sites/[id].tsx` |
-| `site-detail-full.png/html` | `792ce39de6b94d438bc8d3e6befa96ff` | `app/sites/[id].tsx` (full scroll) |
-
-### 04-itineraries/
-Itinerary detail screens showing multi-day tours.
-
-| File | Stitch Screen ID | Route |
-|------|-----------------|-------|
-| `itinerary-detail.png/html` | `7042e33eac8b4f019e1d30c612b9815c` | `app/itineraries/[id].tsx` |
-| `itinerary-detail-full.png/html` | `c59766ed70d34c598e276f18e8e736a4` | `app/itineraries/[id].tsx` (full scroll) |
+| `explore_cavite_full_view_sites.png/html` | TBD | `app/(tabs)/explore.tsx` (Sites view) |
+| `explore_itineraries_full_view.png/html` | TBD | `app/(tabs)/explore.tsx` (Itineraries view) |
+| `site_information_full_view.png/html` | TBD | `app/sites/[id].tsx` |
+| `itinerary_detail.png/html` | TBD | `app/itineraries/[id].tsx` |
 
 ### 05-passport/
 **Note:** Passport is a scrollable screen (identity section at top, then stamps below), not a page-turn booklet.
