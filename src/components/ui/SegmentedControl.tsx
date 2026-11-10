@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radii.button,
   },
   optionActive: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
     borderRadius: radii.button,
   },
   optionPressed: {

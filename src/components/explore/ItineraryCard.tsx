@@ -1,14 +1,13 @@
-import { colors, radii, shadows, spacing, typography } from '@/theme';
-import { type Itinerary } from '@/data/types';
-import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { type Itinerary } from "@/data/types";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * ItineraryCard Component
- * 
+ *
  * Displays itinerary summary with progress tracking.
  * Used in Explore tab Itineraries view.
- * 
+ *
  * Validates: Requirements 2.3.1, 5.3
  */
 
@@ -52,7 +51,8 @@ export function ItineraryCard({
   onPress,
   testID,
 }: ItineraryCardProps) {
-  const percentage = totalStops > 0 ? Math.round((stampedCount / totalStops) * 100) : 0;
+  const percentage =
+    totalStops > 0 ? Math.round((stampedCount / totalStops) * 100) : 0;
 
   return (
     <Pressable
@@ -66,15 +66,20 @@ export function ItineraryCard({
       {/* Thumbnail with overlays */}
       <View style={styles.thumbnailContainer}>
         <Image
-          source={require('@/assets/images/react-logo.png')}
+          source={require("@/assets/images/react-logo.png")}
           style={styles.thumbnail}
           resizeMode="cover"
         />
 
         {/* Tour type badge (top-left) */}
-        <View style={styles.tourTypeBadge}>
+        <View
+          style={[
+            styles.tourTypeBadge,
+            itinerary.type === "Day Tour" && styles.tourTypeBadgeDay,
+          ]}
+        >
           <Text style={styles.badgeText}>
-            {itinerary.type === 'Day Tour' ? 'Day tour' : 'Overnight'}
+            {itinerary.type === "Day Tour" ? "Day tour" : "Overnight"}
           </Text>
         </View>
 
@@ -108,16 +113,15 @@ export function ItineraryCard({
             <Text style={styles.progressLabel}>
               {stampedCount} of {totalStops} stops stamped
             </Text>
-            <Text style={styles.progressPercentage}>{percentage}% complete</Text>
+            <Text style={styles.progressPercentage}>
+              {percentage}% complete
+            </Text>
           </View>
 
           {/* Progress bar */}
           <View style={styles.progressBarContainer}>
             <View
-              style={[
-                styles.progressBarFill,
-                { width: `${percentage}%` },
-              ]}
+              style={[styles.progressBarFill, { width: `${percentage}%` }]}
             />
           </View>
         </View>
@@ -130,7 +134,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
     borderRadius: radii.card,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: spacing.base,
     ...shadows.card,
   },
@@ -138,16 +142,16 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   thumbnailContainer: {
-    width: '100%',
+    width: "100%",
     height: 160,
-    position: 'relative',
+    position: "relative",
   },
   thumbnail: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   tourTypeBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: spacing.sm,
     left: spacing.sm,
     backgroundColor: colors.primary,
@@ -155,8 +159,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radii.chip,
   },
+  tourTypeBadgeDay: {
+    backgroundColor: colors.passportFoil,
+  },
   stopCountBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: spacing.sm,
     right: spacing.sm,
     backgroundColor: colors.accent,
@@ -167,8 +174,8 @@ const styles = StyleSheet.create({
   badgeText: {
     ...typography.labelSmall,
     color: colors.background,
-    fontFamily: 'Inter_700Bold',
-    textTransform: 'uppercase',
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase",
   },
   content: {
     padding: spacing.base,
@@ -176,47 +183,47 @@ const styles = StyleSheet.create({
   title: {
     ...typography.headlineSmall,
     color: colors.text,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
     marginBottom: spacing.xs,
   },
   description: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: "Inter_400Regular",
     marginBottom: spacing.sm,
   },
   points: {
     ...typography.labelLarge,
     color: colors.accent,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
     marginBottom: spacing.md,
   },
   progressSection: {
     gap: spacing.xs,
   },
   progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   progressLabel: {
     ...typography.bodySmall,
     color: colors.text,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: "Inter_400Regular",
   },
   progressPercentage: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: "Inter_600SemiBold",
   },
   progressBarContainer: {
     height: 6,
     backgroundColor: colors.border,
     borderRadius: radii.full,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: colors.success,
     borderRadius: radii.full,
   },

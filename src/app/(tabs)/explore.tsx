@@ -198,13 +198,23 @@ export default function ExploreScreen() {
         {/* Sites View */}
         {activeView === "Sites" && (
           <>
-            {/* Search Bar (Requirement 2.2.1) */}
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search sites..."
-              onClear={() => setSearchQuery("")}
-            />
+            {/* Search Bar and List/Map Switch Row (Requirement 2.2.1, 2.2.3) */}
+            <View style={styles.searchRow}>
+              <View style={styles.searchBarContainer}>
+                <SearchBar
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search sites..."
+                  onClear={() => setSearchQuery("")}
+                />
+              </View>
+              <View style={styles.mapSwitchContainer}>
+                <ListMapSwitch
+                  value={isMapView ? "map" : "list"}
+                  onValueChange={(value) => setIsMapView(value === "map")}
+                />
+              </View>
+            </View>
 
             {/* Category Chips (Requirement 2.2.2) */}
             <ScrollView
@@ -224,14 +234,6 @@ export default function ExploreScreen() {
                 />
               ))}
             </ScrollView>
-
-            {/* List/Map Switch (Requirement 2.2.3) */}
-            <View style={styles.viewSwitchRow}>
-              <ListMapSwitch
-                value={isMapView ? "map" : "list"}
-                onValueChange={(value) => setIsMapView(value === "map")}
-              />
-            </View>
 
             {/* Loading State */}
             {(sitesLoading || stampsLoading) && (
@@ -278,35 +280,39 @@ export default function ExploreScreen() {
             )}
 
             {/* Map View (Requirement 2.2.3) */}
-            {!sitesLoading &&
-              !sitesError &&
-              filteredSites.length > 0 &&
-              isMapView && (
-                <View style={styles.mapContainer}>
-                  <CaviteMap
-                    height={400}
-                    selectedLabel={`${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"} on the map`}
-                  />
-                </View>
-              )}
+            {!sitesLoading && !sitesError && filteredSites.length > 0 && (
+              <View
+                style={[
+                  styles.mapContainer,
+                  !isMapView && styles.hidden,
+                ]}
+              >
+                <CaviteMap
+                  height={400}
+                  selectedLabel={`${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"} on the map`}
+                />
+              </View>
+            )}
 
             {/* List View (Requirement 2.2.4) */}
-            {!sitesLoading &&
-              !sitesError &&
-              filteredSites.length > 0 &&
-              !isMapView && (
-                <View style={styles.sitesList}>
-                  {filteredSites.map((site) => (
-                    <SiteCard
-                      key={site.id}
-                      site={site}
-                      isVisited={isVisited(site.id)}
-                      onPress={() => handleSitePress(site.id)}
-                      testID={`site-card-${site.id}`}
-                    />
-                  ))}
-                </View>
-              )}
+            {!sitesLoading && !sitesError && filteredSites.length > 0 && (
+              <View
+                style={[
+                  styles.sitesList,
+                  isMapView && styles.hidden,
+                ]}
+              >
+                {filteredSites.map((site) => (
+                  <SiteCard
+                    key={site.id}
+                    site={site}
+                    isVisited={isVisited(site.id)}
+                    onPress={() => handleSitePress(site.id)}
+                    testID={`site-card-${site.id}`}
+                  />
+                ))}
+              </View>
+            )}
           </>
         )}
 
@@ -395,10 +401,21 @@ const styles = StyleSheet.create({
     // No top padding
   },
   segmentedControlWrapper: {
+    marginBottom: spacing.sm,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
+  searchBarContainer: {
+    flex: 1,
+  },
+  mapSwitchContainer: {
+    // Fixed width for the Map button
+  },
   chipsScrollView: {
-    marginTop: spacing.md,
     marginBottom: spacing.md,
     marginHorizontal: -spacing.base, // Negative margin to allow full-width scroll
     paddingHorizontal: spacing.base,
@@ -407,15 +424,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingRight: spacing.base * 2, // Extra padding for last chip to have proper right margin
   },
-  viewSwitchRow: {
-    alignItems: "flex-end",
-    marginBottom: spacing.md,
-  },
   mapContainer: {
     marginTop: spacing.md,
   },
   sitesList: {
     gap: spacing.md,
+  },
+  hidden: {
+    display: "none",
   },
   itinerariesList: {
     gap: spacing.md,

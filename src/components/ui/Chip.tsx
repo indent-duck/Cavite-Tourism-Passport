@@ -9,6 +9,8 @@ export interface ChipProps {
   icon?: React.ReactNode;
   size?: "default" | "small";
   testID?: string;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
 /**
@@ -45,6 +47,8 @@ export function Chip({
   icon,
   size = "default",
   testID,
+  backgroundColor,
+  textColor: customTextColor,
 }: ChipProps) {
   const handlePress = () => {
     if (onPress) {
@@ -54,7 +58,8 @@ export function Chip({
   };
 
   const isSmall = size === "small";
-  const textColor = selected ? colors.background : colors.primary;
+  const textColor = customTextColor || (selected ? colors.background : colors.primary);
+  const bgColor = backgroundColor || (selected ? colors.primary : colors.background);
 
   return (
     <Pressable
@@ -65,6 +70,8 @@ export function Chip({
         isSmall ? styles.containerSmall : styles.containerDefault,
         selected ? styles.containerSelected : styles.containerUnselected,
         pressed && styles.containerPressed,
+        backgroundColor && { backgroundColor: bgColor },
+        backgroundColor && !selected && { borderWidth: 0 },
       ]}
       testID={testID}
       accessibilityRole="button"
@@ -107,7 +114,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   containerSelected: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
     borderWidth: 0,
   },
   containerPressed: {

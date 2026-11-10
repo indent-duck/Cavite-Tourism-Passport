@@ -106,12 +106,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               <Ionicons
                 name={isFocused ? tab.iconFocused : tab.icon}
                 size={24}
-                color={isFocused ? colors.primary : colors.border}
+                color={isFocused ? colors.secondary : colors.border}
               />
               <Text
                 style={[
                   styles.label,
-                  { color: isFocused ? colors.primary : colors.textSecondary },
+                  { color: isFocused ? colors.secondary : colors.textSecondary },
                 ]}
               >
                 {tab.label}

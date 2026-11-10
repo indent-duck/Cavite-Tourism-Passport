@@ -61,7 +61,7 @@ export function SummaryCard() {
           <Ionicons
             name="book"
             size={20}
-            color={colors.secondary}
+            color={colors.primary}
             style={styles.titleIcon}
           />
           <Text style={styles.title}>DIGITAL PASSPORT</Text>

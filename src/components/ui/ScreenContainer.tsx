@@ -190,11 +190,13 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
   },
   staticContent: {
     flex: 1,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
   },
 });

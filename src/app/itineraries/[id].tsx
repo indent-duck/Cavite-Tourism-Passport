@@ -142,9 +142,11 @@ export default function ItineraryDetailScreen() {
             <Ionicons
               name={itinerary.type === 'Day Tour' ? 'sunny' : 'moon'}
               size={14}
-              color={colors.primary}
+              color={itinerary.type === 'Day Tour' ? colors.textTertiary : colors.primary}
             />
           }
+          backgroundColor={itinerary.type === 'Day Tour' ? '#FFF3E0' : '#D4E3FF'}
+          textColor={itinerary.type === 'Day Tour' ? colors.textTertiary : colors.primary}
         />
         <Chip
           label={`${totalStops} curated stops`}
@@ -156,6 +158,8 @@ export default function ItineraryDetailScreen() {
               color={colors.primary}
             />
           }
+          backgroundColor="#D4E3FF"
+          textColor={colors.primary}
         />
       </View>
 

@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.base,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
     ...shadows.tabBar,
   },
   leftContent: {

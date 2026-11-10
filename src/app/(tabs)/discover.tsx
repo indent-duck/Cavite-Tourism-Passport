@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     // No top padding
   },
   segmentedControlWrapper: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   centerContainer: {
     flex: 1,

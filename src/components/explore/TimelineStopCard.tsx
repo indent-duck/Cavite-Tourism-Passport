@@ -1,7 +1,6 @@
-import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { POINTS_PER_CATEGORY, type Site } from '@/data/types';
+import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
@@ -251,12 +250,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stopBadge: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#D4E3FF',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radii.chip,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0,
   },
   stopBadgeText: {
     fontSize: 12,
