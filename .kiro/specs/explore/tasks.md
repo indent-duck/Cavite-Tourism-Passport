@@ -66,7 +66,7 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Create `src/components/explore/OperatingHoursCard.tsx`: clock icon, "Operating Hours" heading, hours text from site.operatingHours
     - *Requirements: 3.2*
 
-- [ ] 3. Explore tab screen
+- [x] 3. Explore tab screen
 
   - [x] 3.1 Replace explore placeholder
 
@@ -84,7 +84,6 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Add loading/error/empty states
     - Wire site card onPress (List) and "View details" (Map) to router.push(`/sites/${site.id}`)
     - *Requirements: 2.2, 7.2*
-
   - [x] 3.3 Implement Itineraries view
 
     - Call useItineraries(), useStamps(), useSites()

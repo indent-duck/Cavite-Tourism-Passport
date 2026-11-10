@@ -146,7 +146,7 @@ export default function ExploreScreen() {
 
   return (
     <ScreenContainer
-      scrollable={true}
+      scrollable={activeView === "Sites" ? !isMapView : true}
       edges={["left", "right"]}
       withTabBarPadding={true}
       testID="explore-screen"
@@ -198,43 +198,6 @@ export default function ExploreScreen() {
         {/* Sites View */}
         {activeView === "Sites" && (
           <>
-            {/* Search Bar and List/Map Switch Row (Requirement 2.2.1, 2.2.3) */}
-            <View style={styles.searchRow}>
-              <View style={styles.searchBarContainer}>
-                <SearchBar
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Search sites..."
-                  onClear={() => setSearchQuery("")}
-                />
-              </View>
-              <View style={styles.mapSwitchContainer}>
-                <ListMapSwitch
-                  value={isMapView ? "map" : "list"}
-                  onValueChange={(value) => setIsMapView(value === "map")}
-                />
-              </View>
-            </View>
-
-            {/* Category Chips (Requirement 2.2.2) */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.chipsScrollView}
-              contentContainerStyle={styles.chipsContainer}
-              keyboardShouldPersistTaps="handled"
-            >
-              {categories.map((category) => (
-                <Chip
-                  key={category}
-                  label={category}
-                  selected={selectedCategory === category}
-                  onPress={() => setSelectedCategory(category)}
-                  testID={`category-chip-${category}`}
-                />
-              ))}
-            </ScrollView>
-
             {/* Loading State */}
             {(sitesLoading || stampsLoading) && (
               <View style={styles.centerContainer}>
@@ -279,38 +242,109 @@ export default function ExploreScreen() {
               </View>
             )}
 
-            {/* Map View (Requirement 2.2.3) */}
-            {!sitesLoading && !sitesError && filteredSites.length > 0 && (
-              <View
-                style={[
-                  styles.mapContainer,
-                  !isMapView && styles.hidden,
-                ]}
-              >
-                <CaviteMap
-                  height={400}
-                  selectedLabel={`${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"} on the map`}
-                />
-              </View>
+            {/* List View (Requirement 2.2.4) */}
+            {!sitesLoading && !sitesError && filteredSites.length > 0 && !isMapView && (
+              <>
+                {/* Search Bar and List/Map Switch Row (Requirement 2.2.1, 2.2.3) */}
+                <View style={styles.searchRow}>
+                  <View style={styles.searchBarContainer}>
+                    <SearchBar
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search sites..."
+                      onClear={() => setSearchQuery("")}
+                    />
+                  </View>
+                  <View style={styles.mapSwitchContainer}>
+                    <ListMapSwitch
+                      value="list"
+                      onValueChange={(value) => setIsMapView(value === "map")}
+                    />
+                  </View>
+                </View>
+
+                {/* Category Chips (Requirement 2.2.2) */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.chipsScrollView}
+                  contentContainerStyle={styles.chipsContainer}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {categories.map((category) => (
+                    <Chip
+                      key={category}
+                      label={category}
+                      selected={selectedCategory === category}
+                      onPress={() => setSelectedCategory(category)}
+                      testID={`category-chip-${category}`}
+                    />
+                  ))}
+                </ScrollView>
+
+                {/* Site Cards */}
+                <View style={styles.sitesList}>
+                  {filteredSites.map((site) => (
+                    <SiteCard
+                      key={site.id}
+                      site={site}
+                      isVisited={isVisited(site.id)}
+                      onPress={() => handleSitePress(site.id)}
+                      testID={`site-card-${site.id}`}
+                    />
+                  ))}
+                </View>
+              </>
             )}
 
-            {/* List View (Requirement 2.2.4) */}
-            {!sitesLoading && !sitesError && filteredSites.length > 0 && (
-              <View
-                style={[
-                  styles.sitesList,
-                  isMapView && styles.hidden,
-                ]}
-              >
-                {filteredSites.map((site) => (
-                  <SiteCard
-                    key={site.id}
-                    site={site}
-                    isVisited={isVisited(site.id)}
-                    onPress={() => handleSitePress(site.id)}
-                    testID={`site-card-${site.id}`}
-                  />
-                ))}
+            {/* Map View (Requirement 2.2.3) */}
+            {!sitesLoading && !sitesError && filteredSites.length > 0 && isMapView && (
+              <View style={styles.mapViewContainer}>
+                {/* Map fills space from search row to tab bar */}
+                <CaviteMap
+                  height={600}
+                  selectedLabel={`${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"}`}
+                />
+
+                {/* Floating controls over map (Requirement 2.2.3) */}
+                <View style={styles.floatingControls}>
+                  {/* Search Bar and List/Map Switch Row */}
+                  <View style={styles.floatingSearchRow}>
+                    <View style={styles.searchBarContainer}>
+                      <SearchBar
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholder="Search sites..."
+                        onClear={() => setSearchQuery("")}
+                      />
+                    </View>
+                    <View style={styles.mapSwitchContainer}>
+                      <ListMapSwitch
+                        value="map"
+                        onValueChange={(value) => setIsMapView(value === "map")}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Category Chips */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.floatingChipsScrollView}
+                    contentContainerStyle={styles.chipsContainer}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {categories.map((category) => (
+                      <Chip
+                        key={category}
+                        label={category}
+                        selected={selectedCategory === category}
+                        onPress={() => setSelectedCategory(category)}
+                        testID={`category-chip-${category}`}
+                      />
+                    ))}
+                  </ScrollView>
+                </View>
               </View>
             )}
           </>
@@ -424,14 +458,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingRight: spacing.base * 2, // Extra padding for last chip to have proper right margin
   },
-  mapContainer: {
-    marginTop: spacing.md,
-  },
   sitesList: {
     gap: spacing.md,
-  },
-  hidden: {
-    display: "none",
   },
   itinerariesList: {
     gap: spacing.md,
@@ -458,5 +486,28 @@ const styles = StyleSheet.create({
     ...typography.titleMedium,
     color: colors.textSecondary,
     textAlign: "center",
+  },
+  // Map view specific styles (Requirement 2.2.3)
+  mapViewContainer: {
+    position: "relative",
+    marginHorizontal: -spacing.base, // Full width including parent padding
+  },
+  floatingControls: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  floatingSearchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  floatingChipsScrollView: {
+    marginHorizontal: 0, // No negative margin since parent already handles the offset
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.md,
   },
 });
