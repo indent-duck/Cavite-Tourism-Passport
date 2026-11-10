@@ -302,6 +302,8 @@ export default function ExploreScreen() {
               <View style={styles.mapViewContainer}>
                 {/* Map fills space from search row to tab bar */}
                 <CaviteMap
+                  sites={filteredSites}
+                  onSitePress={handleSitePress}
                   height={600}
                   selectedLabel={`${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"}`}
                 />
