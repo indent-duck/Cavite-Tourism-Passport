@@ -115,6 +115,8 @@ export function CaviteMap({ sites = [], onSitePress, height, selectedLabel }: Ca
         mapStyle={mapStyle}
         onDidFinishLoadingMap={() => setIsMapLoaded(true)}
         compass={false}
+        logo={false}
+        attribution={false}
       >
         <Camera
           ref={cameraRef}
@@ -229,7 +231,6 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     overflow: 'hidden',
-    borderRadius: radii.card,
   },
   map: {
     flex: 1,
