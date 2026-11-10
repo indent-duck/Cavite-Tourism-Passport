@@ -1,7 +1,7 @@
 import { POINTS_PER_CATEGORY, type Site } from '@/data/types';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
 /**
@@ -131,11 +131,9 @@ export function TimelineStopCard({
           <View style={styles.cardContent}>
             {/* Thumbnail */}
             <View style={styles.thumbnailContainer}>
-              <Image
-                source={require('@/assets/images/react-logo.png')}
-                style={styles.thumbnail}
-                resizeMode="cover"
-              />
+              <View style={styles.thumbnail}>
+                <Ionicons name="image-outline" size={32} color={colors.textSecondary} />
+              </View>
             </View>
 
             {/* Details */}
@@ -291,7 +289,7 @@ const styles = StyleSheet.create({
   },
   thumbnailContainer: {
     width: 80,
-    height: 80,
+    aspectRatio: 16 / 9,
     borderRadius: radii.md,
     overflow: 'hidden',
     backgroundColor: colors.surface,
@@ -300,6 +298,9 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: '100%',
     height: '100%',
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   details: {
     flex: 1,

@@ -20,26 +20,53 @@ Screens (routes)
 
 ### Explore Tab (`src/app/(tabs)/explore.tsx`)
 ```
-<ScreenContainer>
-  <SegmentedControl> (Sites | Itineraries)
-  
-  {/* Sites View */}
-  <SearchBar />
-  <CategoryChips />
-  <ListMapSwitch />
-  {isListView ? (
+{isMapView ? (
+  {/* Map View - Non-scrolling layout */}
+  <View style={{ flex: 1 }}>
+    <View style={styles.topSection}>
+      <SegmentedControl /> {/* Sites | Itineraries - solid at top */}
+    </View>
+    
+    <CaviteMap /> {/* Fills space from search row to tab bar */}
+    
+    {/* Floating controls over map */}
+    <View style={styles.floatingControls}>
+      <View style={styles.searchRow}>
+        <SearchBar />
+        <ListMapSwitch />
+      </View>
+      <CategoryChips /> {/* Horizontal scroll of chips */}
+    </View>
+    
+    {/* Bottom card when pin is tapped */}
+    {selectedSite && (
+      <View style={styles.bottomCard}>
+        <SiteSummary site={selectedSite} />
+        <Button title="View details" />
+      </View>
+    )}
+  </View>
+) : (
+  {/* List View - Scrollable layout */}
+  <ScreenContainer>
+    <SegmentedControl> (Sites | Itineraries)
+    
+    {/* Sites View */}
+    <View style={styles.searchRow}>
+      <SearchBar />
+      <ListMapSwitch />
+    </View>
+    <CategoryChips />
     <SiteCardList>
       <SiteCard /> (multiple)
     </SiteCardList>
-  ) : (
-    <CaviteMap selectedLabel="N sites on the map" />
-  )}
-  
-  {/* Itineraries View */}
-  <ItineraryCardList>
-    <ItineraryCard /> (4 cards)
-  </ItineraryCardList>
-</ScreenContainer>
+    
+    {/* Itineraries View */}
+    <ItineraryCardList>
+      <ItineraryCard /> (4 cards)
+    </ItineraryCardList>
+  </ScreenContainer>
+)}
 ```
 
 ### Site Information (`src/app/sites/[id].tsx`)
@@ -252,9 +279,21 @@ Used for:
 - Active category chip
 - List/Map view toggle
 - Search query text
+- Selected map pin (in Map view)
 - Keyboard visibility
 
 **Pattern:** `useState` + derived values
+
+**Map View Behavior:**
+- When List/Map switch is set to Map, the layout is non-scrolling:
+  - Sites | Itineraries toggle stays solid at the top
+  - Map fills all space from the search row to the top of the tab bar (including bottom inset)
+  - Map renders behind the search row
+  - Search bar, List/Map button, and category chips float over the map as white cards with theme shadows
+  - Search text and category filters update the visible pins in real-time
+  - Camera fits the filtered sites automatically
+  - Tapping a pin shows a small card at the bottom with site summary and "View details" button
+- When switching back to List, restore the scrolling layout and preserve search text and category selection
 
 ### Server State (React Query)
 Used for:

@@ -11,7 +11,7 @@ import { colors, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 /**
  * Site Information Panel
@@ -135,11 +135,9 @@ export default function SiteDetailScreen() {
       testID="site-detail-screen"
     >
       {/* Single placeholder photo */}
-      <Image
-        source={require("@/assets/images/react-logo.png")}
-        style={styles.photo}
-        resizeMode="cover"
-      />
+      <View style={styles.photo}>
+        <Ionicons name="image-outline" size={64} color={colors.textSecondary} />
+      </View>
 
       {/* Site header with visited badge, name, category, points, address */}
       <SiteHeader site={site} isVisited={isVisited} />
@@ -179,8 +177,10 @@ const styles = StyleSheet.create({
   },
   photo: {
     width: "100%",
-    height: 240,
+    aspectRatio: 16 / 9,
     backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorTitle: {
     ...typography.headlineMedium,

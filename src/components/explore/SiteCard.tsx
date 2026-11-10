@@ -1,7 +1,7 @@
 import { POINTS_PER_CATEGORY, type Category, type Site } from "@/data/types";
 import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * SiteCard Component
@@ -58,11 +58,9 @@ export function SiteCard({ site, isVisited, onPress, testID }: SiteCardProps) {
     >
       {/* Photo with overlays */}
       <View style={styles.photoContainer}>
-        <Image
-          source={require("@/assets/images/react-logo.png")}
-          style={styles.photo}
-          resizeMode="cover"
-        />
+        <View style={styles.photo}>
+          <Ionicons name="image-outline" size={48} color={colors.textSecondary} />
+        </View>
 
         {/* Category tag overlay (top-left) */}
         <View style={[styles.categoryTag, { backgroundColor: categoryColor }]}>
@@ -122,12 +120,15 @@ const styles = StyleSheet.create({
   },
   photoContainer: {
     width: "100%",
-    height: 200,
+    aspectRatio: 16 / 9,
     position: "relative",
   },
   photo: {
     width: "100%",
     height: "100%",
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
   },
   categoryTag: {
     position: "absolute",

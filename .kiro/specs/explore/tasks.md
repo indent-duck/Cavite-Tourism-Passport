@@ -79,10 +79,10 @@ The Explore feature provides the primary discovery interface for browsing partne
     - Call useSites(), useStamps()
     - Filter sites client-side by searchQuery (name, address, municipality, case-insensitive) and selectedCategory
     - Derive isVisited for each site from stamps
-    - Render SearchBar, category chips using existing Chip component, ListMapSwitch
-    - Conditional: if isMapView render CaviteMap with "N sites on the map" label, else map filtered sites to SiteCard components
+    - **List view:** Render scrollable layout with SearchBar, category chips using existing Chip component, ListMapSwitch in a horizontal row, then map filtered sites to SiteCard components
+    - **Map view:** Render non-scrolling layout: Sites | Itineraries toggle solid at top, map fills space from search row to tab bar (behind search row), search bar/ListMapSwitch/chips float over map as white cards with shadows, filter pins live, camera fits filtered sites, tapping pin shows bottom card with "View details"
     - Add loading/error/empty states
-    - Wire site card onPress to router.push(`/sites/${site.id}`)
+    - Wire site card onPress (List) and "View details" (Map) to router.push(`/sites/${site.id}`)
     - *Requirements: 2.2, 7.2*
 
   - [x] 3.3 Implement Itineraries view
@@ -200,6 +200,10 @@ The Explore feature provides the primary discovery interface for browsing partne
 ## Notes
 
 - Map is a placeholder component in this spec; real map implementation is a separate later spec
+- **Map view layout:** Non-scrolling. Toggle stays at top, map fills from search row to tab bar, search/chips float over map as white cards with shadows, pins filter live, camera fits sites, tapping pin shows bottom card
+- **List view layout:** Scrollable. SearchBar and ListMapSwitch in same horizontal row (SearchBar flex: 1, ListMapSwitch fixed width)
+- Switching between List/Map preserves search text and category selection
+- Remove "N sites on the map" text (not part of design)
 - All progress values are derived from data, never hardcoded
 - Search is client-side only; no searchSites API function
 - Timeline dashed connector uses react-native-svg Line with strokeDasharray, not CSS borders

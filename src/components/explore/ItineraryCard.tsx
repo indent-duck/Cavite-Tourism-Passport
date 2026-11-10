@@ -1,6 +1,7 @@
 import { type Itinerary } from "@/data/types";
 import { colors, radii, shadows, spacing, typography } from "@/theme";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * ItineraryCard Component
@@ -65,11 +66,9 @@ export function ItineraryCard({
     >
       {/* Thumbnail with overlays */}
       <View style={styles.thumbnailContainer}>
-        <Image
-          source={require("@/assets/images/react-logo.png")}
-          style={styles.thumbnail}
-          resizeMode="cover"
-        />
+        <View style={styles.thumbnail}>
+          <Ionicons name="map-outline" size={48} color={colors.textSecondary} />
+        </View>
 
         {/* Tour type badge (top-left) */}
         <View
@@ -143,12 +142,15 @@ const styles = StyleSheet.create({
   },
   thumbnailContainer: {
     width: "100%",
-    height: 160,
+    aspectRatio: 16 / 9,
     position: "relative",
   },
   thumbnail: {
     width: "100%",
     height: "100%",
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
   },
   tourTypeBadge: {
     position: "absolute",
