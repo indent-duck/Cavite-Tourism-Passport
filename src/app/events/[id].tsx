@@ -1,14 +1,14 @@
-import { CaviteMap } from '@/components/map/CaviteMap';
+import { LocationMapSection } from '@/components/map/LocationMapSection';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { POINTS_PER_CATEGORY } from '@/data/types';
 import { useEventById } from '@/hooks/useEventById';
 import { formatEventDate, getEventStatus } from '@/lib/event-utils';
-import { openInMaps } from '@/lib/open-maps';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 /**
@@ -20,6 +20,15 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: event, isLoading, error, refetch } = useEventById(id as string);
+
+  // Scroll control state for map interaction
+  const [scrollEnabled, setScrollEnabled] = React.useState(true);
+  const scrollViewRef = React.useRef<any>(null);
+
+  // Handle map interaction state changes
+  const handleMapInteractionChange = React.useCallback((isInteracting: boolean) => {
+    setScrollEnabled(!isInteracting);
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -82,16 +91,14 @@ export default function EventDetailScreen() {
   const statusLabel = status === 'happening' ? 'Happening now' : 'Upcoming';
   const statusColor = status === 'happening' ? colors.success : colors.primary;
 
-  const handleOpenMaps = async () => {
-    await openInMaps(event.latitude, event.longitude, event.title);
-  };
-
-  // Truncate address for button label (first part before comma)
+  // Truncate address for label (first part before comma)
   const truncatedAddress = event.address.split(',')[0];
 
   return (
     <ScreenContainer
       scrollable={true}
+      scrollEnabled={scrollEnabled}
+      scrollViewRef={scrollViewRef}
       showHeader={true}
       headerTitle="Event Information"
       onBackPress={() => router.back()}
@@ -206,14 +213,12 @@ export default function EventDetailScreen() {
         {/* Location & Directions section */}
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>LOCATION & DIRECTIONS</Text>
-          <CaviteMap height={200} />
-          <Text style={styles.navigateLabel}>Navigate to {truncatedAddress}</Text>
-          <Button
-            title="Open in Maps"
-            onPress={handleOpenMaps}
-            variant="primary"
-            fullWidth
-            icon={<Ionicons name="navigate-outline" size={20} color={colors.background} />}
+          <LocationMapSection
+            latitude={event.latitude}
+            longitude={event.longitude}
+            locationName={event.title}
+            label={`Navigate to ${truncatedAddress}`}
+            onMapInteractionChange={handleMapInteractionChange}
           />
         </View>
       </View>

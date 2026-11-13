@@ -306,6 +306,9 @@ export default function ExploreScreen() {
                   onSitePress={handleSitePress}
                   height={600}
                   selectedLabel={`${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"}`}
+                  showControls={true}
+                  showInteractionBorder={false}
+                  controlsPosition="right-below-controls"
                 />
 
                 {/* Floating controls over map (Requirement 2.2.3) */}

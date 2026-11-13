@@ -20,11 +20,43 @@ export interface CaviteMapProps {
   onSitePress?: (siteId: string) => void;
   height: number;
   selectedLabel?: string;
+  /**
+   * Callback to control parent ScrollView's scroll state
+   * Pass setScrollEnabled from parent to disable scrolling during map interaction
+   */
+  onMapInteractionChange?: (isInteracting: boolean) => void;
+  /**
+   * Whether to show control buttons (re-center, compass)
+   * @default true
+   */
+  showControls?: boolean;
+  /**
+   * Whether to show blue border when interacting
+   * @default true
+   */
+  showInteractionBorder?: boolean;
+  /**
+   * Position of control buttons
+   * - 'top-right': Top right corner (12px from top)
+   * - 'right-below-controls': Right side, positioned below floating controls (for Explore map)
+   * @default 'top-right'
+   */
+  controlsPosition?: 'top-right' | 'right-below-controls';
 }
 
-export function CaviteMap({ sites = [], onSitePress, height, selectedLabel }: CaviteMapProps) {
+export function CaviteMap({ 
+  sites = [], 
+  onSitePress, 
+  height, 
+  selectedLabel, 
+  onMapInteractionChange,
+  showControls = true,
+  showInteractionBorder = true,
+  controlsPosition = 'top-right',
+}: CaviteMapProps) {
   const cameraRef = useRef<CameraRef>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
 
   const apiKey = process.env.EXPO_PUBLIC_PROTOMAPS_API_KEY;
 
@@ -67,32 +99,39 @@ export function CaviteMap({ sites = [], onSitePress, height, selectedLabel }: Ca
   }, [sites]);
 
   const handleRecenter = () => {
-    if (cameraRef.current) {
-      if (sites.length === 1) {
-        // Single site: fly to it
-        const site = sites[0];
-        cameraRef.current.flyTo({
-          center: [site.longitude, site.latitude],
-          zoom: 14,
-          duration: 1000,
-        });
-      } else if (sites.length > 1) {
-        // Multiple sites: fit bounds
-        const lngs = sites.map(s => s.longitude);
-        const lats = sites.map(s => s.latitude);
-        
-        const bounds: [number, number, number, number] = [
-          Math.min(...lngs),
-          Math.min(...lats),
-          Math.max(...lngs),
-          Math.max(...lats),
-        ];
-        
-        cameraRef.current.fitBounds(bounds, {
-          padding: { top: spacing.xl * 4, right: spacing.xl, bottom: spacing.xl, left: spacing.xl },
-          duration: 1000,
-        });
-      }
+    if (!cameraRef.current) return;
+
+    if (sites.length === 0) {
+      // No sites: fly to Cavite center
+      cameraRef.current.flyTo({
+        center: CAVITE_CENTER,
+        zoom: 9,
+        duration: 1000,
+      });
+    } else if (sites.length === 1) {
+      // Single site: fly to it
+      const site = sites[0];
+      cameraRef.current.flyTo({
+        center: [site.longitude, site.latitude],
+        zoom: 14,
+        duration: 1000,
+      });
+    } else {
+      // Multiple sites: fit bounds
+      const lngs = sites.map(s => s.longitude);
+      const lats = sites.map(s => s.latitude);
+      
+      const bounds: [number, number, number, number] = [
+        Math.min(...lngs),
+        Math.min(...lats),
+        Math.max(...lngs),
+        Math.max(...lats),
+      ];
+      
+      cameraRef.current.fitBounds(bounds, {
+        padding: { top: spacing.xl * 4, right: spacing.xl, bottom: spacing.xl, left: spacing.xl },
+        duration: 1000,
+      });
     }
   };
 
@@ -108,8 +147,33 @@ export function CaviteMap({ sites = [], onSitePress, height, selectedLabel }: Ca
     );
   }
 
+  // Handle map touch start - disable parent scrolling
+  const handleTouchStart = (event: any) => {
+    // Only handle touches on the map itself, not on buttons
+    setIsInteracting(true);
+    onMapInteractionChange?.(true);
+  };
+
+  // Handle map touch end - re-enable parent scrolling
+  const handleTouchEnd = (event: any) => {
+    setIsInteracting(false);
+    onMapInteractionChange?.(false);
+  };
+
   return (
-    <View style={[styles.container, { height }]}>
+    <View 
+      style={[
+        styles.container, 
+        { height },
+        showInteractionBorder && isInteracting && styles.containerInteracting
+      ]}
+    >
+      <View
+        style={{ flex: 1 }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
       <Map 
         style={styles.map} 
         mapStyle={mapStyle}
@@ -146,30 +210,44 @@ export function CaviteMap({ sites = [], onSitePress, height, selectedLabel }: Ca
           </Marker>
         ))}
       </Map>
+      </View>
 
-      {/* Re-center button - right side below chips */}
-      <Pressable 
-        style={styles.recenterButton}
-        onPress={handleRecenter}
-      >
-        <Ionicons name="locate" size={20} color={colors.primary} />
-      </Pressable>
+      {/* Control buttons - only show if showControls is true */}
+      {showControls && (
+        <>
+          {/* Re-center button */}
+          <Pressable 
+            style={[
+              styles.recenterButton,
+              controlsPosition === 'right-below-controls' && styles.recenterButtonBelowControls
+            ]}
+            onPress={handleRecenter}
+            onPressIn={(e) => e.stopPropagation()}
+          >
+            <Ionicons name="locate" size={20} color={colors.primary} />
+          </Pressable>
 
-      {/* Compass button - below re-center button */}
-      <Pressable 
-        style={styles.compassButton}
-        onPress={() => {
-          // Reset map to north orientation at current center
-          cameraRef.current?.easeTo({ 
-            center: CAVITE_CENTER,
-            bearing: 0, 
-            zoom: 9,
-            duration: 500 
-          });
-        }}
-      >
-        <Ionicons name="compass" size={20} color={colors.primary} />
-      </Pressable>
+          {/* Compass button - below re-center button */}
+          <Pressable 
+            style={[
+              styles.compassButton,
+              controlsPosition === 'right-below-controls' && styles.compassButtonBelowControls
+            ]}
+            onPress={() => {
+              // Reset map to north orientation at Cavite center
+              cameraRef.current?.easeTo({ 
+                center: CAVITE_CENTER,
+                bearing: 0, 
+                zoom: 9,
+                duration: 500 
+              });
+            }}
+            onPressIn={(e) => e.stopPropagation()}
+          >
+            <Ionicons name="compass" size={20} color={colors.primary} />
+          </Pressable>
+        </>
+      )}
 
       {/* Loading banner */}
       {!isMapLoaded && (
@@ -231,6 +309,13 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     overflow: 'hidden',
+    borderRadius: radii.card,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  containerInteracting: {
+    borderColor: colors.primary,
+    borderWidth: 2,
   },
   map: {
     flex: 1,
@@ -265,7 +350,7 @@ const styles = StyleSheet.create({
   },
   loadingBanner: {
     position: 'absolute',
-    top: spacing.xl * 4.5, // Below re-center/compass buttons
+    top: spacing.md + 96, // Below buttons (2 buttons * 40px + 2 gaps * 8px)
     left: spacing.base,
     right: spacing.base,
     backgroundColor: colors.background,
@@ -287,8 +372,8 @@ const styles = StyleSheet.create({
   },
   recenterButton: {
     position: 'absolute',
-    top: spacing.xl * 4, // More spacing below chips
-    right: spacing.base,
+    top: spacing.md,
+    right: spacing.md,
     width: 40,
     height: 40,
     backgroundColor: colors.background,
@@ -301,10 +386,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  recenterButtonBelowControls: {
+    top: spacing.xl * 4, // Below floating controls (search bar + chips)
+    right: spacing.base,
+  },
   compassButton: {
     position: 'absolute',
-    top: spacing.xl * 4 + 48, // Below re-center button (40px button + 8px gap)
-    right: spacing.base,
+    top: spacing.md + 48, // Below re-center button (40px button + 8px gap)
+    right: spacing.md,
     width: 40,
     height: 40,
     backgroundColor: colors.background,
@@ -316,6 +405,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  compassButtonBelowControls: {
+    top: spacing.xl * 4 + 48, // Below re-center button
+    right: spacing.base,
   },
   errorContainer: {
     backgroundColor: colors.surface,

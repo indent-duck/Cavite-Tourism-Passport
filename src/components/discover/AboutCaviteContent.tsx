@@ -25,12 +25,20 @@ export function AboutCaviteContent({
   const [selectedExpressway, setSelectedExpressway] = useState<string | null>(
     null,
   );
+  const [isMapInteracting, setIsMapInteracting] = useState(false);
+
+  // Handle map interaction state changes
+  const handleMapInteractionChange = (isInteracting: boolean) => {
+    setIsMapInteracting(isInteracting);
+  };
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      scrollEnabled={!isMapInteracting}
+      nestedScrollEnabled={false}
     >
       {/* 1. Hero Card with Stats */}
       <View style={styles.heroCard}>
@@ -191,6 +199,7 @@ export function AboutCaviteContent({
                 ? `Selected: ${expressways.find((e) => e.id === selectedExpressway)?.name}`
                 : undefined
             }
+            onMapInteractionChange={handleMapInteractionChange}
           />
         </View>
 

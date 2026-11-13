@@ -1,12 +1,11 @@
 import { OperatingHoursCard } from "@/components/explore/OperatingHoursCard";
 import { SiteDescription } from "@/components/explore/SiteDescription";
 import { SiteHeader } from "@/components/explore/SiteHeader";
-import { CaviteMap } from "@/components/map/CaviteMap";
+import { LocationMapSection } from "@/components/map/LocationMapSection";
 import { Button } from "@/components/ui/Button";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { useSiteById } from "@/hooks/useSiteById";
 import { useStamps } from "@/hooks/useStamps";
-import { openInMaps } from "@/lib/open-maps";
 import { colors, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -34,6 +33,10 @@ export default function SiteDetailScreen() {
   } = useSiteById(id);
   const { data: stamps, isLoading: stampsLoading } = useStamps();
 
+  // Scroll control state for map interaction
+  const [scrollEnabled, setScrollEnabled] = React.useState(true);
+  const scrollViewRef = React.useRef<any>(null);
+
   // Derive visited state from stamps
   const isVisited = React.useMemo(() => {
     if (!stamps || !site) return false;
@@ -50,6 +53,11 @@ export default function SiteDetailScreen() {
       router.replace("/(tabs)/explore");
     }
   };
+
+  // Handle map interaction state changes
+  const handleMapInteractionChange = React.useCallback((isInteracting: boolean) => {
+    setScrollEnabled(!isInteracting);
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -131,6 +139,8 @@ export default function SiteDetailScreen() {
       headerTitle="Site Information"
       onBackPress={handleBackPress}
       scrollable={true}
+      scrollEnabled={scrollEnabled}
+      scrollViewRef={scrollViewRef}
       edges={["top", "left", "right", "bottom"]}
       testID="site-detail-screen"
     >
@@ -152,18 +162,12 @@ export default function SiteDetailScreen() {
       <OperatingHoursCard operatingHours={site.operatingHours} />
 
       {/* Location map and button */}
-      <View style={styles.locationSection}>
-        <CaviteMap height={200} />
-        <Text style={styles.coordinates}>
-          {site.latitude.toFixed(6)}, {site.longitude.toFixed(6)}
-        </Text>
-        <Button
-          title="Open in Maps"
-          onPress={() => openInMaps(site.latitude, site.longitude, site.name)}
-          variant="primary"
-          fullWidth
-        />
-      </View>
+      <LocationMapSection
+        latitude={site.latitude}
+        longitude={site.longitude}
+        locationName={site.name}
+        onMapInteractionChange={handleMapInteractionChange}
+      />
     </ScreenContainer>
   );
 }
@@ -204,15 +208,6 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-  locationSection: {
-    marginTop: spacing.lg,
-    gap: spacing.md,
-  },
-  coordinates: {
-    ...typography.bodySmall,
     color: colors.textSecondary,
     textAlign: "center",
   },

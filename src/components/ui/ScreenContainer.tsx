@@ -80,6 +80,12 @@ export interface ScreenContainerProps {
    * Ref to the ScrollView for programmatic scrolling
    */
   scrollViewRef?: React.RefObject<any>;
+
+  /**
+   * Whether scrolling is enabled (useful for nested scrollable components like maps)
+   * @default true
+   */
+  scrollEnabled?: boolean;
 }
 
 export function ScreenContainer({
@@ -93,6 +99,7 @@ export function ScreenContainer({
   edges = ['top', 'left', 'right'],
   testID,
   scrollViewRef,
+  scrollEnabled = true,
 }: ScreenContainerProps) {
   const insets = useSafeAreaInsets();
 
@@ -130,6 +137,7 @@ export function ScreenContainer({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          scrollEnabled={scrollEnabled}
         >
           {children}
         </ScrollView>
