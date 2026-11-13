@@ -178,7 +178,12 @@ export function CaviteMap({
         style={styles.map} 
         mapStyle={mapStyle}
         onDidFinishLoadingMap={() => setIsMapLoaded(true)}
-        compass={false}
+        compass={true}
+        compassPosition={
+          controlsPosition === 'right-below-controls'
+            ? { top: spacing.xl * 4 + 48, right: spacing.base } // Below re-center button (Explore map)
+            : { top: spacing.md + 48, right: spacing.md } // Below re-center button (Detail screens)
+        }
         logo={false}
         attribution={false}
       >
@@ -225,26 +230,6 @@ export function CaviteMap({
             onPressIn={(e) => e.stopPropagation()}
           >
             <Ionicons name="locate" size={20} color={colors.primary} />
-          </Pressable>
-
-          {/* Compass button - below re-center button */}
-          <Pressable 
-            style={[
-              styles.compassButton,
-              controlsPosition === 'right-below-controls' && styles.compassButtonBelowControls
-            ]}
-            onPress={() => {
-              // Reset map to north orientation at Cavite center
-              cameraRef.current?.easeTo({ 
-                center: CAVITE_CENTER,
-                bearing: 0, 
-                zoom: 9,
-                duration: 500 
-              });
-            }}
-            onPressIn={(e) => e.stopPropagation()}
-          >
-            <Ionicons name="compass" size={20} color={colors.primary} />
           </Pressable>
         </>
       )}
@@ -350,7 +335,7 @@ const styles = StyleSheet.create({
   },
   loadingBanner: {
     position: 'absolute',
-    top: spacing.md + 96, // Below buttons (2 buttons * 40px + 2 gaps * 8px)
+    top: spacing.md + 48, // Below re-center button only (40px button + 8px gap)
     left: spacing.base,
     right: spacing.base,
     backgroundColor: colors.background,
@@ -388,26 +373,6 @@ const styles = StyleSheet.create({
   },
   recenterButtonBelowControls: {
     top: spacing.xl * 4, // Below floating controls (search bar + chips)
-    right: spacing.base,
-  },
-  compassButton: {
-    position: 'absolute',
-    top: spacing.md + 48, // Below re-center button (40px button + 8px gap)
-    right: spacing.md,
-    width: 40,
-    height: 40,
-    backgroundColor: colors.background,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  compassButtonBelowControls: {
-    top: spacing.xl * 4 + 48, // Below re-center button
     right: spacing.base,
   },
   errorContainer: {
