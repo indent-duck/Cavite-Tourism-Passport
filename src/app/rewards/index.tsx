@@ -1,275 +1,248 @@
-import { PointsSummaryCard } from '@/components/rewards/PointsSummaryCard';
+import { PointsSummaryCard, type PointsSummaryCardProps } from '@/components/rewards/PointsSummaryCard';
 import { RewardCard } from '@/components/rewards/RewardCard';
-import type { Category } from '@/data/types';
+import { StateView } from '@/components/ui/StateView';
+import type { Category, User } from '@/data/types';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useRewardsWithEligibility } from '@/hooks/useRewardsWithEligibility';
-import { useStamps } from '@/hooks/useStamps';
-import { colors, spacing, typography } from '@/theme';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React from 'react';
+import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Pressable,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+  useRewardsWithEligibility,
+  type RewardWithEligibility,
+} from '@/hooks/useRewardsWithEligibility';
+import { useStamps } from '@/hooks/useStamps';
+import { REDEMPTION_LOCATION } from '@/lib/constants';
+import { getErrorMessage } from '@/lib/errors';
+import {
+  compareRewards,
+  describeRemaining,
+  formatShortDate,
+  getRewardStatus,
+  type RewardStatus,
+} from '@/lib/rewards';
+import { colors, radii, shadows, spacing, typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+type RewardRow = RewardWithEligibility & { status: RewardStatus };
+
+const ItemSeparator = () => <View style={styles.separator} />;
+
 /**
- * Rewards List Screen
- * 
- * Displays the points summary card and a list of all available rewards
- * with their eligibility status. Users can browse rewards and tap to
- * view details.
- * 
+ * Rewards List Screen (Rewards Hub)
+ *
+ * Layout:
+ * - Blue header matching the tab screens' Header (entry is the points pill)
+ * - Points summary: balance, next goal, required stamp slots
+ * - "One reward per period" rule, shown before the user picks anything
+ * - Rewards sorted by what's actionable: claimed, ready, closest locked,
+ *   then rewards that can't be claimed
+ *
  * Entry points:
  * - Header points tap
  * - Passport "View Rewards" button
- * - Account "Redemptions & Vouchers" row (if exists)
- * 
- * Layout:
- * - Custom header with back button, Cavite seal, title, and points badge
- * - Points summary card showing total points and category stamp progress
- * - Section header "Official Souvenirs & Perks" with item count
- * - Scrollable list of reward cards
- * 
+ * - Account "Redemptions & Vouchers" row
+ *
  * Validates: Requirements 5.1 (Rewards List Screen)
  */
 export default function RewardsScreen() {
-  const insets = useSafeAreaInsets();
+  const userQuery = useCurrentUser();
+  const stampsQuery = useStamps();
+  const rewardsQuery = useRewardsWithEligibility();
+  const { data: promoPeriod } = usePromoPeriod();
 
-  // Fetch user data for points
-  const {
-    data: user,
-    isLoading: isLoadingUser,
-    error: userError,
-  } = useCurrentUser();
+  const user = userQuery.data;
+  const stamps = stampsQuery.data;
+  const rewards = rewardsQuery.data;
 
-  // Fetch user's stamps to determine collected categories
-  const {
-    data: stamps,
-    isLoading: isLoadingStamps,
-    error: stampsError,
-  } = useStamps();
-
-  // Fetch all rewards with eligibility in a single query
-  const {
-    data: rewardsWithEligibility,
-    isLoading: isLoadingRewards,
-    error: rewardsError,
-  } = useRewardsWithEligibility();
-
-  // Determine which categories have stamps
   const collectedCategories = React.useMemo(() => {
-    if (!stamps || stamps.length === 0) return [];
-    
-    // Get unique categories from user's stamps
-    const uniqueCategories = new Set<Category>();
-    stamps.forEach(stamp => {
-      uniqueCategories.add(stamp.siteCategory);
-    });
-    
-    return Array.from(uniqueCategories);
+    const unique = new Set<Category>();
+    stamps?.forEach((stamp) => unique.add(stamp.siteCategory));
+    return Array.from(unique);
   }, [stamps]);
 
-  // Handle loading state
-  const isLoading = isLoadingUser || isLoadingStamps || isLoadingRewards;
-  
+  const rows = React.useMemo<RewardRow[]>(() => {
+    if (!rewards) return [];
+    return rewards
+      .map((item) => ({
+        ...item,
+        status: getRewardStatus(item.reward, item.eligibility, user),
+      }))
+      .sort(compareRewards);
+  }, [rewards, user]);
+
+  const periodEnd = promoPeriod ? formatShortDate(promoPeriod.endDate) : undefined;
+  const goal = React.useMemo(
+    () => pickGoal(rows, user, periodEnd),
+    [rows, user, periodEnd],
+  );
+
+  const isLoading = userQuery.isLoading || stampsQuery.isLoading || rewardsQuery.isLoading;
+  const error = userQuery.error || stampsQuery.error || rewardsQuery.error;
+
+  const retry = () => {
+    userQuery.refetch();
+    stampsQuery.refetch();
+    rewardsQuery.refetch();
+  };
+
+  let body: React.ReactNode;
   if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        {/* Custom Header */}
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.backButton}
-                hitSlop={spacing.md}
-              >
-                <Ionicons name="arrow-back" size={24} color={colors.primary} />
-              </Pressable>
-              <Image
-                source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1VAqK3yvSmlr7OU4VVIPwngssTm7naSnr1EMiWEdbNqDtb_u6sSniMylGsdG573XPEX60s7yHY4nbQtCvMNC7EyHvdzZ8Yogoaexxlua7GW0cXFQba-ym8m5lYpV9G8R689XKm5nt1rBtn2aAiLxrjlAkkIIrxMkvvMBmPCLonpDaTL_9eveCZX9ztzo8p8mCYg58NCG7sZVFfl6s609Dq4kvg9dVE1HMvbV7WeWa0YR7njnw_zA750dQQ8' }}
-                style={styles.caviteSeal}
-              />
-              <Text style={styles.headerTitle}>Rewards Hub</Text>
-            </View>
-            <View style={styles.pointsBadge}>
-              <MaterialIcons name="stars" size={16} color={colors.accent} />
-              <Text style={styles.pointsBadgeText}>{user?.points || 0} pts</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading rewards...</Text>
-        </View>
-      </View>
+    body = <StateView variant="loading" title="Loading rewards…" style={styles.state} />;
+  } else if (error) {
+    body = (
+      <StateView
+        variant="error"
+        title="Unable to load rewards"
+        message={getErrorMessage(error)}
+        actionLabel="Try again"
+        onAction={retry}
+        style={styles.state}
+      />
     );
-  }
-
-  // Handle error state
-  const error = userError || stampsError || rewardsError;
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        {/* Custom Header */}
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.backButton}
-                hitSlop={spacing.md}
-              >
-                <Ionicons name="arrow-back" size={24} color={colors.primary} />
-              </Pressable>
-              <Image
-                source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1VAqK3yvSmlr7OU4VVIPwngssTm7naSnr1EMiWEdbNqDtb_u6sSniMylGsdG573XPEX60s7yHY4nbQtCvMNC7EyHvdzZ8Yogoaexxlua7GW0cXFQba-ym8m5lYpV9G8R689XKm5nt1rBtn2aAiLxrjlAkkIIrxMkvvMBmPCLonpDaTL_9eveCZX9ztzo8p8mCYg58NCG7sZVFfl6s609Dq4kvg9dVE1HMvbV7WeWa0YR7njnw_zA750dQQ8' }}
-                style={styles.caviteSeal}
-              />
-              <Text style={styles.headerTitle}>Rewards Hub</Text>
-            </View>
-            <View style={styles.pointsBadge}>
-              <MaterialIcons name="stars" size={16} color={colors.accent} />
-              <Text style={styles.pointsBadgeText}>{user?.points || 0} pts</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle}>Unable to Load Rewards</Text>
-          <Text style={styles.errorText}>
-            {error instanceof Error ? error.message : 'An unexpected error occurred'}
-          </Text>
-        </View>
-      </View>
+  } else if (rows.length === 0) {
+    body = (
+      <StateView
+        variant="empty"
+        icon="gift-outline"
+        title="No rewards yet"
+        message="Check back later for new souvenirs and perks."
+        style={styles.state}
+      />
     );
-  }
+  } else {
+    body = (
+      <FlatList
+        data={rows}
+        keyExtractor={(item) => item.reward.id}
+        renderItem={({ item }) => (
+          <RewardCard
+            reward={item.reward}
+            status={item.status}
+            eligibility={item.eligibility}
+            onPress={() => router.push(`/rewards/${item.reward.id}`)}
+            testID={`reward-card-${item.reward.id}`}
+          />
+        )}
+        ItemSeparatorComponent={ItemSeparator}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <PointsSummaryCard
+              points={user?.points ?? 0}
+              stampCategories={collectedCategories}
+              goal={goal}
+              testID="rewards-points-summary"
+            />
 
-  // Handle empty state
-  if (!rewardsWithEligibility || rewardsWithEligibility.length === 0) {
-    return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        {/* Custom Header */}
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.backButton}
-                hitSlop={spacing.md}
-              >
-                <Ionicons name="arrow-back" size={24} color={colors.primary} />
-              </Pressable>
-              <Image
-                source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1VAqK3yvSmlr7OU4VVIPwngssTm7naSnr1EMiWEdbNqDtb_u6sSniMylGsdG573XPEX60s7yHY4nbQtCvMNC7EyHvdzZ8Yogoaexxlua7GW0cXFQba-ym8m5lYpV9G8R689XKm5nt1rBtn2aAiLxrjlAkkIIrxMkvvMBmPCLonpDaTL_9eveCZX9ztzo8p8mCYg58NCG7sZVFfl6s609Dq4kvg9dVE1HMvbV7WeWa0YR7njnw_zA750dQQ8' }}
-                style={styles.caviteSeal}
-              />
-              <Text style={styles.headerTitle}>Rewards Hub</Text>
-            </View>
-            <View style={styles.pointsBadge}>
-              <MaterialIcons name="stars" size={16} color={colors.accent} />
-              <Text style={styles.pointsBadgeText}>{user?.points || 0} pts</Text>
+            {!user?.hasClaimedThisPeriod && <OneRewardBanner periodEnd={periodEnd} />}
+
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.sectionTitle} accessibilityRole="header">
+                  Souvenirs & Perks
+                </Text>
+                <Text style={styles.sectionSubtitle}>
+                  Redeem in person at the {REDEMPTION_LOCATION}
+                </Text>
+              </View>
+              <Text style={styles.countBadge}>
+                {rows.length} {rows.length === 1 ? 'item' : 'items'}
+              </Text>
             </View>
           </View>
-        </View>
-        
-        <View style={styles.centerContainer}>
-          <Text style={styles.emptyTitle}>No Rewards Available</Text>
-          <Text style={styles.emptyText}>
-            Check back later for new rewards and prizes
-          </Text>
-        </View>
-      </View>
+        }
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      
-      {/* Custom Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Pressable
-              onPress={() => router.back()}
-              style={styles.backButton}
-              hitSlop={spacing.md}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.primary} />
-            </Pressable>
-            <Image
-              source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1VAqK3yvSmlr7OU4VVIPwngssTm7naSnr1EMiWEdbNqDtb_u6sSniMylGsdG573XPEX60s7yHY4nbQtCvMNC7EyHvdzZ8Yogoaexxlua7GW0cXFQba-ym8m5lYpV9G8R689XKm5nt1rBtn2aAiLxrjlAkkIIrxMkvvMBmPCLonpDaTL_9eveCZX9ztzo8p8mCYg58NCG7sZVFfl6s609Dq4kvg9dVE1HMvbV7WeWa0YR7njnw_zA750dQQ8' }}
-              style={styles.caviteSeal}
-            />
-            <Text style={styles.headerTitle}>Rewards Hub</Text>
-          </View>
-          <View style={styles.pointsBadge}>
-            <MaterialIcons name="stars" size={16} color={colors.accent} />
-            <Text style={styles.pointsBadgeText}>{user?.points || 0} pts</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Points Summary Card */}
-        <PointsSummaryCard
-          points={user?.points || 0}
-          stampCategories={collectedCategories}
-          testID="rewards-points-summary"
-        />
-
-        {/* Section Header */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionHeaderText}>
-            <Text style={styles.sectionTitle}>Official Souvenirs & Perks</Text>
-            <Text style={styles.sectionSubtitle}>
-              Redeem in-person at Cavite Provincial Tourism Desks
-            </Text>
-          </View>
-          <View style={styles.countBadge}>
-            <Text style={styles.countBadgeText}>
-              {rewardsWithEligibility.length} {rewardsWithEligibility.length === 1 ? 'Item' : 'Items'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Rewards List */}
-        <FlatList
-          data={rewardsWithEligibility}
-          keyExtractor={(item) => item.reward.id}
-          renderItem={({ item }) => (
-            <RewardCard
-              reward={item.reward}
-              eligibility={item.eligibility}
-              onPress={() => router.push(`/rewards/${item.reward.id}`)}
-              testID={`reward-card-${item.reward.id}`}
-            />
-          )}
-          scrollEnabled={false}
-          contentContainerStyle={styles.rewardsList}
-        />
-      </ScrollView>
+      <StatusBar style="light" />
+      <RewardsHeader />
+      {body}
     </View>
   );
+}
+
+/** Same look as the tab screens' blue Header, with a back button */
+function RewardsHeader() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+      <Pressable
+        onPress={() => router.back()}
+        style={styles.backButton}
+        hitSlop={spacing.sm}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
+        <Ionicons name="arrow-back" size={22} color={colors.background} />
+      </Pressable>
+      <View style={styles.headerTitles}>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Rewards Hub
+        </Text>
+        <Text style={styles.headerSubtitle}>Cavite Tourism Passport</Text>
+      </View>
+    </View>
+  );
+}
+
+/** The one-claim-per-period rule, stated before the user commits to anything */
+function OneRewardBanner({ periodEnd }: { periodEnd?: string }) {
+  return (
+    <View style={styles.banner} accessible accessibilityRole="text">
+      <View style={styles.bannerIcon}>
+        <Ionicons name="information" size={16} color={colors.accent} />
+      </View>
+      <View style={styles.bannerText}>
+        <Text style={styles.bannerTitle}>You can claim 1 reward per promo period</Text>
+        <Text style={styles.bannerBody}>
+          Claiming one locks the others until{' '}
+          {periodEnd ?? 'the period ends'}. Pick the one you want most.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * What the summary card should point the user at: the reward they claimed,
+ * rewards ready to claim, or the locked reward closest to unlocking.
+ */
+function pickGoal(
+  rows: RewardRow[],
+  user: User | undefined,
+  periodEnd: string | undefined,
+): PointsSummaryCardProps['goal'] {
+  if (rows.length === 0) return undefined;
+
+  const claimed = rows.find((row) => row.status === 'claimed');
+  if (claimed) {
+    return {
+      tone: 'claimed',
+      text: `You claimed ${claimed.reward.title}.${periodEnd ? ` New rewards open after ${periodEnd}.` : ''}`,
+    };
+  }
+
+  const readyCount = rows.filter((row) => row.status === 'ready').length;
+  if (readyCount > 0) {
+    return {
+      tone: 'ready',
+      text: `${readyCount} ${readyCount === 1 ? 'reward is' : 'rewards are'} ready to claim`,
+    };
+  }
+
+  // Rows are sorted, so the first locked one is the closest to unlocking
+  const next = rows.find((row) => row.status === 'locked');
+  if (!next || !user) return undefined;
+  const remaining = describeRemaining(next.eligibility);
+  if (!remaining) return undefined;
+  return { tone: 'next', text: `${remaining} for ${next.reward.title}` };
 }
 
 const styles = StyleSheet.create({
@@ -278,139 +251,111 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerContent: {
-    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
     paddingHorizontal: spacing.sm,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
+    paddingBottom: spacing.base,
+    backgroundColor: colors.secondary,
+    borderBottomLeftRadius: radii.card,
+    borderBottomRightRadius: radii.card,
+    ...shadows.header,
+    zIndex: 1,
   },
   backButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    borderRadius: radii.full,
     alignItems: 'center',
-    marginRight: spacing.xs,
+    justifyContent: 'center',
+    backgroundColor: colors.onPrimaryOverlay,
   },
-  caviteSeal: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginRight: spacing.xs,
+  headerTitles: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: -0.3,
+    ...typography.headlineSmall,
+    fontFamily: 'Inter_700Bold',
+    color: colors.background,
   },
-  pointsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${colors.accent}15`,
-    borderWidth: 1,
-    borderColor: `${colors.accent}25`,
-    borderRadius: 20,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  pointsBadgeText: {
+  headerSubtitle: {
     ...typography.labelMedium,
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: -0.2,
+    color: colors.background,
+    opacity: 0.8,
   },
-  scrollView: {
+  state: {
     flex: 1,
   },
-  scrollContent: {
+  listContent: {
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.xxl,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  listHeader: {
+    gap: spacing.md,
+    marginBottom: spacing.base,
+  },
+  separator: {
+    height: spacing.base,
+  },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.accentTint,
+  },
+  bannerIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: radii.full,
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    justifyContent: 'center',
+    backgroundColor: colors.background,
   },
-  loadingText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    marginTop: spacing.base,
+  bannerText: {
+    flex: 1,
+    gap: 2,
   },
-  errorTitle: {
-    ...typography.headlineMedium,
+  bannerTitle: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_700Bold',
     color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
   },
-  errorText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  emptyTitle: {
-    ...typography.headlineMedium,
+  bannerBody: {
+    ...typography.bodySmall,
     color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptyText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    lineHeight: 18,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: spacing.base,
-    marginBottom: spacing.base,
+    marginTop: spacing.sm,
   },
   sectionHeaderText: {
     flex: 1,
     paddingRight: spacing.sm,
   },
   sectionTitle: {
-    ...typography.headlineMedium,
-    fontSize: 17,
-    fontFamily: "Inter_700Bold",
+    ...typography.headlineSmall,
+    fontFamily: 'Inter_700Bold',
     color: colors.text,
-    letterSpacing: -0.3,
   },
   sectionSubtitle: {
     ...typography.bodySmall,
-    fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
   },
   countBadge: {
-    backgroundColor: `${colors.primary}15`,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  countBadgeText: {
-    ...typography.labelSmall,
-    fontSize: 11,
-    fontWeight: '700',
+    ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
     color: colors.primary,
-  },
-  rewardsList: {
-    gap: spacing.base,
+    backgroundColor: colors.primaryTint,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    overflow: 'hidden',
   },
 });

@@ -1,185 +1,158 @@
+import { Category, POINTS_PER_CATEGORY, RewardEligibility } from '@/data/types';
+import { REQUIRED_CATEGORIES } from '@/lib/rewards';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
-import { Category, POINTS_PER_CATEGORY, RewardEligibility } from '@/data/types';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 /**
  * RewardRequirements Component
- * 
- * Displays points progress and category stamp requirements for a reward.
- * 
+ *
+ * The two things a reward needs: enough points and one stamp from each of
+ * the four categories. Missing stamps are shown as empty passport slots
+ * (neutral, not an error) and, when `onCategoryPress` is given, are tappable
+ * so the user can go find a site in that category.
+ *
  * Requirements: Viewing Reward Detail - Locked State
- * Design Differences: #1 - Uses "N of 4 categories collected" not "Pillar Stamps"
  */
 
 export interface RewardRequirementsProps {
   eligibility: RewardEligibility;
   pointsCost: number;
+  /** Called when a missing category row is tapped */
+  onCategoryPress?: (category: Category) => void;
   testID?: string;
 }
 
 export function RewardRequirements({
   eligibility,
   pointsCost,
+  onCategoryPress,
   testID,
 }: RewardRequirementsProps) {
-  const { currentPoints, hasEnoughPoints, hasAllCategories, missingCategories } =
+  const { currentPoints, pointsNeeded, hasEnoughPoints, hasAllCategories, missingCategories } =
     eligibility;
 
-  // Calculate progress percentage
-  const progress = Math.min((currentPoints / pointsCost) * 100, 100);
-
-  // Main categories (excluding Festival)
-  const mainCategories: Category[] = [
-    'Dining',
-    'Staycation',
-    'Heritage',
-    'Adventure',
-  ];
-
-  // Count completed categories
-  const completedCount = mainCategories.length - missingCategories.length;
-
-
-
-  // Check if category is collected
-  const isCategoryCollected = (category: Category): boolean => {
-    return !missingCategories.includes(category);
-  };
-
-  // Generate "What's left" message
-  const getWhatsLeftMessage = (): string => {
-    const parts: string[] = [];
-
-    if (missingCategories.length > 0) {
-      const categoryList = missingCategories
-        .map((cat) => cat)
-        .join(' and ');
-      parts.push(
-        `Collect ${missingCategories.length} ${missingCategories.length === 1 ? 'stamp' : 'stamps'} (${categoryList})`
-      );
-    }
-
-    if (!hasEnoughPoints) {
-      const pointsNeeded = pointsCost - currentPoints;
-      parts.push(`${pointsNeeded} more points`);
-    }
-
-    return parts.join(' and ');
-  };
+  // pointsNeeded can include a program-wide minimum above the reward's cost
+  const target = hasEnoughPoints ? pointsCost : currentPoints + pointsNeeded;
+  const progress = Math.min(currentPoints / target, 1);
+  const collectedCount = REQUIRED_CATEGORIES.length - missingCategories.length;
 
   return (
     <View style={styles.container} testID={testID}>
-      {/* Points Progress Section */}
+      {/* Points */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Points Progress</Text>
-          <Text
-            style={[
-              styles.progressText,
-              hasEnoughPoints && styles.progressTextSuccess,
-            ]}
-          >
-            {currentPoints} / {pointsCost} pts ({Math.round(progress)}%)
+          <Text style={styles.sectionTitle}>Points</Text>
+          <Text style={[styles.badge, hasEnoughPoints ? styles.badgeDone : styles.badgeTodo]}>
+            {currentPoints.toLocaleString('en-US')} / {target.toLocaleString('en-US')}
           </Text>
         </View>
 
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
+        <View
+          style={styles.progressTrack}
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="Points progress"
+          accessibilityValue={{ min: 0, max: target, now: Math.min(currentPoints, target) }}
+        >
           <View
             style={[
-              styles.progressBarFill,
+              styles.progressFill,
               {
-                width: `${progress}%`,
+                width: `${progress * 100}%`,
                 backgroundColor: hasEnoughPoints ? colors.success : colors.accent,
               },
             ]}
           />
         </View>
 
-        {/* Labels below progress bar */}
-        <View style={styles.progressLabels}>
-          <Text style={styles.progressLabel}>Current Balance: {currentPoints} pts</Text>
+        <View style={styles.progressFooter}>
           {hasEnoughPoints ? (
-            <Text style={[styles.progressLabel, styles.targetReached]}>
-              TARGET REACHED
-            </Text>
+            <>
+              <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+              <Text style={[styles.progressNote, styles.progressNoteDone]}>
+                Target reached
+              </Text>
+            </>
           ) : (
-            <Text style={styles.progressLabel}>Target: {pointsCost} pts</Text>
+            <Text style={styles.progressNote}>
+              {pointsNeeded.toLocaleString('en-US')} more pts needed
+            </Text>
           )}
         </View>
-
-        {/* What's left message */}
-        {!eligibility.eligible && (
-          <View style={styles.whatsLeftContainer}>
-            <Ionicons
-              name="information-circle"
-              size={16}
-              color={colors.textSecondary}
-              style={styles.whatsLeftIcon}
-            />
-            <Text style={styles.whatsLeftText}>{getWhatsLeftMessage()}</Text>
-          </View>
-        )}
       </View>
 
-      {/* Category Passport Stamps Section */}
+      {/* Category stamps */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Category Passport Stamps</Text>
-          <View
-            style={[
-              styles.badge,
-              hasAllCategories ? styles.badgeSuccess : styles.badgeDefault,
-            ]}
-          >
-            <Text
-              style={[
-                styles.badgeText,
-                hasAllCategories ? styles.badgeTextSuccess : styles.badgeTextDefault,
-              ]}
-            >
-              {completedCount} of 4 Ready
-            </Text>
-          </View>
+          <Text style={styles.sectionTitle}>Category stamps</Text>
+          <Text style={[styles.badge, hasAllCategories ? styles.badgeDone : styles.badgeTodo]}>
+            {collectedCount} of 4
+          </Text>
         </View>
 
-        {/* Category Rows */}
         <View style={styles.categoryList}>
-          {mainCategories.map((category) => {
-            const collected = isCategoryCollected(category);
-            const categoryColor = CATEGORY_COLORS[category];
-            const iconName = CATEGORY_ICONS[category];
-            const points = POINTS_PER_CATEGORY[category];
+          {REQUIRED_CATEGORIES.map((category) => {
+            const collected = !missingCategories.includes(category);
+            const canFind = !collected && !!onCategoryPress;
 
-            return (
-              <View key={category} style={styles.categoryRow}>
-                {/* Category Icon Circle */}
+            const row = (
+              <>
                 <View
                   style={[
-                    styles.categoryIconCircle,
-                    { backgroundColor: `${categoryColor}1A` }, // 10% opacity
+                    styles.stamp,
+                    collected
+                      ? { backgroundColor: CATEGORY_COLORS[category] }
+                      : styles.stampEmpty,
                   ]}
                 >
-                  <Ionicons name={iconName} size={24} color={categoryColor} />
+                  <Ionicons
+                    name={CATEGORY_ICONS[category]}
+                    size={18}
+                    color={collected ? colors.background : colors.textSecondary}
+                  />
                 </View>
 
-                {/* Category Name and Status */}
                 <View style={styles.categoryInfo}>
-                  <Text style={styles.categoryName}>{category} Category</Text>
+                  <Text style={styles.categoryName}>{category}</Text>
                   <Text style={styles.categoryStatus}>
-                    {collected ? `Collected • ${points} pts` : `Missing • Needs 1 stamp`}
+                    {collected
+                      ? `Collected · +${POINTS_PER_CATEGORY[category]} pts`
+                      : 'Not collected yet'}
                   </Text>
                 </View>
 
-                {/* Status Icon */}
-                <Ionicons
-                  name={collected ? 'checkmark-circle' : 'alert-circle'}
-                  size={24}
-                  color={collected ? colors.success : colors.error}
-                />
+                {collected ? (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+                ) : canFind ? (
+                  <View style={styles.findLink}>
+                    <Text style={styles.findLinkText}>Find sites</Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+                  </View>
+                ) : null}
+              </>
+            );
+
+            return canFind ? (
+              <Pressable
+                key={category}
+                style={({ pressed }) => [styles.categoryRow, pressed && styles.rowPressed]}
+                onPress={() => onCategoryPress(category)}
+                accessibilityRole="button"
+                accessibilityLabel={`${category} stamp not collected. Find ${category} sites`}
+              >
+                {row}
+              </Pressable>
+            ) : (
+              <View
+                key={category}
+                style={styles.categoryRow}
+                accessible
+                accessibilityLabel={`${category} stamp ${collected ? 'collected' : 'not collected'}`}
+              >
+                {row}
               </View>
             );
           })}
@@ -189,12 +162,14 @@ export function RewardRequirements({
   );
 }
 
+const STAMP_SIZE = 40;
+
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.base,
+    gap: spacing.md,
   },
   section: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderRadius: radii.card,
     padding: spacing.base,
     ...shadows.card,
@@ -206,101 +181,98 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    ...typography.bodyMedium,
-    fontWeight: '600',
+    ...typography.titleMedium,
+    fontFamily: 'Inter_700Bold',
     color: colors.text,
   },
-  progressText: {
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  progressTextSuccess: {
-    color: colors.success,
-  },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: colors.background,
-    borderRadius: 4,
+  badge: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
     overflow: 'hidden',
   },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
+  badgeDone: {
+    color: colors.successDark,
+    backgroundColor: colors.successLight,
   },
-  progressLabels: {
+  badgeTodo: {
+    color: colors.accent,
+    backgroundColor: colors.accentTint,
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: colors.surface,
+    borderRadius: radii.full,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: radii.full,
+  },
+  progressFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.xs,
     marginTop: spacing.sm,
   },
-  progressLabel: {
+  progressNote: {
     ...typography.bodySmall,
     color: colors.textSecondary,
   },
-  targetReached: {
+  progressNoteDone: {
     color: colors.success,
-    fontWeight: '600',
-  },
-  whatsLeftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  whatsLeftIcon: {
-    marginRight: spacing.sm,
-  },
-  whatsLeftText: {
-    ...typography.bodySmall,
-    color: colors.text,
-    flex: 1,
-  },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: spacing.sm,
-  },
-  badgeSuccess: {
-    backgroundColor: colors.success,
-  },
-  badgeDefault: {
-    backgroundColor: colors.surface,
-  },
-  badgeText: {
-    ...typography.labelSmall,
-  },
-  badgeTextSuccess: {
-    color: colors.background,
-  },
-  badgeTextDefault: {
-    color: colors.text,
+    fontFamily: 'Inter_600SemiBold',
   },
   categoryList: {
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    paddingVertical: spacing.xs,
+    marginHorizontal: -spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
   },
-  categoryIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  rowPressed: {
+    backgroundColor: colors.surface,
+  },
+  stamp: {
+    width: STAMP_SIZE,
+    height: STAMP_SIZE,
+    borderRadius: STAMP_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  stampEmpty: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.textSecondary,
   },
   categoryInfo: {
     flex: 1,
   },
   categoryName: {
-    ...typography.titleMedium,
+    ...typography.labelLarge,
+    fontFamily: 'Inter_700Bold',
     color: colors.text,
   },
   categoryStatus: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
+  },
+  findLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  findLinkText: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
+    color: colors.accent,
   },
 });

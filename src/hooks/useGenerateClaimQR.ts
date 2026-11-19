@@ -15,8 +15,9 @@ export function useGenerateClaimQR() {
 
   return useMutation<ActiveClaim, Error, string>({
     mutationFn: (rewardId: string) => generateClaimQR(rewardId),
-    onSuccess: (_data, rewardId) => {
-      // Invalidate activeClaim query to refetch the new QR data
+    onSuccess: (claim, rewardId) => {
+      // Show the new pass immediately, then refetch to confirm with the server
+      queryClient.setQueryData(['activeClaim', rewardId], claim);
       queryClient.invalidateQueries({ queryKey: ['activeClaim', rewardId] });
     },
   });

@@ -1,325 +1,350 @@
-import { Button } from '@/components/ui/Button';
-import { ActiveClaim } from '@/data/types';
+import { RewardPhoto } from '@/components/rewards/RewardPhoto';
+import { ActiveClaim, Reward } from '@/data/types';
 import { REDEMPTION_LOCATION } from '@/lib/constants';
-import { colors, radii, shadows, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useKeepAwake } from 'expo-keep-awake';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 /**
  * ClaimQRView Component
- * 
- * Displays a single-use claim QR code with countdown timer for reward redemption.
- * The QR code expires after a set time (CLAIM_QR_EXPIRY_MINUTES), and the timer
- * stays accurate even after app backgrounding by computing from Date.now() on each tick.
- * 
- * Supports two display modes:
- * 1. QR Generated state (default): Shows active QR with countdown and "Done" button
- * 2. Expired state: Shows "Expired" text, grayed-out QR, and "Generate New QR" button
- * 
- * Props:
- * - activeClaim: Active claim object with QR payload and expiration time
- * - rewardTitle: Title of the reward being claimed
- * - rewardPoints: Points cost of the reward
- * - onDone: Callback when user dismisses the QR view (QR Generated state)
- * - isExpired: Whether the claim is expired (switches to Expired state)
- * - onGenerateNewQR: Callback for generating new QR (Expired state only)
- * - isGeneratingNewQR: Loading state for Generate New QR mutation (Expired state only)
- * - testID: Optional test identifier
- * 
- * Layout:
- * - Summary card with reward icon, title, points, and location
- * - QR card with countdown timer, QR code, ticket reference ID, and instructions
- * - Action button at bottom (Done or Generate New QR depending on state)
- * 
- * Timer Logic:
- * - Computed from activeClaim.expiresAt using Date.now() on each tick
- * - Updates every second
- * - Stays correct after app backgrounding
- * - Shows "Expired" when isExpired prop is true
- * 
+ *
+ * The single-use claim pass shown to a tourism officer, styled as a
+ * passport-paper ticket:
+ * - Reward thumbnail, title and points
+ * - Large countdown with a shrinking bar (orange under 3 min, red under 1 min)
+ * - Black-on-white QR for reliable scanning; stamped "EXPIRED" once it lapses
+ * - Reference ID in monospace so it can be read aloud
+ *
+ * While the pass is active the screen is kept awake so it doesn't dim at the
+ * counter. The timer is computed from `expiresAt` on every tick, so it stays
+ * correct after the app is backgrounded.
+ *
+ * Actions (Done / Generate new QR) live in the screen's bottom bar.
+ *
  * Validates: Requirements 6.5 (QR Generated State), 6.6 (Expired State), Timer Logic, QR Code Generation
  */
 
 export interface ClaimQRViewProps {
   /** Active claim with QR payload and expiration */
   activeClaim: ActiveClaim;
-  /** Title of the reward */
-  rewardTitle: string;
-  /** Points cost of the reward */
-  rewardPoints: number;
-  /** Callback when Done button is pressed */
-  onDone: () => void;
-  /** Whether the claim is expired (for Expired state rendering) */
+  /** The reward being claimed */
+  reward: Reward;
+  /** Whether the claim is expired */
   isExpired?: boolean;
-  /** Callback when Generate New QR button is pressed (Expired state only) */
-  onGenerateNewQR?: () => void;
-  /** Whether Generate New QR mutation is loading (Expired state only) */
-  isGeneratingNewQR?: boolean;
   /** Optional test identifier */
   testID?: string;
 }
 
+const MONO_FONT = Platform.select({ ios: 'Menlo', default: 'monospace' });
+
+function formatTime(ms: number): string {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/** Extract claim ID from payload (format: cvt:claim:<claimId>:<token>) */
+function extractClaimId(claim: ActiveClaim): string {
+  const match = claim.qrPayload.match(/^cvt:claim:([^:]+):/);
+  return match?.[1] || claim.claimId;
+}
+
+/** Keeps the display on for as long as it's mounted */
+function KeepScreenAwake() {
+  useKeepAwake('claim-qr');
+  return null;
+}
+
 export function ClaimQRView({
   activeClaim,
-  rewardTitle,
-  rewardPoints,
-  onDone,
+  reward,
   isExpired = false,
-  onGenerateNewQR,
-  isGeneratingNewQR = false,
   testID,
 }: ClaimQRViewProps) {
-  // Calculate remaining time in milliseconds
-  const calculateRemainingTime = React.useCallback(() => {
-    return Math.max(0, activeClaim.expiresAt.getTime() - Date.now());
-  }, [activeClaim.expiresAt]);
+  const expiresAt = activeClaim.expiresAt.getTime();
+  const totalMs = Math.max(1, expiresAt - activeClaim.createdAt.getTime());
 
-  const [remainingMs, setRemainingMs] = useState(() => calculateRemainingTime());
+  const [remainingMs, setRemainingMs] = useState(() =>
+    Math.max(0, expiresAt - Date.now()),
+  );
 
-  // Format milliseconds to MM:SS
-  const formatTime = (ms: number): string => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Update timer every second
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRemainingMs(calculateRemainingTime());
-    }, 1000);
-
-    // Cleanup interval on unmount
+    if (isExpired) return;
+    // The parent keys this view by claim ID, so the initial state is fresh
+    const interval = setInterval(
+      () => setRemainingMs(Math.max(0, expiresAt - Date.now())),
+      1000,
+    );
     return () => clearInterval(interval);
-  }, [calculateRemainingTime]);
+  }, [expiresAt, isExpired]);
 
-  // Extract claim ID from payload (format: cvt:claim:<claimId>:<token>)
-  const extractClaimId = (payload: string): string => {
-    const match = payload.match(/^cvt:claim:([^:]+):/);
-    return match?.[1] || activeClaim.claimId;
-  };
-
-  const claimId = extractClaimId(activeClaim.qrPayload);
-  const timeDisplay = isExpired ? 'Expired' : formatTime(remainingMs);
+  const shownMs = isExpired ? 0 : remainingMs;
+  const timerColor =
+    isExpired || shownMs <= 60_000
+      ? colors.error
+      : shownMs <= 180_000
+        ? colors.accent
+        : colors.primary;
 
   return (
-    <View style={styles.container} testID={testID}>
-      {/* Summary Card */}
-      <View style={styles.summaryCard}>
-        {/* Reward Icon Circle */}
-        <View style={styles.rewardIconCircle}>
-          <Ionicons name="gift" size={32} color={colors.primary} />
-        </View>
+    <View style={styles.ticket} testID={testID}>
+      {!isExpired && <KeepScreenAwake />}
 
-        {/* Reward Info */}
-        <View style={styles.rewardInfo}>
+      {/* Reward summary */}
+      <View style={styles.summary}>
+        <RewardPhoto reward={reward} iconSize={24} style={styles.thumb} />
+        <View style={styles.summaryText}>
+          <Text style={styles.passLabel}>Single-use claim pass</Text>
           <Text style={styles.rewardTitle} numberOfLines={2}>
-            {rewardTitle}
+            {reward.title}
           </Text>
-          <View style={styles.locationRow}>
-            <Ionicons
-              name="location"
-              size={14}
-              color={colors.textSecondary}
-              style={styles.locationIcon}
-            />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {REDEMPTION_LOCATION}
-            </Text>
-          </View>
-        </View>
-
-        {/* Points Badge */}
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsBadgeText}>{rewardPoints} pts</Text>
+          <Text style={styles.rewardPoints}>
+            {reward.pointsCost.toLocaleString('en-US')} pts
+          </Text>
         </View>
       </View>
 
-      {/* QR Card */}
-      <View style={styles.qrCard}>
-        {/* Timer Header */}
-        <View style={styles.qrHeader}>
-          <Text style={styles.qrHeaderText}>
-            Single-Use Pass • Valid for{' '}
-            <Text style={styles.timerText}>{timeDisplay}</Text>
-          </Text>
-        </View>
+      <Perforation />
 
-        {/* QR Code */}
-        <View style={styles.qrCodeContainer}>
-          {isExpired ? (
-            /* Expired: Gray out QR code */
-            <View style={{ opacity: 0.3 }}>
-              <QRCode
-                value={activeClaim.qrPayload}
-                size={200}
-                color={colors.textSecondary}
-                backgroundColor={colors.background}
-              />
-            </View>
-          ) : (
-            <QRCode
-              value={activeClaim.qrPayload}
-              size={200}
-              color={colors.primary}
-              backgroundColor={colors.background}
-            />
-          )}
-        </View>
-
-        {/* Ticket Reference ID */}
-        <View style={styles.ticketSection}>
-          <Text style={styles.ticketLabel}>TICKET REFERENCE ID</Text>
-          <Text style={styles.ticketId}>{claimId}</Text>
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.instructionsRow}>
-          <Ionicons
-            name="information-circle"
-            size={20}
-            color={colors.textSecondary}
-            style={styles.instructionsIcon}
+      {/* Countdown */}
+      <View
+        style={styles.timerBlock}
+        accessible
+        accessibilityRole="timer"
+        accessibilityLabel={
+          isExpired ? 'Pass expired' : `Pass valid for ${formatTime(shownMs)}`
+        }
+      >
+        <Text style={styles.timerLabel}>{isExpired ? 'Pass expired' : 'Valid for'}</Text>
+        <Text style={[styles.timer, { color: timerColor }]}>{formatTime(shownMs)}</Text>
+        <View style={styles.timerTrack}>
+          <View
+            style={[
+              styles.timerFill,
+              {
+                width: `${(shownMs / totalMs) * 100}%`,
+                backgroundColor: timerColor,
+              },
+            ]}
           />
-          <Text style={styles.instructionsText}>
-            Show this code to a tourism office officer. Points are deducted when
-            the reward is claimed.
-          </Text>
         </View>
       </View>
 
-      {/* Action Button */}
-      {isExpired ? (
-        <Button
-          title="Generate New QR"
-          onPress={onGenerateNewQR || (() => {})}
-          variant="accent"
-          fullWidth
-          loading={isGeneratingNewQR}
-          testID={testID ? `${testID}-generate-new-qr-button` : undefined}
-        />
-      ) : (
-        <Button
-          title="Done ✓"
-          onPress={onDone}
-          variant="primary"
-          fullWidth
-          testID={testID ? `${testID}-done-button` : undefined}
-        />
-      )}
+      {/* QR */}
+      <View style={styles.qrFrame}>
+        <View style={isExpired && styles.qrExpired}>
+          <QRCode
+            value={activeClaim.qrPayload}
+            size={208}
+            color={colors.qrInk}
+            backgroundColor={colors.background}
+            quietZone={8}
+          />
+        </View>
+        {isExpired && (
+          <View style={styles.expiredStamp} pointerEvents="none">
+            <Text style={styles.expiredStampText}>EXPIRED</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Reference */}
+      <View style={styles.reference}>
+        <Text style={styles.referenceLabel}>Ticket reference</Text>
+        <Text style={styles.referenceId} selectable>
+          {extractClaimId(activeClaim)}
+        </Text>
+      </View>
+
+      <Perforation />
+
+      {/* Where and how */}
+      <View style={styles.footer}>
+        <View style={styles.footerRow}>
+          <Ionicons name="location" size={16} color={colors.primary} />
+          <Text style={styles.footerText}>{REDEMPTION_LOCATION}</Text>
+        </View>
+        <View style={styles.footerRow}>
+          <Ionicons name="person" size={16} color={colors.primary} />
+          <Text style={styles.footerText}>
+            {isExpired
+              ? 'Generate a new pass when you are at the desk.'
+              : `Show this to a tourism officer. ${reward.pointsCost.toLocaleString('en-US')} pts are deducted only when they scan it.`}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
 
+/** Dashed tear line with semicircle notches cut into both edges */
+function Perforation() {
+  return (
+    <View style={styles.perforation}>
+      <View style={[styles.notch, styles.notchLeft]} />
+      <View style={styles.perforationLine} />
+      <View style={[styles.notch, styles.notchRight]} />
+    </View>
+  );
+}
+
+const NOTCH = 20;
+
 const styles = StyleSheet.create({
-  container: {
-    gap: spacing.base,
-  },
-  summaryCard: {
-    backgroundColor: colors.surface,
+  ticket: {
+    backgroundColor: colors.passportPaper,
     borderRadius: radii.card,
-    padding: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.passportPaperBorder,
+    overflow: 'hidden',
+  },
+  summary: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    padding: spacing.base,
   },
-  rewardIconCircle: {
+  thumb: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: radii.md,
   },
-  rewardInfo: {
+  summaryText: {
     flex: 1,
-    gap: spacing.xs,
+  },
+  passLabel: {
+    ...typography.labelSmall,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
   },
   rewardTitle: {
     ...typography.titleMedium,
+    fontFamily: 'Inter_700Bold',
     color: colors.text,
   },
-  locationRow: {
+  rewardPoints: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
+    color: colors.accent,
+    marginTop: 2,
+  },
+  perforation: {
+    height: NOTCH,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
   },
-  locationIcon: {
-    marginTop: 1, // Optical alignment
-  },
-  locationText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+  perforationLine: {
     flex: 1,
+    marginHorizontal: spacing.xs,
+    borderTopWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.passportPaperBorder,
   },
-  pointsBadge: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.chip,
-  },
-  pointsBadgeText: {
-    ...typography.labelMedium,
-    color: colors.background,
-  },
-  qrCard: {
+  notch: {
+    width: NOTCH,
+    height: NOTCH,
+    borderRadius: NOTCH / 2,
     backgroundColor: colors.background,
-    borderRadius: radii.card,
-    padding: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.passportPaperBorder,
+  },
+  notchLeft: {
+    marginLeft: -NOTCH / 2,
+  },
+  notchRight: {
+    marginRight: -NOTCH / 2,
+  },
+  timerBlock: {
     alignItems: 'center',
-    ...shadows.card,
-    gap: spacing.base,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
   },
-  qrHeader: {
-    alignItems: 'center',
-  },
-  qrHeaderText: {
-    ...typography.bodyMedium,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  timerText: {
-    ...typography.bodyMedium,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-  qrCodeContainer: {
-    padding: spacing.base,
-    backgroundColor: colors.background,
-    borderRadius: radii.md,
-  },
-  qrPlaceholder: {
-    // Container for grayed-out QR code in expired state
-  },
-  ticketSection: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  ticketLabel: {
+  timerLabel: {
     ...typography.labelSmall,
     color: colors.textSecondary,
     textTransform: 'uppercase',
   },
-  ticketId: {
-    ...typography.titleMedium,
+  timer: {
+    fontSize: 40,
+    lineHeight: 48,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
+    fontVariant: ['tabular-nums'],
+  },
+  timerTrack: {
+    alignSelf: 'stretch',
+    height: 4,
+    borderRadius: radii.full,
+    backgroundColor: colors.passportPaperBorder,
+    overflow: 'hidden',
+  },
+  timerFill: {
+    height: '100%',
+    borderRadius: radii.full,
+  },
+  qrFrame: {
+    alignSelf: 'center',
+    marginTop: spacing.base,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qrExpired: {
+    opacity: 0.15,
+  },
+  expiredStamp: {
+    position: 'absolute',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    borderWidth: 3,
+    borderColor: colors.error,
+    borderRadius: radii.sm,
+    transform: [{ rotate: '-12deg' }],
+  },
+  expiredStampText: {
+    ...typography.headlineMedium,
+    fontFamily: 'Inter_700Bold',
+    color: colors.error,
+    letterSpacing: 4,
+  },
+  reference: {
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
+  },
+  referenceLabel: {
+    ...typography.labelSmall,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+  },
+  referenceId: {
+    fontFamily: MONO_FONT,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 1,
     color: colors.text,
     textAlign: 'center',
   },
-  instructionsRow: {
+  footer: {
+    gap: spacing.sm,
+    padding: spacing.base,
+  },
+  footerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    paddingTop: spacing.xs,
   },
-  instructionsIcon: {
-    marginTop: 2, // Optical alignment with first line of text
-  },
-  instructionsText: {
+  footerText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
+    color: colors.text,
     flex: 1,
+    lineHeight: 18,
   },
 });

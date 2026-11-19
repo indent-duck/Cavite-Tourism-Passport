@@ -33,6 +33,8 @@ export const colors = {
 
   // Structural colors
   border: "#E5E7EB", // Dividers, input borders
+  qrInk: "#000000", // QR modules: pure black scans most reliably
+  scrim: "rgba(27, 42, 73, 0.55)", // Modal backdrop (text color at 55%)
 
   // On-brand overlays (translucent white layered on blue surfaces like the Header)
   onPrimaryOverlay: "rgba(255, 255, 255, 0.15)", // Pill/chip fill on blue

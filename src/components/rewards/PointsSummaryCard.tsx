@@ -1,4 +1,5 @@
 import { Category, POINTS_PER_CATEGORY } from "@/data/types";
+import { REQUIRED_CATEGORIES } from "@/lib/rewards";
 import { colors, radii, spacing, typography } from "@/theme";
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,19 +8,11 @@ import { StyleSheet, Text, View } from "react-native";
 /**
  * PointsSummaryCard Component
  *
- * Displays the user's total points balance and category stamp collection progress.
- * Shows which of the 4 main categories (Dining, Staycation, Heritage, Adventure)
- * have been collected and which are still missing.
+ * Top of the Rewards Hub: the user's point balance, the one goal worth
+ * chasing next, and the four category stamps every reward requires.
  *
- * Props:
- * - points: Current user's total points
- * - stampCategories: Array of Category enums representing collected stamps
- * - testID: Optional test identifier
- *
- * Layout:
- * - Top: "TOTAL BALANCE" label, large points display, subtext
- * - Bottom: "Category Stamp Milestones" label with "N of 4 categories collected" badge
- * - Four category chips in 2x2 grid showing Dining, Staycation, Heritage, Adventure
+ * Stamps read like passport slots: a collected category is a filled stamp in
+ * its category color, a missing one is an empty dashed slot (not an error).
  *
  * Validates: Requirements 1.2.1 (Points Summary Card)
  */
@@ -29,249 +22,252 @@ export interface PointsSummaryCardProps {
   points: number;
   /** Categories for which user has collected stamps */
   stampCategories: Category[];
+  /**
+   * The next thing to aim for, e.g. "250 pts + Adventure stamp to go for
+   * Heritage Books". Hidden when undefined.
+   */
+  goal?: { text: string; tone: "ready" | "next" | "claimed" };
   /** Optional test identifier */
   testID?: string;
 }
 
-// Define the 4 main categories in display order
-const MAIN_CATEGORIES: Category[] = [
-  "Dining",
-  "Staycation",
-  "Heritage",
-  "Adventure",
-];
+const GOAL_ICONS = {
+  ready: "gift",
+  next: "flag",
+  claimed: "checkmark-circle",
+} as const;
 
 export function PointsSummaryCard({
   points,
   stampCategories,
+  goal,
   testID,
 }: PointsSummaryCardProps) {
-  // Count how many of the 4 main categories have been collected
-  const collectedCount = MAIN_CATEGORIES.filter((cat) =>
+  const collectedCount = REQUIRED_CATEGORIES.filter((cat) =>
     stampCategories.includes(cat),
   ).length;
+  const allCollected = collectedCount === REQUIRED_CATEGORIES.length;
 
   return (
-    <View style={styles.card} testID={testID}>
-      {/* Points Balance Section */}
-      <View style={styles.balanceSection}>
-        <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
-        <View style={styles.pointsRow}>
-          <Text style={styles.pointsNumber}>{points}</Text>
-          <Text style={styles.pointsLabel}> pts</Text>
+    <View
+      style={styles.card}
+      testID={testID}
+      accessible
+      accessibilityLabel={`Balance ${points} points. ${collectedCount} of 4 category stamps collected.${goal ? ` ${goal.text}.` : ""}`}
+    >
+      {/* Balance */}
+      <Text style={styles.balanceLabel}>Your balance</Text>
+      <View style={styles.pointsRow}>
+        <Text style={styles.pointsNumber}>{points.toLocaleString("en-US")}</Text>
+        <Text style={styles.pointsUnit}>pts</Text>
+      </View>
+
+      {/* Next goal */}
+      {goal && (
+        <View
+          style={[
+            styles.goalRow,
+            goal.tone === "ready" && styles.goalRowReady,
+          ]}
+        >
+          <Ionicons
+            name={GOAL_ICONS[goal.tone]}
+            size={16}
+            color={goal.tone === "next" ? colors.primary : colors.successDark}
+          />
+          <Text
+            style={[
+              styles.goalText,
+              goal.tone !== "next" && styles.goalTextReady,
+            ]}
+            numberOfLines={2}
+          >
+            {goal.text}
+          </Text>
         </View>
-        <Text style={styles.balanceSubtext}>
-          Earned across 4 Cavite Passport categories
+      )}
+
+      <View style={styles.divider} />
+
+      {/* Stamp slots */}
+      <View style={styles.stampsHeader}>
+        <Text style={styles.stampsLabel}>Required stamps</Text>
+        <Text
+          style={[styles.stampsCount, allCollected && styles.stampsCountDone]}
+        >
+          {collectedCount} of 4
         </Text>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Category Milestones Section */}
-      <View style={styles.milestonesSection}>
-        <View style={styles.milestonesHeader}>
-          <Text style={styles.milestonesLabel}>Category Stamp Milestones</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
-              {collectedCount} of 4 categories collected
-            </Text>
-          </View>
-        </View>
-
-        {/* Category Chips Grid */}
-        <View style={styles.chipsGrid}>
-          {MAIN_CATEGORIES.map((category) => {
-            const isCollected = stampCategories.includes(category);
-            const categoryColor = CATEGORY_COLORS[category];
-            const categoryIcon = CATEGORY_ICONS[category];
-            const categoryPoints = POINTS_PER_CATEGORY[category];
-
-            return (
+      <View style={styles.stampsRow}>
+        {REQUIRED_CATEGORIES.map((category) => {
+          const isCollected = stampCategories.includes(category);
+          return (
+            <View key={category} style={styles.stampItem}>
               <View
-                key={category}
                 style={[
-                  styles.chip,
-                  {
-                    borderWidth: isCollected ? 0 : 1,
-                    borderColor: isCollected ? "transparent" : colors.border,
-                    backgroundColor: isCollected
-                      ? colors.successLight
-                      : "#FFF3E0",
-                  },
+                  styles.stamp,
+                  isCollected
+                    ? { backgroundColor: CATEGORY_COLORS[category] }
+                    : styles.stampEmpty,
                 ]}
               >
-                {/* Category Icon */}
                 <Ionicons
-                  name={categoryIcon}
-                  size={16}
-                  color={isCollected ? colors.successDark : colors.accent}
-                  style={styles.chipIcon}
+                  name={CATEGORY_ICONS[category]}
+                  size={20}
+                  color={isCollected ? colors.background : colors.textSecondary}
                 />
-
-                {/* Category Info */}
-                <View style={styles.chipContent}>
-                  <Text
-                    style={[
-                      styles.chipName,
-                      {
-                        color: isCollected ? colors.successDark : colors.accent,
-                      },
-                    ]}
-                  >
-                    {category}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.chipStatus,
-                      {
-                        color: isCollected ? colors.successDark : colors.accent,
-                      },
-                    ]}
-                  >
-                    {isCollected
-                      ? `Collected • ${categoryPoints} pts`
-                      : "Missing (Need 1)"}
-                  </Text>
-                </View>
-
-                {/* Status Icon */}
-                <Ionicons
-                  name={isCollected ? "checkmark-circle" : "alert-circle"}
-                  size={18}
-                  color={isCollected ? colors.successDark : colors.accent}
-                  style={styles.statusIcon}
-                />
+                {isCollected && (
+                  <View style={styles.stampCheck}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={16}
+                      color={colors.success}
+                    />
+                  </View>
+                )}
               </View>
-            );
-          })}
-        </View>
+              <Text
+                style={[styles.stampName, !isCollected && styles.stampNameEmpty]}
+                numberOfLines={1}
+              >
+                {category}
+              </Text>
+              <Text style={styles.stampMeta} numberOfLines={1}>
+                {isCollected ? `+${POINTS_PER_CATEGORY[category]}` : "Needed"}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
 }
 
+const STAMP_SIZE = 48;
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#E9EDFF", // Light blue gradient background
+    backgroundColor: colors.primaryTint,
     borderRadius: radii.card,
     padding: spacing.base,
-    borderWidth: 1,
-    borderColor: `${colors.border}50`,
-    shadowColor: "#1B2A49",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  balanceSection: {
-    alignItems: "flex-start",
-    paddingBottom: spacing.sm,
   },
   balanceLabel: {
     ...typography.labelMedium,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "Inter_600SemiBold",
     color: colors.textSecondary,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
+    letterSpacing: 0.6,
   },
   pointsRow: {
     flexDirection: "row",
     alignItems: "baseline",
+    gap: spacing.xs,
   },
   pointsNumber: {
-    fontSize: 34,
-    fontWeight: "800",
-    color: colors.accent,
-    letterSpacing: -0.5,
-    lineHeight: 40,
+    fontSize: 36,
+    lineHeight: 44,
+    fontFamily: "Inter_700Bold",
+    color: colors.primary,
+    letterSpacing: -0.8,
   },
-  pointsLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.accent,
-  },
-  balanceSubtext: {
-    ...typography.bodySmall,
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: `${colors.border}50`,
-    marginVertical: spacing.sm,
-  },
-  milestonesSection: {
-    gap: spacing.sm,
-  },
-  milestonesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.xs,
-  },
-  milestonesLabel: {
-    ...typography.labelMedium,
-    fontSize: 12,
+  pointsUnit: {
+    ...typography.titleMedium,
     fontFamily: "Inter_700Bold",
     color: colors.primary,
   },
-  badge: {
-    backgroundColor: `${colors.accent}30`,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 20,
-  },
-  badgeText: {
-    ...typography.bodySmall,
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.accent,
-  },
-  chipsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  chip: {
+  goalRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderRadius: spacing.md,
-    paddingHorizontal: spacing.sm,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    minHeight: 52,
-    marginBottom: spacing.sm,
-    // 2 chips per row with space between
-    width: "48.5%",
-    shadowColor: "#1B2A49",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    borderRadius: radii.md,
+    backgroundColor: colors.background,
   },
-  chipIcon: {
-    marginRight: spacing.sm,
+  goalRowReady: {
+    backgroundColor: colors.successLight,
   },
-  chipContent: {
+  goalText: {
+    ...typography.bodySmall,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.text,
     flex: 1,
   },
-  chipName: {
-    ...typography.labelMedium,
-    fontSize: 12,
+  goalTextReady: {
+    color: colors.successDark,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.background,
+    marginVertical: spacing.base,
+  },
+  stampsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  stampsLabel: {
+    ...typography.labelLarge,
     fontFamily: "Inter_700Bold",
     color: colors.text,
-    marginBottom: 2,
   },
-  chipStatus: {
-    ...typography.bodySmall,
-    fontSize: 10,
-    fontWeight: "600",
+  stampsCount: {
+    ...typography.labelMedium,
+    fontFamily: "Inter_700Bold",
+    color: colors.accent,
+    backgroundColor: colors.accentTint,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+    overflow: "hidden",
   },
-  statusIcon: {
-    marginLeft: spacing.xs,
+  stampsCountDone: {
+    color: colors.successDark,
+    backgroundColor: colors.successLight,
+  },
+  stampsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  stampItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  stamp: {
+    width: STAMP_SIZE,
+    height: STAMP_SIZE,
+    borderRadius: STAMP_SIZE / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stampEmpty: {
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: colors.textSecondary,
+    backgroundColor: colors.background,
+  },
+  stampCheck: {
+    position: "absolute",
+    right: -4,
+    bottom: -2,
+    backgroundColor: colors.background,
+    borderRadius: radii.full,
+  },
+  stampName: {
+    ...typography.labelMedium,
+    fontFamily: "Inter_700Bold",
+    color: colors.text,
+    marginTop: spacing.sm,
+  },
+  stampNameEmpty: {
+    color: colors.textSecondary,
+  },
+  stampMeta: {
+    ...typography.labelSmall,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.textSecondary,
   },
 });

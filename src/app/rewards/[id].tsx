@@ -1,1000 +1,728 @@
+import { StampReveal } from '@/components/passport/StampReveal';
+import { ClaimConfirmModal } from '@/components/rewards/ClaimConfirmModal';
 import { ClaimQRView } from '@/components/rewards/ClaimQRView';
+import { RewardDevPanel } from '@/components/rewards/RewardDevPanel';
+import { RewardPhoto } from '@/components/rewards/RewardPhoto';
 import { RewardRequirements } from '@/components/rewards/RewardRequirements';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { setMockScenario } from '@/data/api';
+import { StateView } from '@/components/ui/StateView';
+import type { ActiveClaim, Category, RewardEligibility } from '@/data/types';
 import { useActiveClaim } from '@/hooks/useActiveClaim';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useGenerateClaimQR } from '@/hooks/useGenerateClaimQR';
+import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { useRewardById } from '@/hooks/useRewardById';
 import { useRewardEligibility } from '@/hooks/useRewardEligibility';
 import { useSimulateClaim } from '@/hooks/useSimulateClaim';
-import { REDEMPTION_LOCATION } from '@/lib/constants';
+import { CLAIM_QR_EXPIRY_MINUTES, REDEMPTION_LOCATION } from '@/lib/constants';
+import {
+  describeRemaining,
+  formatShortDate,
+  getRewardStatus,
+  type RewardStatus,
+} from '@/lib/rewards';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+/** Reward status plus the two claim-pass states */
+type ScreenState = RewardStatus | 'qr-active' | 'qr-expired';
+
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 /**
  * Reward Detail Screen
- * 
- * Shows complete reward information and redemption options.
- * Six states: Locked, Eligible, QR Generated, Expired, Already Claimed, No Longer Available
- * 
+ *
+ * One layout for every state: hero photo, title and points, a status banner
+ * that says exactly where the user stands, then details. Only the banner and
+ * the pinned bottom action change between states:
+ *
+ * - locked:      "250 pts + Adventure stamp to go" → Find Adventure sites
+ * - ready:       unlocked                         → Claim (with confirmation)
+ * - qr-active:   claim pass ticket                → Done
+ * - qr-expired:  expired ticket                   → Generate new pass
+ * - claimed:     claimed stamp (animated on claim) → Back to rewards
+ * - period-used: another reward was claimed        → Back to rewards
+ * - sold-out:    no claims left                   → Back to rewards
+ *
  * Requirements: Viewing Reward Detail states
  */
 export default function RewardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  
-  // Extract reward ID from params
   const rewardId = Array.isArray(id) ? id[0] : id;
+  const insets = useSafeAreaInsets();
 
-  // Fetch reward data, eligibility, user data, and active claim status
-  const { data: reward, isLoading: isLoadingReward, error: rewardError } = useRewardById(rewardId);
-  const { data: eligibility, isLoading: isLoadingEligibility } = useRewardEligibility(rewardId);
-  const { data: user, isLoading: isLoadingUser } = useCurrentUser();
-  const { data: activeClaim, isLoading: isLoadingActiveClaim } = useActiveClaim(rewardId);
+  const rewardQuery = useRewardById(rewardId);
+  const eligibilityQuery = useRewardEligibility(rewardId);
+  const userQuery = useCurrentUser();
+  const activeClaimQuery = useActiveClaim(rewardId);
+  const { data: promoPeriod } = usePromoPeriod();
 
-   
-  // Mutations for generating claim QR and simulating officer scan (dev only)
-  const generateClaimQRMutation = useGenerateClaimQR();
-  const simulateClaimMutation = useSimulateClaim(rewardId);
+  const reward = rewardQuery.data;
+  const eligibility = eligibilityQuery.data;
+  const user = userQuery.data;
+  const activeClaim = activeClaimQuery.data ?? null;
 
-  // Query client for invalidation (dev only)
-  const queryClient = useQueryClient();
+  const generateClaimQR = useGenerateClaimQR();
+  const simulateClaim = useSimulateClaim(rewardId);
 
-  // Loading state - show loading indicator while any required data is loading
-  const isLoading = isLoadingReward || isLoadingEligibility || isLoadingUser || isLoadingActiveClaim;
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [justClaimed, setJustClaimed] = useState(false);
 
-  // State determination logic (task 6.2) - Must be called before early returns
-  type RewardState = 'locked' | 'eligible' | 'qr-generated' | 'expired' | 'already-claimed' | 'no-longer-available';
-  
-  // Capture current time once per render for purity (use useState initializer to satisfy linter)
-  const [currentTime] = useState(() => Date.now());
-  
-  const rewardState = useMemo<RewardState>(() => {
-    if (!reward || !user) return 'locked';
+  // When the pass lapses, switch to the expired view right away instead of
+  // waiting for the next refetch, and keep showing it after the API drops
+  // the expired claim.
+  const [now, setNow] = useState(() => Date.now());
+  const [expiredClaim, setExpiredClaim] = useState<ActiveClaim | null>(null);
+  useEffect(() => {
+    if (!activeClaim) return;
+    const msLeft = activeClaim.expiresAt.getTime() - Date.now();
+    const timer = setTimeout(() => {
+      setNow(Date.now());
+      setExpiredClaim(activeClaim);
+    }, Math.max(0, msLeft) + 50);
+    return () => clearTimeout(timer);
+  }, [activeClaim]);
 
-    // Already Claimed state (user-level check)
-    if (user.hasClaimedThisPeriod) {
-      return 'already-claimed';
-    }
+  const periodEnd = promoPeriod ? formatShortDate(promoPeriod.endDate) : undefined;
 
-    // No Longer Available state (limited reward fully claimed)
-    if (!reward.available && reward.limited && reward.remainingClaims === 0) {
-      return 'no-longer-available';
-    }
+  const isLoading =
+    rewardQuery.isLoading ||
+    eligibilityQuery.isLoading ||
+    userQuery.isLoading ||
+    activeClaimQuery.isLoading;
 
-    // QR Generated state (active claim not expired)
-    if (activeClaim && activeClaim.expiresAt.getTime() > currentTime) {
-      return 'qr-generated';
-    }
+  const shell = (children: React.ReactNode) => (
+    <ScreenContainer
+      showHeader
+      headerTitle="Reward Details"
+      onBackPress={() => router.back()}
+      contentContainerStyle={styles.shellContent}
+      testID="reward-detail-screen"
+    >
+      <StatusBar style="dark" />
+      {children}
+    </ScreenContainer>
+  );
 
-    // Expired state (active claim expired)
-    if (activeClaim && activeClaim.expiresAt.getTime() <= currentTime) {
-      return 'expired';
-    }
-
-    // Eligible state
-    if (eligibility?.eligible) {
-      return 'eligible';
-    }
-
-    // Default to Locked state
-    return 'locked';
-  }, [reward, user, activeClaim, eligibility, currentTime]);
-
-  // Error state - show error message if reward not found
-  if (rewardError) {
-    return (
-      <ScreenContainer
-        scrollable={true}
-        showHeader={true}
-        headerTitle="Reward Details"
-        onBackPress={() => router.back()}
-        testID="reward-detail-screen"
-      >
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load reward</Text>
-          <Button
-            title="Go Back"
-            onPress={() => router.back()}
-            testID="error-back-button"
-          />
-        </View>
-      </ScreenContainer>
+  if (rewardQuery.error) {
+    return shell(
+      <StateView
+        variant="error"
+        title="Unable to load this reward"
+        message={rewardQuery.error.message}
+        actionLabel="Try again"
+        onAction={() => rewardQuery.refetch()}
+        style={styles.state}
+      />,
     );
   }
 
-  // Show loading state
   if (isLoading) {
-    return (
-      <ScreenContainer
-        scrollable={true}
-        showHeader={true}
-        headerTitle="Reward Details"
-        onBackPress={() => router.back()}
-        testID="reward-detail-screen"
-      >
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading reward details...</Text>
-        </View>
-      </ScreenContainer>
-    );
+    return shell(<StateView variant="loading" style={styles.state} />);
   }
 
-  // Reward not found
   if (!reward) {
-    return (
-      <ScreenContainer
-        scrollable={true}
-        showHeader={true}
-        headerTitle="Reward Details"
-        onBackPress={() => router.back()}
-        testID="reward-detail-screen"
-      >
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Reward not found</Text>
-          <Button
-            title="Go Back"
-            onPress={() => router.back()}
-            testID="not-found-back-button"
-          />
-        </View>
-      </ScreenContainer>
+    return shell(
+      <StateView
+        variant="empty"
+        icon="gift-outline"
+        title="Reward not found"
+        message="It may have been removed from this promo period."
+        actionLabel="Back to rewards"
+        onAction={() => router.back()}
+        style={styles.state}
+      />,
     );
   }
 
-  // Render Locked state (task 6.3)
-  const renderLockedState = () => {
-    if (!reward || !eligibility) return null;
+  // ---- State ---------------------------------------------------------------
 
-    return (
-      <View style={styles.stateContainer} testID="reward-detail-locked">
-        {/* Reward Image with overlays */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={reward.imageSource}
-            style={styles.rewardImage}
-            contentFit="cover"
-            testID="reward-image"
-          />
-          
-          {/* Limited badge overlay (top-left) */}
-          {reward.limited && reward.remainingClaims !== undefined && reward.remainingClaims > 0 && (
-            <View style={[styles.imageOverlay, styles.imageOverlayTopLeft]}>
-              <View style={styles.limitedBadge}>
-                <Text style={styles.limitedBadgeText}>
-                  Limited: {reward.remainingClaims} left
+  const status = getRewardStatus(reward, eligibility, user);
+  let state: ScreenState = status;
+  if (status === 'ready' || status === 'locked') {
+    if (activeClaim && activeClaim.expiresAt.getTime() > now) {
+      state = 'qr-active';
+    } else if (activeClaim ?? expiredClaim) {
+      state = 'qr-expired';
+    }
+  }
+  const shownClaim = activeClaim ?? expiredClaim;
+  const isPass = (state === 'qr-active' || state === 'qr-expired') && shownClaim;
+
+  // ---- Actions -------------------------------------------------------------
+
+  const generatePass = async () => {
+    try {
+      await generateClaimQR.mutateAsync(rewardId);
+      setExpiredClaim(null);
+      setConfirmVisible(false);
+    } catch {
+      Alert.alert('Could not create your pass', 'Check your connection and try again.');
+    }
+  };
+
+  const findSites = (category?: Category) => {
+    router.dismissTo({
+      pathname: '/explore',
+      params: category ? { category } : {},
+    });
+  };
+
+  const simulateScan = async () => {
+    if (!shownClaim) return;
+    try {
+      await simulateClaim.mutateAsync({ claimId: shownClaim.claimId, rewardId });
+      setJustClaimed(true);
+    } catch {
+      Alert.alert('Simulation failed', 'Failed to simulate officer scan. Please try again.');
+    }
+  };
+
+  const firstMissing = eligibility?.missingCategories[0];
+  let cta: React.ReactNode;
+  switch (state) {
+    case 'locked':
+      cta = (
+        <Button
+          title={firstMissing ? `Find ${firstMissing} sites` : 'Explore sites to earn points'}
+          onPress={() => findSites(firstMissing)}
+          variant="primary"
+          fullWidth
+          icon={<Ionicons name="compass" size={18} color={colors.background} />}
+          testID="find-sites-button"
+        />
+      );
+      break;
+    case 'ready':
+      cta = (
+        <Button
+          title="Claim this reward"
+          onPress={() => setConfirmVisible(true)}
+          variant="accent"
+          fullWidth
+          icon={<Ionicons name="gift" size={18} color={colors.background} />}
+          testID="claim-button"
+        />
+      );
+      break;
+    case 'qr-active':
+      cta = (
+        <Button
+          title="Done"
+          onPress={() => router.back()}
+          variant="primary"
+          fullWidth
+          icon={<Ionicons name="checkmark" size={18} color={colors.background} />}
+          testID="done-button"
+        />
+      );
+      break;
+    case 'qr-expired':
+      cta = (
+        <Button
+          title="Generate new pass"
+          onPress={generatePass}
+          variant="accent"
+          fullWidth
+          loading={generateClaimQR.isPending}
+          icon={<Ionicons name="refresh" size={18} color={colors.background} />}
+          testID="generate-new-qr-button"
+        />
+      );
+      break;
+    default:
+      cta = (
+        <Button
+          title="Back to rewards"
+          onPress={() => router.back()}
+          variant="outline"
+          fullWidth
+          testID="back-to-rewards-button"
+        />
+      );
+  }
+
+  // ---- Render --------------------------------------------------------------
+
+  return shell(
+    <>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        testID={`reward-detail-${state}`}
+      >
+        {isPass ? (
+          <View style={styles.passIntro}>
+            <Text style={styles.passHeading} accessibilityRole="header">
+              {state === 'qr-active' ? 'Your claim pass' : 'This pass has expired'}
+            </Text>
+            <Text style={styles.passSubheading}>
+              {state === 'qr-active'
+                ? 'Keep this screen open at the tourism desk.'
+                : 'Passes last a few minutes for security. Make a new one at the desk.'}
+            </Text>
+            <ClaimQRView
+              key={shownClaim.claimId}
+              activeClaim={shownClaim}
+              reward={reward}
+              isExpired={state === 'qr-expired'}
+              testID="claim-qr-view"
+            />
+          </View>
+        ) : (
+          <>
+            {/* Hero */}
+            <View style={styles.hero}>
+              <RewardPhoto reward={reward} iconSize={64} style={styles.heroImage} />
+              {reward.limited &&
+                (reward.remainingClaims ?? 0) > 0 &&
+                state !== 'sold-out' && (
+                  <View style={styles.limitedPill}>
+                    <Ionicons name="flame" size={12} color={colors.accent} />
+                    <Text style={styles.limitedPillText}>
+                      Only {reward.remainingClaims} left
+                    </Text>
+                  </View>
+                )}
+            </View>
+
+            {/* Title */}
+            <View style={styles.titleBlock}>
+              <Text style={styles.title} testID="reward-title">
+                {reward.title}
+              </Text>
+              <View style={styles.pointsPill}>
+                <Ionicons name="star" size={14} color={colors.accent} />
+                <Text style={styles.pointsPillText}>
+                  {reward.pointsCost.toLocaleString('en-US')} pts
                 </Text>
               </View>
             </View>
-          )}
-          
-          {/* Points badge overlay (bottom-right) */}
-          <View style={[styles.imageOverlay, styles.imageOverlayBottomRight]}>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsBadgeText}>
-                {reward.pointsCost} pts required
-              </Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Title and Description */}
-        <View style={styles.rewardInfo}>
-          <Text style={styles.rewardTitle} testID="reward-title">
-            {reward.title}
-          </Text>
-          
-          {/* Category badge */}
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryBadgeText}>OFFICIAL MERCH</Text>
-          </View>
-          
-          <Text style={styles.rewardDescription} testID="reward-description">
-            {reward.description}
-          </Text>
-        </View>
-
-        {/* Redemption Location Section */}
-        <View style={styles.locationSection}>
-          <Text style={styles.sectionLabel}>REDEMPTION LOCATION</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={20} color={colors.textSecondary} style={styles.locationIcon} />
-            <Text style={styles.locationText}>{REDEMPTION_LOCATION}</Text>
-          </View>
-        </View>
-
-        {/* Reward Requirements Component */}
-        <RewardRequirements
-          eligibility={eligibility}
-          pointsCost={reward.pointsCost}
-          testID="reward-requirements"
-        />
-
-        {/* Claim Procedure Info Box */}
-        <View style={styles.infoBox}>
-          <Ionicons name="qr-code" size={24} color={colors.primary} style={styles.infoBoxIcon} />
-          <View style={styles.infoBoxContent}>
-            <Text style={styles.infoBoxTitle}>Claim Procedure</Text>
-            <Text style={styles.infoBoxText}>
-              Once all 4 categories are stamped and {reward.pointsCost} pts are reached, your unique claim QR code will be generated to redeem this kit on-site.
-            </Text>
-          </View>
-        </View>
-
-        {/* Action Button */}
-        <Button
-          title="Reward Locked (Requirements Incomplete)"
-          onPress={() => {}}
-          disabled={true}
-          testID="locked-button"
-        />
-      </View>
-    );
-  };
-
-  // Render Eligible state (task 6.4)
-  const renderEligibleState = () => {
-    if (!reward || !eligibility) return null;
-
-    const handleGenerateQR = async () => {
-      try {
-        await generateClaimQRMutation.mutateAsync(rewardId);
-        // State will automatically transition to QR Generated when mutation succeeds
-      } catch (error) {
-        console.error('Failed to generate claim QR:', error);
-      }
-    };
-
-    return (
-      <View style={styles.stateContainer} testID="reward-detail-eligible">
-        {/* Status chips at top */}
-        <View style={styles.statusChipsRow}>
-          {/* Ready to Claim chip */}
-          <View style={styles.readyToClaimChip}>
-            <Ionicons name="checkmark" size={16} color={colors.background} style={styles.chipIcon} />
-            <Text style={styles.readyToClaimText}>READY TO CLAIM</Text>
-          </View>
-          
-          {/* Limited badge if applicable */}
-          {reward.limited && reward.remainingClaims !== undefined && reward.remainingClaims > 0 && (
-            <View style={styles.limitedChip}>
-              <Text style={styles.limitedChipText}>
-                Limited: {reward.remainingClaims} left
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Reward Image */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={reward.imageSource}
-            style={styles.rewardImage}
-            contentFit="cover"
-            testID="reward-image"
-          />
-          
-          {/* Points badge overlay (bottom-right) */}
-          <View style={[styles.imageOverlay, styles.imageOverlayBottomRight]}>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsBadgeText}>
-                {reward.pointsCost} pts
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Title and Description */}
-        <View style={styles.rewardInfo}>
-          <Text style={styles.rewardTitle} testID="reward-title">
-            {reward.title}
-          </Text>
-          
-          {/* Category badge */}
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryBadgeText}>OFFICIAL MERCH</Text>
-          </View>
-          
-          <Text style={styles.rewardDescription} testID="reward-description">
-            {reward.description}
-          </Text>
-        </View>
-
-        {/* Redemption Location Section */}
-        <View style={styles.locationSection}>
-          <Text style={styles.sectionLabel}>REDEMPTION LOCATION</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={20} color={colors.textSecondary} style={styles.locationIcon} />
-            <Text style={styles.locationText}>{REDEMPTION_LOCATION}</Text>
-          </View>
-        </View>
-
-        {/* Reward Requirements Component (all complete) */}
-        <RewardRequirements
-          eligibility={eligibility}
-          pointsCost={reward.pointsCost}
-          testID="reward-requirements"
-        />
-
-        {/* All Requirements Met Info Box */}
-        <View style={[styles.infoBox, styles.successInfoBox]}>
-          <Ionicons name="checkmark-circle" size={24} color={colors.success} style={styles.infoBoxIcon} />
-          <View style={styles.infoBoxContent}>
-            <Text style={styles.infoBoxTitle}>All Requirements Met!</Text>
-            <Text style={styles.infoBoxText}>
-              You have unlocked this reward. You may generate your single-use claim QR now or continue saving for higher rewards.
-            </Text>
-          </View>
-        </View>
-
-        {/* Generate Claim QR Button */}
-        <Button
-          title="Generate Claim QR"
-          onPress={handleGenerateQR}
-          disabled={false}
-          variant="accent"
-          loading={generateClaimQRMutation.isPending}
-          testID="generate-qr-button"
-        />
-
-        {/* Note below button */}
-        <Text style={styles.eligibleNote}>
-          Generating a code is optional. You can keep collecting points toward higher rewards.
-        </Text>
-      </View>
-    );
-  };
-
-  // Render QR Generated state (task 6.5)
-  const renderQRGeneratedState = () => {
-    if (!reward || !activeClaim) return null;
-
-    const handleDone = () => {
-      router.back();
-    };
-
-    const handleSimulateOfficerScan = async () => {
-      try {
-        await simulateClaimMutation.mutateAsync({
-          claimId: activeClaim.claimId,
-          rewardId: rewardId,
-        });
-        
-        // Show success message
-        Alert.alert(
-          'Claim Simulated',
-          `Successfully claimed ${reward.title}. Points deducted and reward marked as claimed.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate back to rewards list
-                router.back();
-              },
-            },
-          ]
-        );
-      } catch (error) {
-        console.error('Failed to simulate claim:', error);
-        Alert.alert(
-          'Simulation Failed',
-          'Failed to simulate officer scan. Please try again.',
-          [{ text: 'OK' }]
-        );
-      }
-    };
-
-    return (
-      <View style={styles.stateContainer} testID="reward-detail-qr-generated">
-        <ClaimQRView
-          activeClaim={activeClaim}
-          rewardTitle={reward.title}
-          rewardPoints={reward.pointsCost}
-          onDone={handleDone}
-          testID="claim-qr-view"
-        />
-        
-        {/* Dev-only: Simulate Officer Scan button (task 6.9) */}
-        {__DEV__ && (
-          <View style={styles.devSimulateSection}>
-            <Text style={styles.devSectionTitle}>Dev Testing:</Text>
-            <Button
-              title="Simulate Officer Scan"
-              onPress={handleSimulateOfficerScan}
-              variant="primary"
-              loading={simulateClaimMutation.isPending}
-              testID="dev-simulate-claim-button"
+            <StatusBanner
+              state={state}
+              eligibility={eligibility}
+              periodEnd={periodEnd}
+              justClaimed={justClaimed}
             />
-            <Text style={styles.devNote}>
-              This simulates an officer scanning the QR code to claim the reward.
+
+            <Text style={styles.description} testID="reward-description">
+              {reward.description}
             </Text>
-          </View>
+
+            {/* Where to redeem */}
+            <View style={styles.locationCard}>
+              <View style={styles.locationIcon}>
+                <Ionicons name="location" size={18} color={colors.primary} />
+              </View>
+              <View style={styles.locationText}>
+                <Text style={styles.locationLabel}>Redeem at</Text>
+                <Text style={styles.locationValue}>{REDEMPTION_LOCATION}</Text>
+              </View>
+            </View>
+
+            {(state === 'locked' || state === 'ready') && eligibility && (
+              <>
+                <Text style={styles.sectionTitle} accessibilityRole="header">
+                  Requirements
+                </Text>
+                <RewardRequirements
+                  eligibility={eligibility}
+                  pointsCost={reward.pointsCost}
+                  onCategoryPress={state === 'locked' ? findSites : undefined}
+                  testID="reward-requirements"
+                />
+
+                <Text style={styles.sectionTitle} accessibilityRole="header">
+                  How to claim
+                </Text>
+                <HowToClaim requirementsMet={state === 'ready'} />
+              </>
+            )}
+          </>
         )}
-      </View>
-    );
-  };
 
-  // Render Expired state (task 6.6)
-  const renderExpiredState = () => {
-    if (!reward || !activeClaim) return null;
-
-    const handleGenerateNewQR = async () => {
-      try {
-        await generateClaimQRMutation.mutateAsync(rewardId);
-        // State will automatically transition to QR Generated when mutation succeeds
-      } catch (error) {
-        console.error('Failed to generate new claim QR:', error);
-      }
-    };
-
-    return (
-      <View style={styles.stateContainer} testID="reward-detail-expired">
-        <ClaimQRView
-          activeClaim={activeClaim}
-          rewardTitle={reward.title}
-          rewardPoints={reward.pointsCost}
-          onDone={() => router.back()}
-          isExpired={true}
-          onGenerateNewQR={handleGenerateNewQR}
-          isGeneratingNewQR={generateClaimQRMutation.isPending}
-          testID="claim-qr-view-expired"
-        />
-      </View>
-    );
-  };
-
-  // Render Already Claimed state (task 6.7)
-  const renderAlreadyClaimedState = () => {
-    if (!reward) return null;
-
-    return (
-      <View style={styles.stateContainer} testID="reward-detail-already-claimed">
-        {/* Reward Image */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={reward.imageSource}
-            style={styles.rewardImage}
-            contentFit="cover"
-            testID="reward-image"
+        {__DEV__ && (
+          <RewardDevPanel
+            info={[
+              ['State', state],
+              ['Points', String(user?.points ?? 0)],
+              ['Eligible', eligibility?.eligible ? 'yes' : 'no'],
+              ['Claimed this period', user?.hasClaimedThisPeriod ? 'yes' : 'no'],
+              ['Pass expires', shownClaim ? shownClaim.expiresAt.toLocaleTimeString() : '—'],
+              ['Remaining claims', reward.limited ? String(reward.remainingClaims) : '∞'],
+            ]}
+            onSimulateScan={state === 'qr-active' ? simulateScan : undefined}
+            simulating={simulateClaim.isPending}
           />
-          
-          {/* Points badge overlay (bottom-right) */}
-          <View style={[styles.imageOverlay, styles.imageOverlayBottomRight]}>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsBadgeText}>
-                {reward.pointsCost} pts
-              </Text>
-            </View>
-          </View>
-        </View>
+        )}
+      </ScrollView>
 
-        {/* Title and Description */}
-        <View style={styles.rewardInfo}>
-          <Text style={styles.rewardTitle} testID="reward-title">
-            {reward.title}
-          </Text>
-          
-          {/* Category badge */}
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryBadgeText}>OFFICIAL MERCH</Text>
-          </View>
-          
-          <Text style={styles.rewardDescription} testID="reward-description">
-            {reward.description}
-          </Text>
-        </View>
-
-        {/* Redemption Location Section */}
-        <View style={styles.locationSection}>
-          <Text style={styles.sectionLabel}>REDEMPTION LOCATION</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={20} color={colors.textSecondary} style={styles.locationIcon} />
-            <Text style={styles.locationText}>{REDEMPTION_LOCATION}</Text>
-          </View>
-        </View>
-
-        {/* Already Claimed Message Card */}
-        <View style={styles.messageCard}>
-          <Ionicons name="information-circle" size={24} color={colors.textSecondary} style={styles.messageIcon} />
-          <Text style={styles.messageText}>
-            You&apos;ve already claimed a prize this promo period
-          </Text>
-        </View>
-
-        {/* Action Button */}
-        <Button
-          title="Already Claimed"
-          onPress={() => {}}
-          disabled={true}
-          testID="already-claimed-button"
-        />
+      {/* Pinned action */}
+      <View style={[styles.actionBar, { paddingBottom: insets.bottom + spacing.md }]}>
+        {cta}
       </View>
-    );
-  };
 
-  // Render No Longer Available state (task 6.8)
-  const renderNoLongerAvailableState = () => {
-    if (!reward) return null;
+      <ClaimConfirmModal
+        visible={confirmVisible}
+        reward={reward}
+        periodEnd={periodEnd}
+        loading={generateClaimQR.isPending}
+        onConfirm={generatePass}
+        onCancel={() => setConfirmVisible(false)}
+      />
+    </>,
+  );
+}
 
+// ---- Status banner ----------------------------------------------------------
+
+interface StatusBannerProps {
+  state: ScreenState;
+  eligibility?: RewardEligibility;
+  periodEnd?: string;
+  justClaimed: boolean;
+}
+
+function StatusBanner({ state, eligibility, periodEnd, justClaimed }: StatusBannerProps) {
+  const reopen = periodEnd ? `New rewards open after ${periodEnd}.` : 'New rewards open next promo period.';
+
+  if (state === 'claimed') {
     return (
-      <View style={styles.stateContainer} testID="reward-detail-no-longer-available">
-        {/* Reward Image */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={reward.imageSource}
-            style={styles.rewardImage}
-            contentFit="cover"
-            testID="reward-image"
-          />
-          
-          {/* Points badge overlay (bottom-right) */}
-          <View style={[styles.imageOverlay, styles.imageOverlayBottomRight]}>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsBadgeText}>
-                {reward.pointsCost} pts
-              </Text>
-            </View>
+      <View style={[styles.banner, { backgroundColor: colors.primaryTint }]}>
+        <StampReveal
+          highlight={
+            justClaimed ? { stampId: 'claimed', celebrate: true, key: 'claimed' } : undefined
+          }
+        >
+          <View style={styles.claimedStamp}>
+            <Ionicons name="ribbon" size={18} color={colors.primary} />
+            <Text style={styles.claimedStampText}>CLAIMED</Text>
           </View>
-        </View>
-
-        {/* Title and Description */}
-        <View style={styles.rewardInfo}>
-          <Text style={styles.rewardTitle} testID="reward-title">
-            {reward.title}
+        </StampReveal>
+        <View style={styles.bannerText}>
+          <Text style={[styles.bannerTitle, { color: colors.primary }]}>
+            You claimed this reward
           </Text>
-          
-          {/* Category badge */}
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryBadgeText}>OFFICIAL MERCH</Text>
-          </View>
-          
-          <Text style={styles.rewardDescription} testID="reward-description">
-            {reward.description}
-          </Text>
+          <Text style={styles.bannerBody}>Enjoy your souvenir! {reopen}</Text>
         </View>
-
-        {/* Redemption Location Section */}
-        <View style={styles.locationSection}>
-          <Text style={styles.sectionLabel}>REDEMPTION LOCATION</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={20} color={colors.textSecondary} style={styles.locationIcon} />
-            <Text style={styles.locationText}>{REDEMPTION_LOCATION}</Text>
-          </View>
-        </View>
-
-        {/* No Longer Available Message Card */}
-        <View style={styles.messageCard}>
-          <Ionicons name="information-circle" size={24} color={colors.textSecondary} style={styles.messageIcon} />
-          <Text style={styles.messageText}>
-            This reward is no longer available
-          </Text>
-        </View>
-
-        {/* Action Button */}
-        <Button
-          title="No Longer Available"
-          onPress={() => {}}
-          disabled={true}
-          testID="no-longer-available-button"
-        />
       </View>
     );
-  };
+  }
 
-  // Main render
+  let icon: IconName;
+  let tint: string;
+  let fg: string;
+  let title: string;
+  let body: string;
+
+  switch (state) {
+    case 'ready':
+      icon = 'checkmark-circle';
+      tint = colors.successLight;
+      fg = colors.successDark;
+      title = "You've unlocked this reward";
+      body = 'Claiming it uses your one reward for this promo period.';
+      break;
+    case 'period-used':
+      icon = 'time-outline';
+      tint = colors.surface;
+      fg = colors.text;
+      title = "You've already claimed a reward this period";
+      body = reopen;
+      break;
+    case 'sold-out':
+      icon = 'close-circle';
+      tint = colors.errorTint;
+      fg = colors.error;
+      title = 'Sold out';
+      body = 'All claims for this reward have been taken.';
+      break;
+    default:
+      icon = 'lock-closed';
+      tint = colors.accentTint;
+      fg = colors.accent;
+      title = (eligibility && describeRemaining(eligibility)) ?? 'Not unlocked yet';
+      body = 'Visit more sites around Cavite to unlock this reward.';
+  }
+
   return (
-    <ScreenContainer
-      scrollable={true}
-      showHeader={true}
-      headerTitle="Reward Details"
-      onBackPress={() => router.back()}
-      testID="reward-detail-screen"
+    <View
+      style={[styles.banner, { backgroundColor: tint }]}
+      accessible
+      accessibilityLabel={`${title}. ${body}`}
+      testID="reward-status-banner"
     >
-      <View style={styles.container}>
-        {/* Dev-only: Scenario Switcher (task 6.9) */}
-        {__DEV__ && (
-          <View style={styles.devScenarioSwitcher}>
-            <Text style={styles.devSectionTitle}>Dev Mock Scenario:</Text>
-            <View style={styles.scenarioButtonsRow}>
-              <Pressable
-                style={styles.scenarioButton}
-                onPress={() => {
-                  setMockScenario('default');
-                  queryClient.invalidateQueries();
-                }}
-                testID="dev-scenario-default"
-              >
-                <Text style={styles.scenarioButtonText}>Default</Text>
-                <Text style={styles.scenarioButtonSubtext}>
-                  450 pts, missing Adventure
-                </Text>
-              </Pressable>
-              
-              <Pressable
-                style={styles.scenarioButton}
-                onPress={() => {
-                  setMockScenario('eligible');
-                  queryClient.invalidateQueries();
-                }}
-                testID="dev-scenario-eligible"
-              >
-                <Text style={styles.scenarioButtonText}>Eligible</Text>
-                <Text style={styles.scenarioButtonSubtext}>
-                  900 pts, all categories
-                </Text>
-              </Pressable>
-              
-              <Pressable
-                style={styles.scenarioButton}
-                onPress={() => {
-                  setMockScenario('claimed');
-                  queryClient.invalidateQueries();
-                }}
-                testID="dev-scenario-claimed"
-              >
-                <Text style={styles.scenarioButtonText}>Claimed</Text>
-                <Text style={styles.scenarioButtonSubtext}>
-                  Already claimed
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-        
-        {/* Render current state */}
-        {rewardState === 'locked' && renderLockedState()}
-        {rewardState === 'eligible' && renderEligibleState()}
-        {rewardState === 'qr-generated' && renderQRGeneratedState()}
-        {rewardState === 'expired' && renderExpiredState()}
-        {rewardState === 'already-claimed' && renderAlreadyClaimedState()}
-        {rewardState === 'no-longer-available' && renderNoLongerAvailableState()}
-        
-        {/* Dev info for testing */}
-        {__DEV__ && (
-          <View style={styles.devInfo}>
-            <Text style={styles.devInfoTitle}>Dev Info:</Text>
-            <Text style={styles.devInfoText}>
-              - Current State: {rewardState.toUpperCase()}
-            </Text>
-            <Text style={styles.devInfoText}>
-              - Reward: {reward.title}
-            </Text>
-            <Text style={styles.devInfoText}>
-              - Eligibility: {eligibility?.eligible ? 'Eligible' : 'Not Eligible'}
-            </Text>
-            <Text style={styles.devInfoText}>
-              - Active Claim: {activeClaim ? 'Yes' : 'No'}
-            </Text>
-            {activeClaim && (
-              <Text style={styles.devInfoText}>
-                - QR Expires: {new Date(activeClaim.expiresAt).toLocaleTimeString()}
-              </Text>
-            )}
-            <Text style={styles.devInfoText}>
-              - User Points: {user?.points ?? 0}
-            </Text>
-            <Text style={styles.devInfoText}>
-              - Has Claimed: {user?.hasClaimedThisPeriod ? 'Yes' : 'No'}
-            </Text>
-            <Text style={styles.devInfoText}>
-              - Reward Available: {reward.available ? 'Yes' : 'No'}
-            </Text>
-            {reward.limited && (
-              <Text style={styles.devInfoText}>
-                - Remaining Claims: {reward.remainingClaims}
-              </Text>
-            )}
-          </View>
-        )}
+      <Ionicons name={icon} size={24} color={fg} />
+      <View style={styles.bannerText}>
+        <Text style={[styles.bannerTitle, { color: fg }]}>{title}</Text>
+        <Text style={styles.bannerBody}>{body}</Text>
       </View>
-    </ScreenContainer>
+    </View>
+  );
+}
+
+// ---- How to claim -------------------------------------------------------------
+
+function HowToClaim({ requirementsMet }: { requirementsMet: boolean }) {
+  const steps = [
+    {
+      title: 'Meet the requirements',
+      body: 'Collect all 4 category stamps and enough points.',
+      done: requirementsMet,
+    },
+    {
+      title: 'Generate your pass at the desk',
+      body: `It stays valid for ${CLAIM_QR_EXPIRY_MINUTES} minutes.`,
+      done: false,
+    },
+    {
+      title: 'Show it to a tourism officer',
+      body: 'Points are deducted only when they scan it.',
+      done: false,
+    },
+  ];
+
+  return (
+    <View style={styles.steps}>
+      {steps.map((step, index) => (
+        <View key={step.title} style={styles.step}>
+          <View style={[styles.stepBadge, step.done && styles.stepBadgeDone]}>
+            {step.done ? (
+              <Ionicons name="checkmark" size={14} color={colors.background} />
+            ) : (
+              <Text style={styles.stepNumber}>{index + 1}</Text>
+            )}
+          </View>
+          <View style={styles.stepText}>
+            <Text style={styles.stepTitle}>{step.title}</Text>
+            <Text style={styles.stepBody}>{step.body}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
+  shellContent: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
-  centerContainer: {
+  state: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.base,
   },
-  stateContainer: {
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.base,
+    paddingBottom: spacing.xl,
     gap: spacing.base,
   },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    aspectRatio: 16 / 10,
+
+  // Hero + title
+  hero: {
     borderRadius: radii.card,
     overflow: 'hidden',
   },
-  rewardImage: {
+  heroImage: {
     width: '100%',
-    height: '100%',
+    aspectRatio: 16 / 10,
   },
-  imageOverlay: {
+  limitedPill: {
     position: 'absolute',
-  },
-  imageOverlayTopLeft: {
-    top: spacing.sm,
-    left: spacing.sm,
-  },
-  imageOverlayBottomRight: {
-    bottom: spacing.sm,
-    right: spacing.sm,
-  },
-  limitedBadge: {
-    backgroundColor: colors.accent,
+    top: spacing.md,
+    left: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: radii.card,
+    borderRadius: radii.full,
+    backgroundColor: colors.background,
   },
-  limitedBadgeText: {
-    ...typography.labelSmall,
-    color: colors.background,
-    fontWeight: '600',
+  limitedPillText: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
+    color: colors.text,
   },
-  pointsBadge: {
-    backgroundColor: colors.primary,
+  titleBlock: {
+    gap: spacing.sm,
+  },
+  title: {
+    ...typography.headlineLarge,
+    fontFamily: 'Inter_700Bold',
+    color: colors.text,
+  },
+  pointsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    backgroundColor: colors.primary,
+  },
+  pointsPillText: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_700Bold',
+    color: colors.background,
+  },
+
+  // Status banner
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.base,
     borderRadius: radii.card,
   },
-  pointsBadgeText: {
-    ...typography.bodyMedium,
-    color: colors.background,
-    fontWeight: '600',
+  bannerText: {
+    flex: 1,
+    gap: 2,
   },
-  rewardInfo: {
-    marginTop: spacing.base,
+  bannerTitle: {
+    ...typography.titleMedium,
+    fontFamily: 'Inter_700Bold',
   },
-  rewardTitle: {
-    ...typography.headlineLarge,
+  bannerBody: {
+    ...typography.bodySmall,
     color: colors.text,
-    marginBottom: spacing.sm,
+    lineHeight: 18,
   },
-  categoryBadge: {
-    backgroundColor: colors.surface,
+  claimedStamp: {
+    alignItems: 'center',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
-    alignSelf: 'flex-start',
-    marginBottom: spacing.sm,
+    borderWidth: 2.5,
+    borderColor: colors.primary,
+    borderRadius: radii.md,
+    transform: [{ rotate: '-8deg' }],
   },
-  categoryBadgeText: {
+  claimedStampText: {
     ...typography.labelSmall,
-    color: colors.text,
-    fontWeight: '600',
+    fontFamily: 'Inter_700Bold',
+    color: colors.primary,
+    letterSpacing: 1.5,
   },
-  rewardDescription: {
+
+  // Details
+  description: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
     lineHeight: 22,
   },
-  locationSection: {
-    marginTop: spacing.base,
-  },
-  sectionLabel: {
-    ...typography.labelSmall,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    marginBottom: spacing.sm,
-    letterSpacing: 0.5,
-  },
-  locationRow: {
+  locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.card,
+    backgroundColor: colors.surface,
   },
   locationIcon: {
-    marginRight: spacing.xs,
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryTint,
   },
   locationText: {
-    ...typography.bodyMedium,
-    color: colors.text,
     flex: 1,
   },
-  infoBox: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: spacing.base,
-    ...shadows.card,
-  },
-  infoBoxIcon: {
-    marginRight: spacing.md,
-    marginTop: 2,
-  },
-  infoBoxContent: {
-    flex: 1,
-  },
-  infoBoxTitle: {
-    ...typography.titleMedium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  infoBoxText: {
-    ...typography.bodySmall,
+  locationLabel: {
+    ...typography.labelSmall,
     color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  loadingText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    marginTop: spacing.base,
-  },
-  errorText: {
-    ...typography.titleMedium,
-    color: colors.error,
-    marginBottom: spacing.base,
-    textAlign: 'center',
-  },
-  placeholderContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  placeholderText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  devInfo: {
-    marginTop: spacing.lg,
-    padding: spacing.base,
-    backgroundColor: colors.surface,
-    borderRadius: spacing.sm,
-  },
-  devInfoTitle: {
-    ...typography.titleMedium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  devInfoText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  // Eligible state styles (task 6.4)
-  statusChipsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  readyToClaimChip: {
-    backgroundColor: colors.success,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.chip,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  chipIcon: {
-    marginRight: spacing.xs,
-  },
-  readyToClaimText: {
-    ...typography.labelMedium,
-    color: colors.background,
-    fontWeight: '600',
     textTransform: 'uppercase',
   },
-  limitedChip: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.chip,
+  locationValue: {
+    ...typography.labelLarge,
+    color: colors.text,
   },
-  limitedChipText: {
-    ...typography.labelSmall,
-    color: colors.background,
-    fontWeight: '600',
-  },
-  successInfoBox: {
-    // Additional styles for success variant of info box
-  },
-  eligibleNote: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  sectionTitle: {
+    ...typography.headlineSmall,
+    fontFamily: 'Inter_700Bold',
+    color: colors.text,
     marginTop: spacing.sm,
-    lineHeight: 18,
+    marginBottom: -spacing.xs,
   },
-  // Already Claimed state styles (task 6.7)
-  messageCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
+
+  // How to claim
+  steps: {
+    gap: spacing.md,
     padding: spacing.base,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.base,
+    borderRadius: radii.card,
+    backgroundColor: colors.background,
     ...shadows.card,
   },
-  messageIcon: {
-    marginRight: spacing.md,
-  },
-  messageText: {
-    ...typography.bodyMedium,
-    color: colors.text,
-    flex: 1,
-    lineHeight: 20,
-  },
-  // Dev scenario switcher styles (task 6.9)
-  devScenarioSwitcher: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    marginBottom: spacing.base,
-    borderWidth: 2,
-    borderColor: colors.accent,
-  },
-  devSectionTitle: {
-    ...typography.titleMedium,
-    color: colors.text,
-    marginBottom: spacing.md,
-    fontWeight: '600',
-  },
-  scenarioButtonsRow: {
+  step: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
-  scenarioButton: {
-    flex: 1,
-    minWidth: 100,
-    backgroundColor: colors.background,
-    borderRadius: spacing.sm,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+  stepBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: radii.full,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryTint,
   },
-  scenarioButtonText: {
+  stepBadgeDone: {
+    backgroundColor: colors.success,
+  },
+  stepNumber: {
     ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
+    color: colors.primary,
+  },
+  stepText: {
+    flex: 1,
+  },
+  stepTitle: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_700Bold',
     color: colors.text,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
   },
-  scenarioButtonSubtext: {
+  stepBody: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
+
+  // Claim pass
+  passIntro: {
+    gap: spacing.xs,
+  },
+  passHeading: {
+    ...typography.headlineSmall,
+    fontFamily: 'Inter_700Bold',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  passSubheading: {
     ...typography.bodySmall,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 16,
+    marginBottom: spacing.md,
   },
-  devSimulateSection: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    marginTop: spacing.base,
-    borderWidth: 2,
-    borderColor: colors.accent,
-  },
-  devNote: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    lineHeight: 16,
+
+  // Pinned action bar
+  actionBar: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 });
-
-
-
-
-
-
-
-
-
