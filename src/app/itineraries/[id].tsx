@@ -3,7 +3,7 @@ import { TimelineStopCard } from '@/components/explore/TimelineStopCard';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { POINTS_PER_CATEGORY } from '@/data/types';
+import { POINTS_PER_CATEGORY, type Site } from '@/data/types';
 import { useItineraryById } from '@/hooks/useItineraryById';
 import { useSites } from '@/hooks/useSites';
 import { useStamps } from '@/hooks/useStamps';
@@ -103,26 +103,31 @@ export default function ItineraryDetailScreen() {
     );
   }
 
-  // Derive stop sites from itinerary.siteIds
+  // One-time lookups instead of scanning sites/stamps per stop
+  const sitesById = new Map(sites.map(site => [site.id, site]));
+  const visitedSiteIds = new Set(stamps.map(stamp => stamp.siteId));
+
+  // Derive stop sites from itinerary.siteIds (in order)
   const stopSites = itinerary.siteIds
-    .map(siteId => sites.find(s => s.id === siteId))
-    .filter(Boolean) as typeof sites;
+    .map(siteId => sitesById.get(siteId))
+    .filter((site): site is Site => site !== undefined);
+
+  const stampedSites = stopSites.filter(site => visitedSiteIds.has(site.id));
 
   // Calculate progress values
   const totalStops = itinerary.siteIds.length;
-  
-  const stampedCount = stopSites.filter(site =>
-    stamps.some(stamp => stamp.siteId === site.id)
-  ).length;
+
+  const stampedCount = stampedSites.length;
 
   const pointsAvailable = stopSites.reduce(
     (sum, site) => sum + POINTS_PER_CATEGORY[site.category],
     0
   );
 
-  const pointsCollected = stopSites
-    .filter(site => stamps.some(stamp => stamp.siteId === site.id))
-    .reduce((sum, site) => sum + POINTS_PER_CATEGORY[site.category], 0);
+  const pointsCollected = stampedSites.reduce(
+    (sum, site) => sum + POINTS_PER_CATEGORY[site.category],
+    0
+  );
 
   return (
     <ScreenContainer
@@ -183,7 +188,7 @@ export default function ItineraryDetailScreen() {
       <View style={styles.timelineContainer}>
         <Text style={styles.timelineTitle}>Itinerary Timeline</Text>
         {stopSites.map((site, index) => {
-          const isStamped = stamps.some(stamp => stamp.siteId === site.id);
+          const isStamped = visitedSiteIds.has(site.id);
           const stopNumber = index + 1;
           const showConnector = index > 0;
 

@@ -14,6 +14,7 @@ import { useItineraries } from "@/hooks/useItineraries";
 import { useSites } from "@/hooks/useSites";
 import { useStamps } from "@/hooks/useStamps";
 import { TAB_BAR_HEIGHT } from "@/lib/constants";
+import { getErrorMessage } from "@/lib/errors";
 import { colors, radii, shadows, spacing } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -36,12 +37,6 @@ type ItineraryWithProgress = {
   totalStops: number;
   pointsAvailable: number;
 };
-
-const NETWORK_ERROR_MESSAGE = "Check your connection and try again.";
-
-/** Show the raw error in development only; users get a friendly message. */
-const errorMessage = (error: Error) =>
-  __DEV__ ? error.message : NETWORK_ERROR_MESSAGE;
 
 const CardSeparator = () => <View style={styles.separator} />;
 
@@ -211,7 +206,7 @@ export default function ExploreScreen() {
         <StateView
           variant="error"
           title="Unable to load sites"
-          message={errorMessage(sitesError)}
+          message={getErrorMessage(sitesError)}
           actionLabel="Retry"
           onAction={refetchSites}
           actionLoading={sitesFetching}
@@ -247,7 +242,7 @@ export default function ExploreScreen() {
         <StateView
           variant="error"
           title="Unable to load itineraries"
-          message={errorMessage(itinerariesFailure)}
+          message={getErrorMessage(itinerariesFailure)}
           actionLabel="Retry"
           onAction={handleRetryItineraries}
           actionLoading={itinerariesFetching || sitesFetching || stampsFetching}

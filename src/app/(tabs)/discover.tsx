@@ -1,79 +1,73 @@
 import { AboutCaviteContent } from '@/components/discover/AboutCaviteContent';
 import { EventCard } from '@/components/discover/EventCard';
-import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { StateView } from '@/components/ui/StateView';
+import type { Event } from '@/data/types';
 import { useEvents } from '@/hooks/useEvents';
 import { useExpressways } from '@/hooks/useExpressways';
+import { TAB_BAR_HEIGHT } from '@/lib/constants';
+import { getErrorMessage } from '@/lib/errors';
 import { getEventStatus } from '@/lib/event-utils';
 import { colors, spacing, typography } from '@/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, View, type ListRenderItem } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type DiscoverView = 'events' | 'about';
+
+const handleEventPress = (id: string) => router.push(`/events/${id}`);
+
+const CardSeparator = () => <View style={styles.separator} />;
 
 /**
  * Discover Tab Screen
- * 
+ *
  * Toggle between Events view (festival/event cards) and About Cavite view (info sections).
  * Events are filtered to exclude past events and sorted chronologically.
+ *
+ * The screen itself doesn't scroll: Events is a FlatList and About Cavite
+ * owns its ScrollView (which it locks while the user drags its map).
  */
 export default function DiscoverScreen() {
-  const [selectedView, setSelectedView] = useState<'events' | 'about'>('events');
+  const [selectedView, setSelectedView] = useState<DiscoverView>('events');
   const eventsQuery = useEvents();
   const expresswaysQuery = useExpressways();
 
-  return (
-    <ScreenContainer
-      scrollable={true}
-      edges={['left', 'right']}
-      withTabBarPadding={true}
-      testID="discover-screen"
-    >
-      <View style={styles.container}>
-        {/* Segmented control */}
-        <View style={styles.segmentedControlWrapper}>
-          <SegmentedControl
-            options={[
-              {
-                label: 'Events',
-                value: 'events',
-                icon: (
-                  <MaterialCommunityIcons
-                    name="party-popper"
-                    size={16}
-                    color={selectedView === 'events' ? colors.background : colors.textSecondary}
-                  />
-                ),
-              },
-              {
-                label: 'About Cavite',
-                value: 'about',
-                icon: (
-                  <MaterialCommunityIcons
-                    name="map"
-                    size={16}
-                    color={selectedView === 'about' ? colors.background : colors.textSecondary}
-                  />
-                ),
-              },
-            ]}
-            selectedValue={selectedView}
-            onValueChange={(value) => setSelectedView(value as 'events' | 'about')}
-            testID="discover-segmented-control"
-          />
-        </View>
+  const tabIcon = (view: DiscoverView, name: 'party-popper' | 'map') => (
+    <MaterialCommunityIcons
+      name={name}
+      size={16}
+      color={selectedView === view ? colors.background : colors.textSecondary}
+    />
+  );
 
-        {/* Conditional render based on selected view */}
-        {selectedView === 'events' ? (
-          <EventsView query={eventsQuery} />
-        ) : (
-          <AboutCaviteView
-            eventsQuery={eventsQuery}
-            expresswaysQuery={expresswaysQuery}
-          />
-        )}
+  return (
+    <ScreenContainer edges={['left', 'right']} testID="discover-screen">
+      {/* Segmented control */}
+      <View style={styles.segmentedControlWrapper}>
+        <SegmentedControl<DiscoverView>
+          options={[
+            { label: 'Events', value: 'events', icon: tabIcon('events', 'party-popper') },
+            { label: 'About Cavite', value: 'about', icon: tabIcon('about', 'map') },
+          ]}
+          selectedValue={selectedView}
+          onValueChange={setSelectedView}
+          testID="discover-segmented-control"
+        />
       </View>
+
+      {/* Conditional render based on selected view */}
+      {selectedView === 'events' ? (
+        <EventsView query={eventsQuery} />
+      ) : (
+        <AboutCaviteView
+          eventsQuery={eventsQuery}
+          expresswaysQuery={expresswaysQuery}
+        />
+      )}
     </ScreenContainer>
   );
 }
@@ -83,61 +77,71 @@ interface EventsViewProps {
 }
 
 function EventsView({ query }: EventsViewProps) {
-  // Loading state
-  if (query.isLoading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const insets = useSafeAreaInsets();
 
-  // Error state
-  if (query.isError) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Unable to load events</Text>
-        <Button title="Retry" onPress={() => query.refetch()} variant="primary" />
-      </View>
-    );
-  }
+  // Upcoming and ongoing events, soonest first
+  const upcomingEvents = useMemo(
+    () =>
+      (query.data ?? [])
+        .filter((event) => getEventStatus(event) !== 'past')
+        .sort(
+          (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+        ),
+    [query.data],
+  );
 
-  // Filter and sort events
-  const events = query.data || [];
-  const upcomingAndHappeningEvents = events
-    .filter((event) => getEventStatus(event) !== 'past')
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  const isReady = !query.isLoading && !query.isError;
+  const data = isReady ? upcomingEvents : [];
 
-  // Empty state
-  if (upcomingAndHappeningEvents.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>No events at this time</Text>
-      </View>
-    );
-  }
+  const renderEvent: ListRenderItem<Event> = ({ item }) => (
+    <EventCard event={item} onPress={handleEventPress} />
+  );
+
+  const emptyState = query.isLoading ? (
+    <StateView variant="loading" />
+  ) : query.isError ? (
+    <StateView
+      variant="error"
+      title="Unable to load events"
+      message={getErrorMessage(query.error)}
+      actionLabel="Retry"
+      onAction={() => query.refetch()}
+      actionLoading={query.isFetching}
+    />
+  ) : (
+    <StateView
+      variant="empty"
+      icon="calendar-outline"
+      title="No events at this time"
+    />
+  );
 
   return (
-    <View style={styles.eventsContainer}>
-      {/* Section heading */}
-      <View style={styles.headingSection}>
-        <Text style={styles.heading}>Provincial Festivals & Events</Text>
-        <Text style={styles.subtitle}>
-          Explore vibrant cultural fiestas across Cavite municipalities
-        </Text>
-      </View>
-
-      {/* Event cards - using map instead of FlatList */}
-      <View style={styles.eventsList}>
-        {upcomingAndHappeningEvents.map((event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            onPress={(id) => router.push(`/events/${id}`)}
-          />
-        ))}
-      </View>
-    </View>
+    <FlatList
+      style={styles.fullBleed}
+      data={data}
+      keyExtractor={(event) => event.id}
+      renderItem={renderEvent}
+      ListHeaderComponent={
+        data.length > 0 ? (
+          <View style={styles.headingSection}>
+            <Text style={styles.heading}>Provincial Festivals & Events</Text>
+            <Text style={styles.subtitle}>
+              Explore vibrant cultural fiestas across Cavite municipalities
+            </Text>
+          </View>
+        ) : undefined
+      }
+      ListEmptyComponent={emptyState}
+      ItemSeparatorComponent={CardSeparator}
+      contentContainerStyle={[
+        styles.listContent,
+        // Matches the bottom padding ScreenContainer gave scrollable tab screens
+        { paddingBottom: TAB_BAR_HEIGHT + insets.bottom },
+      ]}
+      showsVerticalScrollIndicator={false}
+      testID="discover-events-list"
+    />
   );
 }
 
@@ -149,72 +153,55 @@ interface AboutCaviteViewProps {
 function AboutCaviteView({ eventsQuery, expresswaysQuery }: AboutCaviteViewProps) {
   // Loading state
   if (eventsQuery.isLoading || expresswaysQuery.isLoading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <StateView variant="loading" />;
   }
 
   // Error state
-  if (eventsQuery.isError || expresswaysQuery.isError) {
+  const error = eventsQuery.error ?? expresswaysQuery.error;
+  if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Unable to load content</Text>
-        <Button
-          title="Retry"
-          onPress={() => {
-            eventsQuery.refetch();
-            expresswaysQuery.refetch();
-          }}
-          variant="primary"
-        />
-      </View>
+      <StateView
+        variant="error"
+        title="Unable to load content"
+        message={getErrorMessage(error)}
+        actionLabel="Retry"
+        onAction={() => {
+          if (eventsQuery.isError) eventsQuery.refetch();
+          if (expresswaysQuery.isError) expresswaysQuery.refetch();
+        }}
+        actionLoading={eventsQuery.isFetching || expresswaysQuery.isFetching}
+      />
     );
   }
 
-  const events = eventsQuery.data || [];
-  const expressways = expresswaysQuery.data || [];
-
   return (
     <AboutCaviteContent
-      expressways={expressways}
-      events={events}
-      onEventPress={(id) => router.push(`/events/${id}`)}
+      expressways={expresswaysQuery.data ?? []}
+      events={eventsQuery.data ?? []}
+      onEventPress={handleEventPress}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // No top padding
-  },
   segmentedControlWrapper: {
     marginBottom: spacing.sm,
   },
-  centerContainer: {
+  // Cancels ScreenContainer's horizontal padding so the list scrolls (and
+  // card shadows render) edge to edge; the list re-applies it on its content.
+  fullBleed: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.base,
+    marginHorizontal: -spacing.base,
+  },
+  listContent: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xxl,
   },
-  errorText: {
-    ...typography.bodyLarge,
-    color: colors.error,
-    textAlign: 'center',
-  },
-  emptyText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  eventsContainer: {
-    gap: spacing.base,
+  separator: {
+    height: spacing.base,
   },
   headingSection: {
     gap: spacing.xs,
+    marginBottom: spacing.base,
   },
   heading: {
     ...typography.headlineLarge,
@@ -224,8 +211,5 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
-  },
-  eventsList: {
-    gap: spacing.base,
   },
 });
