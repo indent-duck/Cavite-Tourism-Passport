@@ -2,25 +2,25 @@ import { colors, radii, spacing, typography } from "@/theme";
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-export interface SegmentedControlOption {
+export interface SegmentedControlOption<T extends string = string> {
   label: string;
-  value: string;
+  value: T;
   icon?: ReactNode;
 }
 
-export interface SegmentedControlProps {
-  options: SegmentedControlOption[];
-  selectedValue: string;
-  onValueChange: (value: string) => void;
+export interface SegmentedControlProps<T extends string = string> {
+  options: SegmentedControlOption<T>[];
+  selectedValue: T;
+  onValueChange: (value: T) => void;
   testID?: string;
 }
 
-export function SegmentedControl({
+export function SegmentedControl<T extends string = string>({
   options,
   selectedValue,
   onValueChange,
   testID,
-}: SegmentedControlProps) {
+}: SegmentedControlProps<T>) {
   return (
     <View style={styles.container} testID={testID}>
       {options.map((option, index) => {

@@ -43,6 +43,7 @@ export interface Site {
   latitude: number;
   longitude: number;
   operatingHours?: string;
+  imageUrl?: string; // Cover photo; cards fall back to a placeholder when absent
 }
 
 // Collected stamp
@@ -65,6 +66,7 @@ export interface Itinerary {
   description?: string;
   duration?: string; // e.g., "8 hours", "2 days"
   siteIds: string[]; // Ordered list of site IDs
+  imageUrl?: string; // Cover photo; cards fall back to a placeholder when absent
 }
 
 // Event/festival

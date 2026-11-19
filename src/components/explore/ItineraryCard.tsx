@@ -1,6 +1,7 @@
 import { type Itinerary } from "@/data/types";
 import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
@@ -63,12 +64,26 @@ export function ItineraryCard({
         pressed && styles.containerPressed,
       ]}
       testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`${itinerary.title}, ${itinerary.type}, ${totalStops} stops. ${stampedCount} of ${totalStops} stamped. Earn up to ${pointsAvailable} points.`}
     >
       {/* Thumbnail with overlays */}
       <View style={styles.thumbnailContainer}>
-        <View style={styles.thumbnail}>
-          <Ionicons name="map-outline" size={48} color={colors.textSecondary} />
-        </View>
+        {itinerary.imageUrl ? (
+          <Image
+            source={{ uri: itinerary.imageUrl }}
+            style={styles.thumbnail}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+            recyclingKey={itinerary.id}
+            accessible={false}
+          />
+        ) : (
+          <View style={styles.thumbnail}>
+            <Ionicons name="map-outline" size={48} color={colors.textSecondary} />
+          </View>
+        )}
 
         {/* Tour type badge (top-left) */}
         <View
@@ -96,7 +111,7 @@ export function ItineraryCard({
         </Text>
 
         {/* Description */}
-        {itinerary.description && (
+        {!!itinerary.description && (
           <Text style={styles.description} numberOfLines={2}>
             {itinerary.description}
           </Text>
@@ -134,7 +149,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.card,
     overflow: "hidden",
-    marginBottom: spacing.base,
     ...shadows.card,
   },
   containerPressed: {

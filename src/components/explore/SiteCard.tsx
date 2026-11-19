@@ -1,6 +1,7 @@
 import { POINTS_PER_CATEGORY, type Category, type Site } from "@/data/types";
 import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
@@ -55,12 +56,26 @@ export function SiteCard({ site, isVisited, onPress, testID }: SiteCardProps) {
         pressed && styles.containerPressed,
       ]}
       testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`${site.name}, ${site.category}, ${site.address}. Earn ${points} points.${isVisited ? " Visited." : ""}`}
     >
       {/* Photo with overlays */}
       <View style={styles.photoContainer}>
-        <View style={styles.photo}>
-          <Ionicons name="image-outline" size={48} color={colors.textSecondary} />
-        </View>
+        {site.imageUrl ? (
+          <Image
+            source={{ uri: site.imageUrl }}
+            style={styles.photo}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+            recyclingKey={site.id}
+            accessible={false}
+          />
+        ) : (
+          <View style={styles.photo}>
+            <Ionicons name="image-outline" size={48} color={colors.textSecondary} />
+          </View>
+        )}
 
         {/* Category tag overlay (top-left) */}
         <View style={[styles.categoryTag, { backgroundColor: categoryColor }]}>
@@ -112,7 +127,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.card,
     overflow: "hidden",
-    marginBottom: spacing.md,
     ...shadows.card,
   },
   containerPressed: {

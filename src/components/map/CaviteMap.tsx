@@ -18,7 +18,11 @@ const CAVITE_CENTER: LngLat = [120.8833, 14.25]; // [lng, lat]
 export interface CaviteMapProps {
   sites?: Site[];
   onSitePress?: (siteId: string) => void;
-  height: number;
+  /**
+   * Fixed map height. Omit to fill the parent (flex: 1) — the parent must
+   * then have a bounded height.
+   */
+  height?: number;
   selectedLabel?: string;
   /**
    * Callback to control parent ScrollView's scroll state
@@ -57,6 +61,8 @@ export function CaviteMap({
   const cameraRef = useRef<CameraRef>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+
+  const sizeStyle = height != null ? { height } : styles.fill;
 
   const apiKey = process.env.EXPO_PUBLIC_PROTOMAPS_API_KEY;
 
@@ -137,7 +143,7 @@ export function CaviteMap({
 
   if (!apiKey) {
     return (
-      <View style={[styles.errorContainer, { height }]}>
+      <View style={[styles.errorContainer, sizeStyle]}>
         <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
         <Text style={styles.errorText}>Map API key not configured</Text>
         <Text style={styles.errorSubtext}>
@@ -163,8 +169,8 @@ export function CaviteMap({
   return (
     <View 
       style={[
-        styles.container, 
-        { height },
+        styles.container,
+        sizeStyle,
         showInteractionBorder && isInteracting && styles.containerInteracting
       ]}
     >
@@ -236,7 +242,12 @@ export function CaviteMap({
 
       {/* Loading banner */}
       {!isMapLoaded && (
-        <View style={styles.loadingBanner}>
+        <View
+          style={[
+            styles.loadingBanner,
+            controlsPosition === 'right-below-controls' && styles.loadingBannerBelowControls,
+          ]}
+        >
           <ActivityIndicator size="small" color={colors.primary} />
           <Text style={styles.loadingText}>
             Loading map... This may take a few moments
@@ -298,6 +309,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
+  fill: {
+    flex: 1,
+  },
   containerInteracting: {
     borderColor: colors.primary,
     borderWidth: 2,
@@ -351,9 +365,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  loadingBannerBelowControls: {
+    // Explore map: the floating search row + chips cover the top ~88px, so sit
+    // in the re-center button's row instead and stop short of the button
+    // (40px wide + 8px gap).
+    top: spacing.xl * 4,
+    right: spacing.base + 40 + spacing.sm,
+  },
   loadingText: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
+    flexShrink: 1,
   },
   recenterButton: {
     position: 'absolute',

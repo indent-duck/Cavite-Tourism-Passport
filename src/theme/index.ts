@@ -36,6 +36,10 @@ export const colors = {
   passportHeaderBorder: "#F47B20", // Orange border on passport header (reuses accent)
   passportLeather: "#0B2A4A",
   passportFoil: "#F89C48",
+  passportPaper: "#F7F1E3", // Raised paper panels inside the booklet
+  passportPaperBorder: "#E8DDCA", // Hairline borders on booklet panels
+  passportFooter: "#F3E7D3", // Booklet page footer strip
+  passportGuilloche: "#C9B48A", // Security-pattern line color (used at low opacity)
 
   // Category stamp colors
   categoryDining: "#00542A", // Green for Dining stamps

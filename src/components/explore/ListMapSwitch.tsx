@@ -15,8 +15,8 @@ export interface ListMapSwitchProps {
  *
  * **Visual Specifications:**
  * - Button with icon and label
- * - Icon changes: "list" for list view, "map" for map view
- * - Label changes: "List" for list view, "Map" for map view
+ * - Icon/label show the destination: "Map" while in list view,
+ *   "List" while in map view
  * - List view: surface background, primary text/icon, with border
  * - Map view: primary background, white text/icon (reversed colors)
  * - Rounded corners
@@ -25,20 +25,20 @@ export interface ListMapSwitchProps {
  * **Behavior:**
  * - Toggles between "list" and "map" on press
  * - Provides haptic feedback on press
- * - Shows current mode (not the mode it will switch to)
  *
  * **Validates:** Requirements 2.2.3
  */
 export function ListMapSwitch({ value, onValueChange }: ListMapSwitchProps) {
+  const isMapView = value === "map";
+  const target = isMapView ? "list" : "map";
+
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newValue = value === "list" ? "map" : "list";
-    onValueChange(newValue);
+    onValueChange(target);
   };
 
-  const iconName = value === "list" ? "list" : "map";
-  const label = value === "list" ? "List" : "Map";
-  const isMapView = value === "map";
+  const iconName = isMapView ? "list" : "map";
+  const label = isMapView ? "List" : "Map";
 
   return (
     <Pressable
@@ -48,9 +48,8 @@ export function ListMapSwitch({ value, onValueChange }: ListMapSwitchProps) {
         isMapView && styles.containerMapView,
         pressed && styles.containerPressed,
       ]}
-      accessibilityLabel={`Switch to ${value === "list" ? "map" : "list"} view`}
+      accessibilityLabel={`Switch to ${target} view`}
       accessibilityRole="button"
-      accessibilityState={{ selected: isMapView }}
     >
       <Ionicons
         name={iconName}

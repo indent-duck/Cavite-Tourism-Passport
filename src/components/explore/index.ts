@@ -4,6 +4,9 @@ export type { SearchBarProps } from './SearchBar';
 export { ListMapSwitch } from './ListMapSwitch';
 export type { ListMapSwitchProps } from './ListMapSwitch';
 
+export { SiteFilters, CATEGORY_FILTERS } from './SiteFilters';
+export type { SiteFiltersProps, CategoryFilter } from './SiteFilters';
+
 export { SiteCard } from './SiteCard';
 export type { SiteCardProps } from './SiteCard';
 
