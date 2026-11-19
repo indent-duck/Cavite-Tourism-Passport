@@ -1,12 +1,18 @@
 import { colors, radii, spacing, typography } from '@/theme';
-import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useState, type ComponentRef, type Ref } from 'react';
 import {
-    KeyboardTypeOptions,
+    Pressable,
     TextInput as RNTextInput,
     StyleSheet,
     Text,
     View,
+    type KeyboardTypeOptions,
+    type ReturnKeyTypeOptions,
+    type TextInputProps as RNTextInputProps,
 } from 'react-native';
+
+export type TextInputRef = ComponentRef<typeof RNTextInput>;
 
 export interface TextInputProps {
   label?: string;
@@ -14,29 +20,44 @@ export interface TextInputProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   error?: string;
+  /** Hides the text and shows a show/hide toggle on the right */
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  /** Autofill hint (Android + iOS), e.g. 'email', 'current-password', 'new-password', 'name' */
+  autoComplete?: RNTextInputProps['autoComplete'];
+  /** iOS autofill hint, e.g. 'emailAddress', 'password', 'newPassword', 'name' */
+  textContentType?: RNTextInputProps['textContentType'];
+  returnKeyType?: ReturnKeyTypeOptions;
+  onSubmitEditing?: () => void;
+  /** 'submit' keeps the keyboard open when moving to the next field */
+  submitBehavior?: RNTextInputProps['submitBehavior'];
+  /** Ionicons glyph shown inside the field, before the text */
+  leftIcon?: keyof typeof Ionicons.glyphMap;
   editable?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
+  maxLength?: number;
   testID?: string;
   onFocus?: () => void;
+  onBlur?: () => void;
+  ref?: Ref<TextInputRef>;
 }
 
 /**
  * TextInput Component
- * 
- * A styled text input with label, error states, and focus handling.
- * 
+ *
+ * The single text field used across the app's forms.
+ *
  * **Visual Specifications:**
- * - Container height: 56px (single line), auto (multiline)
- * - Background: surface color (#F4F6FA)
- * - Border: 1px transparent default, 1.5px primary when focused, 1.5px error when error
- * - Label above input with 4px spacing
- * - Error message below input with 4px spacing
- * - 12px border radius, 16px padding
- * 
+ * - Height: 52px (single line), auto (multiline)
+ * - Background: white, 1.5px border (border color, primary when focused, error when invalid)
+ * - Label above the field (labelMedium, text color), error below with an alert icon
+ * - Optional left icon; password fields get a show/hide toggle on the right
+ *
+ * Pass `ref`, `returnKeyType` and `onSubmitEditing` to chain fields so the
+ * keyboard's return key moves to the next input.
+ *
  * **Validates:** Requirements 1.2.2
  */
 export function TextInput({
@@ -48,74 +69,100 @@ export function TextInput({
   secureTextEntry = false,
   keyboardType,
   autoCapitalize = 'sentences',
+  autoComplete,
+  textContentType,
+  returnKeyType,
+  onSubmitEditing,
+  submitBehavior,
+  leftIcon,
   editable = true,
   multiline = false,
   numberOfLines = 1,
+  maxLength,
   testID,
   onFocus,
+  onBlur,
+  ref,
 }: TextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [isTextVisible, setIsTextVisible] = useState(false);
 
-  // Handle focus with both internal and external handlers
-  const handleFocus = () => {
-    setIsFocused(true);
-    onFocus?.();
-  };
-
-  // Determine border style based on state
-  const getBorderStyle = () => {
-    if (error) {
-      return {
-        borderColor: colors.error,
-        borderWidth: 1.5,
-      };
-    }
-    if (isFocused) {
-      return {
-        borderColor: colors.primary,
-        borderWidth: 1.5,
-      };
-    }
-    return {
-      borderColor: 'transparent',
-      borderWidth: 1,
-    };
-  };
-
-  const inputContainerStyle = [
-    styles.inputContainer,
-    getBorderStyle(),
-    multiline && styles.inputContainerMultiline,
-    !editable && styles.inputContainerDisabled,
-  ];
+  const borderColor = error ? colors.error : isFocused ? colors.primary : colors.border;
+  const iconColor = isFocused ? colors.primary : colors.textSecondary;
 
   return (
     <View style={styles.container} testID={testID}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
-      <View style={inputContainerStyle}>
+
+      <View
+        style={[
+          styles.field,
+          { borderColor },
+          multiline && styles.fieldMultiline,
+          !editable && styles.fieldDisabled,
+        ]}
+      >
+        {leftIcon && (
+          <Ionicons name={leftIcon} size={20} color={iconColor} style={styles.leftIcon} />
+        )}
+
         <RNTextInput
-          style={[
-            styles.input,
-            multiline && styles.inputMultiline,
-          ]}
+          ref={ref}
+          style={[styles.input, multiline && styles.inputMultiline]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={colors.textSecondary}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={secureTextEntry && !isTextVisible}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          autoCorrect={!secureTextEntry && keyboardType !== 'email-address'}
+          autoComplete={autoComplete}
+          textContentType={textContentType}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          submitBehavior={submitBehavior}
           editable={editable}
           multiline={multiline}
           numberOfLines={multiline ? numberOfLines : 1}
-          onFocus={handleFocus}
-          onBlur={() => setIsFocused(false)}
+          maxLength={maxLength}
+          accessibilityLabel={label}
+          accessibilityHint={error}
+          onFocus={() => {
+            setIsFocused(true);
+            onFocus?.();
+          }}
+          onBlur={() => {
+            setIsFocused(false);
+            onBlur?.();
+          }}
           testID={testID ? `${testID}-input` : undefined}
         />
+
+        {secureTextEntry && (
+          <Pressable
+            onPress={() => setIsTextVisible((visible) => !visible)}
+            style={styles.toggle}
+            hitSlop={spacing.xs}
+            accessibilityRole="button"
+            accessibilityLabel={isTextVisible ? 'Hide password' : 'Show password'}
+          >
+            {/* Icon shows the current state: open eye = visible, crossed eye = hidden */}
+            <Ionicons
+              name={isTextVisible ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        )}
       </View>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error ? (
+        <View style={styles.errorRow} accessibilityLiveRegion="polite">
+          <Ionicons name="alert-circle" size={14} color={colors.error} />
+          <Text style={styles.error}>{error}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -123,39 +170,63 @@ export function TextInput({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    gap: spacing.xs + 2,
   },
   label: {
-    ...typography.bodyMedium,
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
     color: colors.text,
-    marginBottom: spacing.xs, // 4px
+    paddingHorizontal: spacing.xs,
   },
-  inputContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.input, // 12px
-    paddingHorizontal: spacing.base, // 16px
-    paddingVertical: spacing.base, // 16px
-    minHeight: 56,
-    justifyContent: 'center',
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 52,
+    backgroundColor: colors.background,
+    borderRadius: radii.input,
+    borderWidth: 1.5,
+    paddingLeft: spacing.base,
   },
-  inputContainerMultiline: {
-    minHeight: 56,
-    height: 'auto',
+  fieldMultiline: {
+    alignItems: 'flex-start',
+    paddingVertical: spacing.md,
   },
-  inputContainerDisabled: {
+  fieldDisabled: {
     opacity: 0.6,
   },
+  leftIcon: {
+    marginRight: spacing.md,
+  },
   input: {
+    flex: 1,
     ...typography.bodyLarge,
+    fontFamily: 'Inter_400Regular',
     color: colors.text,
-    padding: 0, // Remove default padding to control via container
-    minHeight: 24, // lineHeight from bodyLarge
+    paddingVertical: spacing.md,
+    paddingRight: spacing.base,
   },
   inputMultiline: {
     textAlignVertical: 'top',
+    paddingVertical: 0,
+  },
+  // 44px touch target for the show/hide toggle
+  toggle: {
+    width: 44,
+    height: 44,
+    marginRight: spacing.xs,
+    marginLeft: -spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   error: {
     ...typography.bodySmall,
     color: colors.error,
-    marginTop: spacing.xs, // 4px
+    flex: 1,
   },
 });

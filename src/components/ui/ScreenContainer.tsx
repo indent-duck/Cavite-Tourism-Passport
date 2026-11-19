@@ -1,7 +1,7 @@
 import { TAB_BAR_HEIGHT } from '@/lib/constants';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -14,7 +14,9 @@ import {
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
+import { KeyboardFooter } from './KeyboardFooter';
 
 /**
  * ScreenContainer Component
@@ -92,6 +94,41 @@ export interface ScreenContainerProps {
    * Pull-to-refresh control (only used when `scrollable` is true)
    */
   refreshControl?: React.ReactElement<RefreshControlProps>;
+
+  /**
+   * Keep the focused TextInput visible above the on-screen keyboard by
+   * scrolling to it automatically (react-native-keyboard-controller).
+   * Only used when `scrollable` is true. Use this for any form screen
+   * instead of manual Keyboard listeners or scrollTo offsets.
+   * @default false
+   */
+  keyboardAware?: boolean;
+
+  /**
+   * Space kept between the keyboard (or the keyboard footer) and the focused
+   * input when `keyboardAware` is on.
+   * @default 24
+   */
+  keyboardBottomOffset?: number;
+
+  /**
+   * Content pinned below the scroll view that rides on top of the keyboard
+   * while it is open, e.g. a form's submit button. Only used with
+   * `scrollable` + `keyboardAware`. The focused input is kept above it.
+   */
+  keyboardFooter?: React.ReactNode;
+
+  /**
+   * Style for the keyboard footer container (e.g. a background color or
+   * bottom padding when the screen does not apply the bottom safe area edge)
+   */
+  keyboardFooterStyle?: StyleProp<ViewStyle>;
+
+  /**
+   * Screen background color
+   * @default colors.background
+   */
+  backgroundColor?: string;
 }
 
 export function ScreenContainer({
@@ -107,8 +144,15 @@ export function ScreenContainer({
   scrollViewRef,
   scrollEnabled = true,
   refreshControl,
+  keyboardAware = false,
+  keyboardBottomOffset = spacing.xl,
+  backgroundColor = colors.background,
+  keyboardFooter,
+  keyboardFooterStyle,
 }: ScreenContainerProps) {
   const insets = useSafeAreaInsets();
+  // Measured so the focused input is scrolled above the footer, not just the keyboard
+  const [footerHeight, setFooterHeight] = useState(0);
 
   // Calculate bottom padding if tab bar padding is enabled
   const bottomPadding = withTabBarPadding ? TAB_BAR_HEIGHT + insets.bottom : 0;
@@ -132,7 +176,25 @@ export function ScreenContainer({
         </View>
       )}
 
-      {scrollable ? (
+      {scrollable && keyboardAware ? (
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollViewContent,
+            { paddingBottom: bottomPadding || spacing.lg },
+            contentContainerStyle,
+          ]}
+          bottomOffset={keyboardBottomOffset + (keyboardFooter ? footerHeight : 0)}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          scrollEnabled={scrollEnabled}
+          refreshControl={refreshControl}
+        >
+          {children}
+        </KeyboardAwareScrollView>
+      ) : scrollable ? (
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
@@ -157,8 +219,26 @@ export function ScreenContainer({
     </View>
   );
 
+  // KeyboardAwareScrollView already makes room for the keyboard. Wrapping it in
+  // KeyboardAvoidingView as well would shift the content twice.
+  if (scrollable && keyboardAware) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={edges} testID={testID}>
+        {content}
+        {keyboardFooter ? (
+          <KeyboardFooter
+            onHeightChange={setFooterHeight}
+            style={[{ backgroundColor }, keyboardFooterStyle]}
+          >
+            {keyboardFooter}
+          </KeyboardFooter>
+        ) : null}
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={edges} testID={testID}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={edges} testID={testID}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'android' ? undefined : 'padding'}

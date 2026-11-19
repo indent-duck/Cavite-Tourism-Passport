@@ -11,9 +11,8 @@ import {
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-    Keyboard,
     Pressable,
     TextInput as RNTextInput,
     StyleSheet,
@@ -41,56 +40,6 @@ export default function ForgotNewPasswordScreen() {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const { resetPassword } = useAuth();
-
-  // Refs for scroll-to-input behavior
-  const scrollViewRef = useRef<any>(null);
-  const [inputLayouts, setInputLayouts] = useState<Record<string, number>>({});
-
-  // Listen to keyboard events and scroll when keyboard appears
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        // Small delay to ensure keyboard is fully shown
-        setTimeout(() => {
-          // Scroll to make room for keyboard and password criteria
-          scrollViewRef.current?.scrollTo({
-            y: 150,
-            animated: true,
-          });
-        }, 100);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        // Scroll back to top when keyboard closes
-        scrollViewRef.current?.scrollTo({
-          y: 0,
-          animated: true,
-        });
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
-
-  // Helper to scroll to an input based on stored layout
-  const scrollToInput = (inputKey: string, extraOffset = 150) => {
-    const yPosition = inputLayouts[inputKey];
-    if (yPosition !== undefined && scrollViewRef.current) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          y: Math.max(0, yPosition - extraOffset),
-          animated: true,
-        });
-      }, 100);
-    }
-  };
 
   // Password validation helper
   const validatePassword = (pwd: string): boolean => {
@@ -149,7 +98,7 @@ export default function ForgotNewPasswordScreen() {
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']} contentContainerStyle={styles.scrollContent} scrollViewRef={scrollViewRef}>
+    <ScreenContainer scrollable edges={['top', 'left', 'right']} contentContainerStyle={styles.scrollContent} keyboardAware keyboardBottomOffset={60}>
       <View style={styles.container}>
         {/* Top Bar - Back Button and Step Indicator */}
         <View style={styles.topBar}>
@@ -185,12 +134,6 @@ export default function ForgotNewPasswordScreen() {
         {/* New Password Input */}
         <View
           style={styles.inputGroup}
-          onLayout={(event) => {
-            setInputLayouts((prev) => ({
-              ...prev,
-              newPassword: event.nativeEvent.layout.y,
-            }));
-          }}
         >
           <Text style={styles.label}>New Password</Text>
           <View style={styles.inputContainer}>
@@ -204,7 +147,6 @@ export default function ForgotNewPasswordScreen() {
                 setNewPassword(text);
                 setNewPasswordError('');
               }}
-              onFocus={() => scrollToInput('newPassword', 100)}
               placeholder="Enter new password"
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showNewPassword}
@@ -230,12 +172,6 @@ export default function ForgotNewPasswordScreen() {
         {/* Confirm Password Input */}
         <View
           style={styles.inputGroup}
-          onLayout={(event) => {
-            setInputLayouts((prev) => ({
-              ...prev,
-              confirmPassword: event.nativeEvent.layout.y,
-            }));
-          }}
         >
           <Text style={styles.label}>Confirm New Password</Text>
           <View style={styles.inputContainer}>
@@ -249,7 +185,6 @@ export default function ForgotNewPasswordScreen() {
                 setConfirmPassword(text);
                 setConfirmPasswordError('');
               }}
-              onFocus={() => scrollToInput('confirmPassword', 150)}
               placeholder="Re-enter new password"
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showConfirmPassword}
@@ -317,7 +252,7 @@ export default function ForgotNewPasswordScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: spacing.xxl * 6, // Significant padding to allow scrolling above keyboard
+    paddingBottom: spacing.lg,
   },
   container: {
     flex: 1,

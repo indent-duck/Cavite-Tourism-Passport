@@ -51,6 +51,34 @@ export const PASSWORD_REQUIRES_UPPERCASE = true;
 export const PASSWORD_REQUIRES_SPECIAL = true;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// All 23 local government units of Cavite (8 component cities, 15 municipalities),
+// used for the residential address picker during sign-up
+export const CAVITE_LGUS = [
+  { name: 'Alfonso', type: 'Municipality' },
+  { name: 'Amadeo', type: 'Municipality' },
+  { name: 'Bacoor', type: 'City' },
+  { name: 'Carmona', type: 'City' },
+  { name: 'Cavite City', type: 'City' },
+  { name: 'Dasmariñas', type: 'City' },
+  { name: 'General Emilio Aguinaldo', type: 'Municipality' },
+  { name: 'General Mariano Alvarez', type: 'Municipality' },
+  { name: 'General Trias', type: 'City' },
+  { name: 'Imus', type: 'City' },
+  { name: 'Indang', type: 'Municipality' },
+  { name: 'Kawit', type: 'Municipality' },
+  { name: 'Magallanes', type: 'Municipality' },
+  { name: 'Maragondon', type: 'Municipality' },
+  { name: 'Mendez', type: 'Municipality' },
+  { name: 'Naic', type: 'Municipality' },
+  { name: 'Noveleta', type: 'Municipality' },
+  { name: 'Rosario', type: 'Municipality' },
+  { name: 'Silang', type: 'Municipality' },
+  { name: 'Tagaytay', type: 'City' },
+  { name: 'Tanza', type: 'Municipality' },
+  { name: 'Ternate', type: 'Municipality' },
+  { name: 'Trece Martires', type: 'City' },
+] as const;
+
 // Social Links (TBD - pending Tourism Office URLs)
 export const SOCIAL_LINKS = {
   BIYAHENG_SOUTH: 'https://example.com/biyaheng-south', // TBD

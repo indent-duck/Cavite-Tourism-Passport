@@ -12,6 +12,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -37,21 +38,24 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <BottomSheetModalProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="scanner" />
-            <Stack.Screen name="sites/[id]" />
-            <Stack.Screen name="itineraries/[id]" />
-            <Stack.Screen name="events/[id]" />
-            <Stack.Screen name="rewards" />
-            <Stack.Screen name="settings" />
-          </Stack>
-        </BottomSheetModalProvider>
-      </QueryClientProvider>
+      {/* Tracks the on-screen keyboard so forms can keep the focused input visible */}
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <BottomSheetModalProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="scanner" />
+              <Stack.Screen name="sites/[id]" />
+              <Stack.Screen name="itineraries/[id]" />
+              <Stack.Screen name="events/[id]" />
+              <Stack.Screen name="rewards" />
+              <Stack.Screen name="settings" />
+            </Stack>
+          </BottomSheetModalProvider>
+        </QueryClientProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

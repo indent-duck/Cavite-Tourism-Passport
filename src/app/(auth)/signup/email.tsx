@@ -1,178 +1,163 @@
+import { AuthHeader, AuthSwitchPrompt, authScreenStyles, linkTextStyle } from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { TextInput } from '@/components/ui/TextInput';
+import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
 import { EMAIL_REGEX } from '@/lib/constants';
-import { colors, radii, spacing, typography } from '@/theme';
+import { hapticError } from '@/lib/haptics';
+import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
 
 /**
  * Sign Up - Step 1: Email Entry
- * 
+ *
  * First step of the signup process where user enters their email address
  * and agrees to the terms of service. Sends verification code on success.
- * 
+ *
  * Validates: Requirements 1.2 (Sign up step 1)
  */
 export default function SignupEmailScreen() {
   const [email, setEmail] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [termsError, setTermsError] = useState('');
 
   const { sendCode } = useAuth();
-  const scrollViewRef = useRef<any>(null);
-
-  // Listen to keyboard events and scroll
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        setTimeout(() => {
-          scrollViewRef.current?.scrollTo({
-            y: 200,
-            animated: true,
-          });
-        }, 100);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        scrollViewRef.current?.scrollTo({
-          y: 0,
-          animated: true,
-        });
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
-
-  // Email validation runs on every keystroke
-  const isEmailValid = EMAIL_REGEX.test(email) && email.length > 0;
+  const emailRef = useRef<TextInputRef>(null);
 
   const handleContinue = async () => {
-    // Reset errors
     setEmailError('');
+    setTermsError('');
 
-    // Validate email
-    if (!email.trim()) {
-      setEmailError('Email is required');
-      return;
+    const trimmed = email.trim();
+    let emailProblem = '';
+    if (!trimmed) {
+      emailProblem = 'Email is required';
+    } else if (!EMAIL_REGEX.test(trimmed)) {
+      emailProblem = 'Please enter a valid email address';
     }
-    if (!EMAIL_REGEX.test(email)) {
-      setEmailError('Please enter a valid email address');
+
+    if (emailProblem || !termsAccepted) {
+      setEmailError(emailProblem);
+      if (!termsAccepted) {
+        setTermsError('Please accept the Terms of Service and Privacy Policy to continue');
+      }
+      hapticError();
+      if (emailProblem) emailRef.current?.focus();
       return;
     }
 
     try {
-      await sendCode.fn(email);
-      // On success, navigate to verification screen with email
+      await sendCode.fn(trimmed);
       router.push({
         pathname: '/signup/verify',
-        params: { email },
+        params: { email: trimmed },
       });
-    } catch {
-      // Error is already set by useAuth hook
-      if (sendCode.error) {
-        setEmailError(sendCode.error);
-      }
+    } catch (error) {
+      // Use the thrown error: the hook's error state is not updated yet in this closure
+      setEmailError(
+        error instanceof Error ? error.message : 'Failed to send verification code. Please try again.'
+      );
+      hapticError();
     }
   };
 
+  const toggleTerms = () => {
+    setTermsAccepted((accepted) => !accepted);
+    setTermsError('');
+  };
+
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']} scrollViewRef={scrollViewRef} contentContainerStyle={{ paddingBottom: spacing.xxl * 6 }}>
-      <View style={styles.container}>
-        {/* Top Bar - Back Button and Step Indicator */}
-        <View style={styles.topBar}>
-          <Pressable onPress={() => router.replace('/login')} style={styles.backButton} hitSlop={spacing.sm}>
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
-          </Pressable>
-          <View style={styles.stepBadge}>
-            <Text style={styles.stepBadgeText}>STEP 1 OF 3</Text>
-          </View>
-        </View>
-
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBackground}>
-            <View style={[styles.progressBarFill, { width: '33.33%' }]} />
-          </View>
-        </View>
-
-        {/* Headline */}
-        <Text style={styles.headline}>Create your passport</Text>
-
-        {/* Email Input */}
-        <View style={styles.inputSection}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Email Address</Text>
-          </View>
-          <TextInput
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setEmailError('');
-            }}
-            placeholder="juandelacruz@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={emailError}
-          />
-        </View>
-
-        {/* Terms Checkbox */}
-        <View style={styles.termsContainer}>
-          <Pressable
-            onPress={() => setTermsAccepted(!termsAccepted)}
-            style={styles.checkboxContainer}
-            hitSlop={spacing.sm}
-          >
-            <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
-              {termsAccepted && (
-                <Ionicons name="checkmark" size={16} color={colors.background} />
-              )}
-            </View>
-          </Pressable>
-          <Text style={styles.termsText}>
-            I agree to the{' '}
-            <Pressable onPress={() => router.push('/privacy')}>
-              <Text style={styles.termsLink}>Terms of Service</Text>
-            </Pressable>{' '}
-            &{' '}
-            <Pressable onPress={() => router.push('/privacy')}>
-              <Text style={styles.termsLink}>Privacy Policy</Text>
-            </Pressable>
-            .
-          </Text>
-        </View>
-
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
+    <ScreenContainer
+      scrollable
+      keyboardAware
+      edges={['top', 'left', 'right', 'bottom']}
+      contentContainerStyle={authScreenStyles.scrollContent}
+      // The button rides on top of the keyboard so it is never covered
+      keyboardFooter={
+        <View style={styles.footer}>
           <Button
             title="Continue"
             onPress={handleContinue}
-            variant="primary"
+            variant="accent"
             fullWidth
             loading={sendCode.loading}
-            disabled={!isEmailValid || !termsAccepted}
             icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
           />
+          <AuthSwitchPrompt
+            prompt="Already have an account?"
+            linkTitle="Log in"
+            onPress={() => router.replace('/login')}
+          />
         </View>
+      }
+    >
+      <AuthHeader step={1} totalSteps={3} onBack={() => router.replace('/login')} backLabel="Back to log in" />
 
-        {/* Login Link */}
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <Pressable onPress={() => router.replace('/login')}>
-            <Text style={styles.loginLink}>Log in</Text>
+      <Text style={authScreenStyles.headline} accessibilityRole="header">
+        Create your passport
+      </Text>
+
+      <View style={styles.form}>
+        <TextInput
+          ref={emailRef}
+          label="Email address"
+          leftIcon="mail-outline"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            setEmailError('');
+          }}
+          placeholder="juandelacruz@email.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="done"
+          onSubmitEditing={handleContinue}
+          error={emailError}
+        />
+
+        {/* Terms: the whole row toggles the checkbox; the links open the policy */}
+        <View style={styles.termsBlock}>
+          <Pressable
+            onPress={toggleTerms}
+            style={styles.termsRow}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: termsAccepted }}
+            accessibilityLabel="I agree to the Terms of Service and Privacy Policy"
+          >
+            <View
+              style={[
+                styles.checkbox,
+                termsAccepted && styles.checkboxChecked,
+                !!termsError && styles.checkboxError,
+              ]}
+            >
+              {termsAccepted && <Ionicons name="checkmark" size={16} color={colors.background} />}
+            </View>
+            <Text style={styles.termsText}>
+              I agree to the{' '}
+              <Text style={styles.termsLink} onPress={() => router.push('/privacy')} accessibilityRole="link">
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text style={styles.termsLink} onPress={() => router.push('/privacy')} accessibilityRole="link">
+                Privacy Policy
+              </Text>
+              .
+            </Text>
           </Pressable>
+          {termsError ? (
+            <View style={styles.errorRow} accessibilityLiveRegion="polite">
+              <Ionicons name="alert-circle" size={14} color={colors.error} />
+              <Text style={styles.errorText}>{termsError}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
     </ScreenContainer>
@@ -180,121 +165,61 @@ export default function SignupEmailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: spacing.sm,
+  footer: {
+    gap: spacing.xs,
   },
-  topBar: {
+  form: {
+    gap: spacing.lg,
+  },
+  termsBlock: {
+    gap: spacing.xs,
+  },
+  // Row is at least 44px tall so the checkbox is easy to hit
+  termsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.base,
-    marginLeft: -8, // Align back button to edge
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    backgroundColor: colors.surface,
-    borderRadius: radii.full,
-  },
-  stepBadgeText: {
-    ...typography.labelSmall,
-    color: colors.primary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-  },
-  progressBarContainer: {
-    marginBottom: spacing.xxl,
-  },
-  progressBarBackground: {
-    height: 6,
-    backgroundColor: colors.surface,
-    borderRadius: radii.full,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: colors.accent,
-    borderRadius: radii.full,
-  },
-  headline: {
-    ...typography.displayLargeMobile,
-    color: colors.primary,
-    marginBottom: spacing.xl,
-  },
-  inputSection: {
-    marginBottom: spacing.xl,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-    paddingHorizontal: 4,
-  },
-  label: {
-    ...typography.labelMedium,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  termsContainer: {
-    flexDirection: 'row',
-    marginBottom: spacing.base,
-    gap: spacing.sm,
-  },
-  checkboxContainer: {
-    paddingTop: 2, // Align with first line of text
+    gap: spacing.md,
+    minHeight: 44,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: colors.surface,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: colors.background,
     borderWidth: 1.5,
     borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  checkboxError: {
+    borderColor: colors.error,
   },
   termsText: {
-    ...typography.bodySmall,
+    ...typography.bodyMedium,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     flex: 1,
   },
+  // Same size as the sentence so the links sit on the same baseline
   termsLink: {
-    ...typography.labelMedium,
-    color: colors.primary,
-    fontWeight: '600',
+    ...typography.bodyMedium,
+    fontFamily: linkTextStyle.fontFamily,
+    color: linkTextStyle.color,
     textDecorationLine: 'underline',
   },
-  buttonContainer: {
-    marginBottom: spacing.xxl,
-  },
-  loginContainer: {
+  errorRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.base,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
-  loginText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-  },
-  loginLink: {
-    ...typography.labelLarge,
-    color: colors.accent,
-    fontWeight: '700',
+  errorText: {
+    ...typography.bodySmall,
+    color: colors.error,
+    flex: 1,
   },
 });

@@ -1,293 +1,272 @@
+import { AuthLink, AuthSwitchPrompt, FormBanner, PassportCover } from '@/components/auth';
 import { Button } from '@/components/ui/Button';
-import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { TextInput } from '@/components/ui/TextInput';
+import { KeyboardFooter } from '@/components/ui/KeyboardFooter';
+import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
 import { EMAIL_REGEX } from '@/lib/constants';
-import { colors, radii, spacing, typography } from '@/theme';
+import { hapticError } from '@/lib/haptics';
+import { colors, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { router, useIsFocused } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, {
+    useAnimatedRef,
+    useAnimatedStyle,
+    useScrollOffset,
+    useSharedValue,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// How far the cream form page overlaps the leather cover
+const PAGE_OVERLAP = 24;
 
 /**
  * Login Screen
- * 
- * User login with email and password.
+ *
+ * Leather "passport cover" hero with the sign-in form on a cream page below.
  * Mock rule: password "wrong" shows error, others succeed.
  * Navigates to Explore on success.
- * 
+ *
+ * Keyboard: the Log in button rides on top of the keyboard, and the page is
+ * lifted by one amount so the whole form ends just above the button. The lift
+ * does not depend on which field is focused, so both fields land in the same
+ * place and switching between them does not move the screen.
+ *
  * Validates: Requirements 1.1 (Login screen)
  */
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [formError, setFormError] = useState('');
 
   const { signIn } = useAuth();
-  const scrollViewRef = useRef<any>(null);
+  const insets = useSafeAreaInsets();
+  // The login screen stays mounted under the forgot-password screens, so only
+  // force a light status bar while it is the visible screen
+  const isFocused = useIsFocused();
 
-  // Listen to keyboard events and scroll when keyboard appears
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        // Small delay to ensure keyboard is fully shown
-        setTimeout(() => {
-          // Scroll to make room for keyboard and button
-          scrollViewRef.current?.scrollTo({
-            y: 200,
-            animated: true,
-          });
-        }, 100);
-      }
-    );
+  const emailRef = useRef<TextInputRef>(null);
+  const passwordRef = useRef<TextInputRef>(null);
 
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        // Scroll back to top when keyboard closes
-        scrollViewRef.current?.scrollTo({
-          y: 0,
-          animated: true,
-        });
-      }
-    );
+  // --- Keyboard lift -------------------------------------------------------
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const scrollY = useScrollOffset(scrollRef);
+  // `height` is the keyboard height as a negative number, animated with the keyboard
+  const keyboard = useReanimatedKeyboardAnimation();
+  const screenHeight = useSharedValue(0);
+  const footerHeight = useSharedValue(0);
+  const pageY = useSharedValue(0);
+  const formY = useSharedValue(0);
+  const formHeight = useSharedValue(0);
+  const topInset = insets.top;
+  const bottomInset = insets.bottom;
 
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
+  const liftStyle = useAnimatedStyle(() => {
+    const formTop = pageY.value + formY.value - scrollY.value;
+    const formBottom = formTop + formHeight.value;
+    // Top edge of the footer as it rides up with the keyboard (see KeyboardFooter offset)
+    const footerTop =
+      screenHeight.value - footerHeight.value + keyboard.height.value + bottomInset * keyboard.progress.value;
+    // Lift until the form ends just above the footer, but never push the
+    // top of the form under the status bar
+    const needed = formBottom + spacing.base - footerTop;
+    const maxLift = formTop - topInset - spacing.base;
+    const lift = Math.max(0, Math.min(needed, maxLift));
+    return { transform: [{ translateY: -lift }] };
+  });
 
   const handleLogin = async () => {
-    // Reset errors
     setEmailError('');
     setPasswordError('');
+    setFormError('');
 
-    // Validate
     if (!email.trim()) {
       setEmailError('Email is required');
+      hapticError();
+      emailRef.current?.focus();
       return;
     }
-    if (!EMAIL_REGEX.test(email)) {
+    if (!EMAIL_REGEX.test(email.trim())) {
       setEmailError('Please enter a valid email address');
+      hapticError();
+      emailRef.current?.focus();
       return;
     }
     if (!password) {
       setPasswordError('Password is required');
+      hapticError();
+      passwordRef.current?.focus();
       return;
     }
 
     try {
-      await signIn.fn(email, password);
+      await signIn.fn(email.trim(), password);
       // On success, navigate to Explore and reset navigation stack
       router.replace('/(tabs)/explore');
-    } catch {
-      // Error is already set by useAuth hook
-      // Display in password field as it's the auth error
-      if (signIn.error) {
-        setPasswordError(signIn.error);
-      }
+    } catch (error) {
+      // Use the thrown error: the hook's error state is not updated yet in this closure
+      setFormError(
+        error instanceof Error ? error.message : 'Failed to sign in. Please try again.'
+      );
+      hapticError();
     }
   };
 
   return (
-    <ScreenContainer scrollable edges={['top', 'left', 'right']} scrollViewRef={scrollViewRef} contentContainerStyle={{ paddingBottom: spacing.xxl * 6 }}>
-      <View style={styles.container}>
-        {/* Heritage Seal */}
-        <View style={styles.sealContainer}>
-          <View style={styles.seal}>
-            <Ionicons name="shield" size={36} color={colors.passportFoil} />
-            <Text style={styles.sealYear}>1898</Text>
-          </View>
-        </View>
+    <View
+      style={styles.screen}
+      onLayout={(event) => {
+        screenHeight.value = event.nativeEvent.layout.height;
+      }}
+    >
+      {isFocused && <StatusBar style="light" />}
 
-        {/* Headline */}
-        <Text style={styles.headline}>Cavite Tourism Passport</Text>
+      <Animated.View style={[styles.lift, liftStyle]}>
+        <Animated.ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          // Pulling past the top would show the cream background above the cover
+          bounces={false}
+          overScrollMode="never"
+        >
+          <PassportCover
+            title="Cavite Tourism Passport"
+            tagline="Explore Cavite and collect stamps."
+            overlap={PAGE_OVERLAP}
+          />
 
-        {/* Description */}
-        <Text style={styles.description}>Explore Cavite and collect stamps.</Text>
-
-        {/* Form Card */}
-        <View style={styles.formCard}>
-          {/* Email Input */}
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Email address</Text>
-            <TextInput
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setEmailError('');
+          <View
+            style={styles.page}
+            onLayout={(event) => {
+              pageY.value = event.nativeEvent.layout.y;
+            }}
+          >
+            <View
+              style={styles.form}
+              onLayout={(event) => {
+                formY.value = event.nativeEvent.layout.y;
+                formHeight.value = event.nativeEvent.layout.height;
               }}
-              placeholder="juandelacruz@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={emailError}
-            />
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setPasswordError('');
-                }}
-                placeholder="••••••••••••"
-                secureTextEntry={!passwordVisible}
-                autoCapitalize="none"
-                error={passwordError}
-              />
-              <Pressable
-                onPress={() => setPasswordVisible(!passwordVisible)}
-                style={styles.visibilityToggle}
-                hitSlop={spacing.sm}
-              >
-                <Ionicons
-                  name={passwordVisible ? 'eye' : 'eye-off'}
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </Pressable>
-            </View>
-
-            {/* Forgot Password Link */}
-            <Pressable
-              onPress={() => router.push('/forgot/email')}
-              style={styles.forgotPasswordLink}
             >
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </Pressable>
-          </View>
+              <TextInput
+                ref={emailRef}
+                label="Email address"
+                leftIcon="mail-outline"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setEmailError('');
+                  setFormError('');
+                }}
+                placeholder="juandelacruz@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                error={emailError}
+              />
 
-          {/* Login Button */}
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Log in"
-              onPress={handleLogin}
-              variant="primary"
-              fullWidth
-              loading={signIn.loading}
-              icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
-            />
-          </View>
-        </View>
+              <View>
+                <TextInput
+                  ref={passwordRef}
+                  label="Password"
+                  leftIcon="lock-closed-outline"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setPasswordError('');
+                    setFormError('');
+                  }}
+                  placeholder="Enter your password"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  textContentType="password"
+                  returnKeyType="go"
+                  onSubmitEditing={handleLogin}
+                  error={passwordError}
+                />
+                <AuthLink
+                  title="Forgot password?"
+                  onPress={() => router.push('/forgot/email')}
+                  style={styles.forgotLink}
+                />
+              </View>
 
-        {/* Sign Up Link */}
-        <View style={styles.signupContainer}>
-          <Text style={styles.signupText}>Don&apos;t have an account? </Text>
-          <Pressable onPress={() => router.replace('/signup/email')}>
-            <Text style={styles.signupLink}>Sign up</Text>
-          </Pressable>
-        </View>
-      </View>
-    </ScreenContainer>
+              {formError ? <FormBanner message={formError} /> : null}
+            </View>
+          </View>
+        </Animated.ScrollView>
+      </Animated.View>
+
+      {/* The Log in button rides on top of the keyboard so it is never covered */}
+      <KeyboardFooter
+        style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
+        onHeightChange={(height) => {
+          footerHeight.value = height;
+        }}
+      >
+        <Button
+          title="Log in"
+          onPress={handleLogin}
+          variant="accent"
+          fullWidth
+          loading={signIn.loading}
+          icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
+        />
+        <AuthSwitchPrompt
+          prompt="Don't have an account?"
+          linkTitle="Sign up"
+          onPress={() => router.replace('/signup/email')}
+        />
+      </KeyboardFooter>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  // Cream behind everything so lifting the page never reveals a different color
+  screen: {
     flex: 1,
-    paddingTop: spacing.sm,
+    backgroundColor: colors.passportCream,
   },
-  sealContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.md,
+  lift: {
+    flex: 1,
   },
-  seal: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.passportLeather,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  scrollContent: {
+    flexGrow: 1,
   },
-  sealYear: {
-    ...typography.labelSmall,
-    color: colors.passportFoil,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginTop: -4,
+  page: {
+    flexGrow: 1,
+    marginTop: -PAGE_OVERLAP,
+    backgroundColor: colors.passportCream,
+    borderTopLeftRadius: PAGE_OVERLAP,
+    borderTopRightRadius: PAGE_OVERLAP,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.base,
   },
-  headline: {
-    ...typography.displayLargeMobile,
-    color: colors.primary,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  description: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.xxl,
-  },
-  formCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.input,
-    padding: spacing.base,
-    marginBottom: spacing.lg,
+  form: {
     gap: spacing.base,
   },
-  inputWrapper: {
-    gap: spacing.xs,
-  },
-  label: {
-    ...typography.labelMedium,
-    color: colors.text,
-    fontWeight: '600',
-    paddingHorizontal: 4,
-  },
-  passwordContainer: {
-    position: 'relative',
-  },
-  visibilityToggle: {
-    position: 'absolute',
-    right: 16,
-    top: 20,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  forgotPasswordLink: {
+  forgotLink: {
     alignSelf: 'flex-end',
-    paddingTop: 4,
-    paddingRight: 4,
+    marginTop: spacing.xs,
+    marginBottom: -spacing.sm,
   },
-  forgotPasswordText: {
-    ...typography.labelMedium,
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  buttonWrapper: {
-    marginTop: spacing.sm,
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
-  },
-  signupText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-  },
-  signupLink: {
-    ...typography.labelLarge,
-    color: colors.accent,
-    fontWeight: '700',
+  footer: {
+    backgroundColor: colors.passportCream,
+    gap: spacing.xs,
   },
 });

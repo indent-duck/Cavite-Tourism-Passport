@@ -6,8 +6,8 @@ import { EMAIL_REGEX } from '@/lib/constants';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Forgot Password - Step 1: Email Entry
@@ -22,38 +22,6 @@ export default function ForgotEmailScreen() {
   const [emailError, setEmailError] = useState('');
 
   const { sendCode } = useAuth();
-
-  // Scroll management refs
-  const scrollViewRef = useRef<any>(null);
-  const [inputLayout, setInputLayout] = useState({ y: 0, height: 0 });
-
-  // Keyboard event listeners
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      // Scroll content up by 150px when keyboard appears
-      scrollViewRef.current?.scrollTo({ y: 150, animated: true });
-    });
-
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      // Scroll back to top when keyboard closes
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    });
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
-
-  // Helper function to scroll to input when focused
-  const scrollToInput = (offsetAdjustment = 100) => {
-    if (inputLayout.y > 0) {
-      scrollViewRef.current?.scrollTo({
-        y: inputLayout.y - offsetAdjustment,
-        animated: true,
-      });
-    }
-  };
 
   const handleSendCode = async () => {
     // Reset errors
@@ -88,7 +56,8 @@ export default function ForgotEmailScreen() {
     <ScreenContainer 
       scrollable 
       edges={['top', 'left', 'right']}
-      scrollViewRef={scrollViewRef}
+      keyboardAware
+      keyboardBottomOffset={140}
       contentContainerStyle={styles.scrollContent}
     >
       <View style={styles.container}>
@@ -126,13 +95,7 @@ export default function ForgotEmailScreen() {
         </Text>
 
         {/* Email Input */}
-        <View 
-          style={styles.inputSection}
-          onLayout={(event) => {
-            const { y, height } = event.nativeEvent.layout;
-            setInputLayout({ y, height });
-          }}
-        >
+        <View style={styles.inputSection}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Email Address</Text>
             <Text style={styles.labelHint}>Official verification</Text>
@@ -147,7 +110,6 @@ export default function ForgotEmailScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             error={emailError}
-            onFocus={() => scrollToInput(100)}
           />
         </View>
 
@@ -193,7 +155,7 @@ export default function ForgotEmailScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: spacing.xxl * 6, // Increased padding for keyboard
+    paddingBottom: spacing.lg,
   },
   container: {
     paddingTop: spacing.sm,
