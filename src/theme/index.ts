@@ -15,6 +15,7 @@ export const colors = {
   primaryTint: "#E5EDF5", // Very light navy, active nav indicator background
   secondary: "#095495", // secondary blue accent color
   accent: "#F47B20", // Orange for CTAs, highlights
+  accentTint: "#FEEFE3", // Very light orange, icon chip backgrounds
   background: "#FFFFFF", // Main canvas background
   surface: "#F4F6FA", // Card backgrounds
 
@@ -28,6 +29,7 @@ export const colors = {
   successLight: "#E8F5E9", // Light green background for collected states
   successDark: "#1B5E20", // Dark green text for collected states
   error: "#D64545", // Error states, validation failures
+  errorTint: "#FBECEC", // Very light red, destructive row pressed/icon backgrounds
 
   // Structural colors
   border: "#E5E7EB", // Dividers, input borders
