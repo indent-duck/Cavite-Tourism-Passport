@@ -2,10 +2,11 @@ import { Stamp } from '@/data/types';
 import { colors, radii, spacing, typography } from '@/theme';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 interface StampSlotProps {
   stamp: Stamp;
+  style?: StyleProp<ViewStyle>;
 }
 
 const MONO_FONT = Platform.select({ ios: 'Menlo', default: 'monospace' });
@@ -47,12 +48,12 @@ function formatStampDate(date: Date | string): string {
  *
  * Validates: Requirements 2.7
  */
-export function StampSlot({ stamp }: StampSlotProps) {
+export function StampSlot({ stamp, style }: StampSlotProps) {
   const inkColor = CATEGORY_COLORS[stamp.siteCategory];
   const rotation = hashStringToRotation(stamp.siteId);
 
   return (
-    <View style={styles.slot}>
+    <View style={[styles.slot, style]}>
       <Text style={[styles.categoryLabel, { color: inkColor }]} numberOfLines={1}>
         {stamp.siteCategory.toUpperCase()}
       </Text>

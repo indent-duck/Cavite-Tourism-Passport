@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/Button';
 import { Stamp } from '@/data/types';
 import {
     PASSPORT_ISSUER_LINE,
@@ -6,12 +7,16 @@ import {
 } from '@/lib/constants';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { PassportPage } from './PassportPage';
+import { StampHighlight, StampReveal } from './StampReveal';
 import { StampSlot } from './StampSlot';
 
 interface StampsCardProps {
   stamps: Stamp[];
+  /** Stamp to animate into view (e.g. right after scanning it) */
+  highlight?: StampHighlight | null;
 }
 
 /**
@@ -19,10 +24,11 @@ interface StampsCardProps {
  *
  * Displays collected stamps in chronological order (most recent first).
  * Shows only collected stamps with category badges - no uncollected placeholders.
+ * A highlighted stamp (just scanned) animates onto the page.
  *
  * Validates: Requirements 2.6, 2.7
  */
-export function StampsCard({ stamps }: StampsCardProps) {
+export function StampsCard({ stamps, highlight }: StampsCardProps) {
   // Sort stamps chronologically (most recent first)
   const sortedStamps = [...stamps].sort(
     (a, b) => b.collectedAt.getTime() - a.collectedAt.getTime()
@@ -47,11 +53,27 @@ export function StampsCard({ stamps }: StampsCardProps) {
           <Text style={styles.emptyMessage}>
             Scan QR codes at partner sites to collect your first stamp.
           </Text>
+          <View style={styles.emptyAction}>
+            <Button
+              title="Scan a QR code"
+              onPress={() => router.push('/scanner')}
+              variant="accent"
+              size="compact"
+              icon={<Ionicons name="qr-code-outline" size={18} color={colors.background} />}
+              testID="passport-empty-scan-button"
+            />
+          </View>
         </View>
       ) : (
         <View style={styles.grid}>
           {sortedStamps.map((stamp, index) => (
-            <StampSlot key={`${stamp.id}-${index}`} stamp={stamp} />
+            <StampReveal
+              key={`${stamp.id}-${index}`}
+              style={styles.slot}
+              highlight={highlight?.stampId === stamp.id ? highlight : undefined}
+            >
+              <StampSlot stamp={stamp} style={styles.slotInner} />
+            </StampReveal>
           ))}
         </View>
       )}
@@ -91,10 +113,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 260,
   },
+  emptyAction: {
+    marginTop: spacing.lg,
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: spacing.md,
+  },
+  slot: {
+    width: '48.5%',
+  },
+  slotInner: {
+    width: '100%',
   },
 });

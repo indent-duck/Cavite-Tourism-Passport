@@ -10,6 +10,7 @@ import {
     StyleSheet,
     Text,
     View,
+    type RefreshControlProps,
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
@@ -86,6 +87,11 @@ export interface ScreenContainerProps {
    * @default true
    */
   scrollEnabled?: boolean;
+
+  /**
+   * Pull-to-refresh control (only used when `scrollable` is true)
+   */
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
 export function ScreenContainer({
@@ -100,6 +106,7 @@ export function ScreenContainer({
   testID,
   scrollViewRef,
   scrollEnabled = true,
+  refreshControl,
 }: ScreenContainerProps) {
   const insets = useSafeAreaInsets();
 
@@ -138,6 +145,7 @@ export function ScreenContainer({
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           scrollEnabled={scrollEnabled}
+          refreshControl={refreshControl}
         >
           {children}
         </ScrollView>

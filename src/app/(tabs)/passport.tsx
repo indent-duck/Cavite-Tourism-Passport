@@ -1,202 +1,159 @@
 import { IdentityCard } from '@/components/passport/IdentityCard';
+import { PassportPager } from '@/components/passport/PassportPager';
+import { PassportSkeleton } from '@/components/passport/PassportSkeleton';
+import type { StampHighlight } from '@/components/passport/StampReveal';
 import { StampsCard } from '@/components/passport/StampsCard';
 import { SummaryCard } from '@/components/passport/SummaryCard';
-import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { StateView } from '@/components/ui/StateView';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useEvents } from '@/hooks/useEvents';
+import { useRewardsWithEligibility } from '@/hooks/useRewardsWithEligibility';
 import { useSites } from '@/hooks/useSites';
 import { useStamps } from '@/hooks/useStamps';
-import { colors, spacing, typography } from '@/theme';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { colors, spacing } from '@/theme';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-type PassportView = 'identity' | 'stamps';
+const IDENTITY_PAGE = 0;
+const STAMPS_PAGE = 1;
 
 /**
  * Passport Tab Screen
- * 
- * Displays the user's digital tourism passport with:
- * - Summary card showing stamps collected, points balance, and overall completion
- * - Segmented toggle to switch between Identity Page and Visas & Stamps views
- * - Identity Page card with holder details, passport ID, and validity dates
- * - Visas & Stamps card with stamp slots grouped by category
- * - View Rewards button to navigate to rewards list
- * 
+ *
+ * - Progress card: next reward to work toward + stamps collected per category
+ * - Swipeable booklet pages: Identity Page and Visas & Stamps
+ * - Opens on the Stamps page when the holder has any stamps
+ * - Pull to refresh
+ * - Coming back from the scanner (`?stamp=<id>&new=1&t=<nonce>`) switches to
+ *   the Stamps page and animates that stamp in
+ *
  * Validates: Requirements 2.9, 2.10, 2.11
  */
 export default function PassportScreen() {
-  const [view, setView] = useState<PassportView>('identity');
-  
-  // Fetch data
-  const {
-    data: stamps = [],
-    isLoading: stampsLoading,
-    isError: stampsError,
-    refetch: refetchStamps,
-  } = useStamps();
-  
-  // Sites and events hooks are needed - SummaryCard uses them to calculate total stamp slots
-  const {
-    data: sites = [],
-    isLoading: sitesLoading,
-    isError: sitesError,
-    refetch: refetchSites,
-  } = useSites();
-  
-  const {
-    data: events = [],
-    isLoading: eventsLoading,
-    isError: eventsError,
-    refetch: refetchEvents,
-  } = useEvents();
+  const params = useLocalSearchParams<{ stamp?: string; new?: string; t?: string }>();
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Loading state
-  const isLoading = stampsLoading || sitesLoading || eventsLoading;
-  
-  // Error state
-  const hasError = stampsError || sitesError || eventsError;
+  // null = not chosen by the user yet, so the default page applies
+  const [selectedPage, setSelectedPage] = useState<number | null>(null);
 
-  // Handle retry
-  const handleRetry = () => {
-    refetchStamps();
-    refetchSites();
-    refetchEvents();
+  const stampsQuery = useStamps();
+  const sitesQuery = useSites();
+  const eventsQuery = useEvents();
+  const userQuery = useCurrentUser();
+  // Rewards only feed the progress card's goal; failure hides the goal instead of the screen
+  const rewardsQuery = useRewardsWithEligibility();
+
+  const stamps = stampsQuery.data ?? [];
+  const user = userQuery.data;
+
+  // Arriving from the scanner: highlight the stamp and switch to its page.
+  // Adjusting state during render (keyed on the nonce) avoids an extra pass.
+  const [handledScanKey, setHandledScanKey] = useState<string | undefined>(undefined);
+  const [highlight, setHighlight] = useState<StampHighlight | null>(null);
+  if (params.stamp && params.t && params.t !== handledScanKey) {
+    setHandledScanKey(params.t);
+    setHighlight({ stampId: params.stamp, celebrate: params.new === '1', key: params.t });
+    setSelectedPage(STAMPS_PAGE);
+  }
+
+  // Bring the booklet into view for the highlighted stamp
+  const highlightKey = highlight?.key;
+  useEffect(() => {
+    if (highlightKey) scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [highlightKey]);
+
+  const page = selectedPage ?? (stamps.length > 0 ? STAMPS_PAGE : IDENTITY_PAGE);
+
+  const isLoading =
+    stampsQuery.isLoading || sitesQuery.isLoading || eventsQuery.isLoading || userQuery.isLoading;
+  const hasError =
+    stampsQuery.isError || sitesQuery.isError || eventsQuery.isError || userQuery.isError;
+
+  const refetchAll = () =>
+    Promise.all([
+      stampsQuery.refetch(),
+      sitesQuery.refetch(),
+      eventsQuery.refetch(),
+      userQuery.refetch(),
+      rewardsQuery.refetch(),
+    ]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetchAll();
+    } finally {
+      setRefreshing(false);
+    }
   };
-
-  // Handle View Rewards button
-  const handleViewRewards = () => {
-    router.push('/rewards');
-  };
-
-  // Segmented control options
-  const segmentedOptions = [
-    { label: 'Identity Page', value: 'identity' },
-    { label: `Visas & Stamps (${stamps.length})`, value: 'stamps' },
-  ];
 
   return (
     <ScreenContainer
       scrollable={true}
       edges={['left', 'right']}
       withTabBarPadding={true}
+      scrollViewRef={scrollRef}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+        />
+      }
       testID="passport-screen"
     >
-      <View style={styles.container}>
-        {/* Loading State */}
-        {isLoading && (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading passport...</Text>
-          </View>
-        )}
+      {isLoading ? (
+        <PassportSkeleton />
+      ) : hasError || !user ? (
+        <StateView
+          variant="error"
+          title="Unable to load passport"
+          message="Please check your connection and try again."
+          actionLabel="Retry"
+          onAction={refetchAll}
+          style={styles.error}
+          testID="passport-error"
+        />
+      ) : (
+        <>
+          <SummaryCard
+            user={user}
+            stamps={stamps}
+            sites={sitesQuery.data ?? []}
+            events={eventsQuery.data ?? []}
+            rewards={rewardsQuery.data}
+          />
 
-        {/* Error State */}
-        {!isLoading && hasError && (
-          <View style={styles.centerContainer}>
-            <Text style={styles.errorTitle}>Unable to load passport</Text>
-            <Text style={styles.errorMessage}>
-              Please check your connection and try again.
-            </Text>
-            <Button
-              title="Retry"
-              onPress={handleRetry}
-              variant="accent"
-              testID="passport-retry-button"
+          <View style={styles.pager}>
+            <PassportPager
+              index={page}
+              onIndexChange={setSelectedPage}
+              testID="passport-pager"
+              pages={[
+                { key: 'identity', label: 'Identity', content: <IdentityCard /> },
+                {
+                  key: 'stamps',
+                  label: 'Stamps',
+                  content: <StampsCard stamps={stamps} highlight={highlight} />,
+                },
+              ]}
             />
           </View>
-        )}
-
-        {/* Loaded State */}
-        {!isLoading && !hasError && (
-          <>
-            {/* Summary Card */}
-            <SummaryCard />
-
-            {/* Segmented Toggle */}
-            <View style={styles.toggleContainer}>
-              <SegmentedControl
-                options={segmentedOptions}
-                selectedValue={view}
-                onValueChange={(value) => setView(value as PassportView)}
-                testID="passport-view-toggle"
-              />
-            </View>
-
-            {/* Passport Card - Identity or Stamps */}
-            <View style={styles.cardContainer}>
-              {view === 'identity' ? (
-                <IdentityCard />
-              ) : (
-                <StampsCard stamps={stamps} />
-              )}
-            </View>
-
-            {/* View Rewards Button */}
-            <View style={styles.buttonContainer}>
-              <Button
-                title="View Rewards"
-                onPress={handleViewRewards}
-                variant="accent"
-                fullWidth
-                testID="view-rewards-button"
-              />
-            </View>
-
-            {/* Note Text */}
-            <Text style={styles.noteText}>
-              Collect stamps by scanning the QR code at each partner site.
-            </Text>
-          </>
-        )}
-      </View>
+        </>
+      )}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // No top padding
+  pager: {
+    marginTop: spacing.md,
   },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xxxl,
-  },
-  loadingText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    marginTop: spacing.base,
-  },
-  errorTitle: {
-    ...typography.headlineMedium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-  },
-  toggleContainer: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  cardContainer: {
-    marginBottom: spacing.base,
-  },
-  buttonContainer: {
-    marginBottom: spacing.md,
-  },
-  noteText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.base,
+  error: {
+    paddingVertical: spacing.huge,
   },
 });

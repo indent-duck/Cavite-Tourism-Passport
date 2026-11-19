@@ -374,10 +374,14 @@ export default function ScannerScreen() {
   // ============================================================================
 
   /**
-   * "View in Passport" / "Dismiss" button handler for success/already scanned
-   * Closes modal, exits scanner, and returns to previous screen
+   * "View in Passport" button handler for success/already scanned
+   * Closes modal, exits scanner, and opens the Passport tab with the stamp
+   * highlighted (a fresh stamp also gets the "stamp slam" animation)
    */
   const handleViewPassport = () => {
+    const stampId = collectedStamp?.id;
+    const isNew = modalState === 'success';
+
     // Close the modals
     successSheetRef.current?.close();
     alreadyScannedSheetRef.current?.close();
@@ -387,8 +391,16 @@ export default function ScannerScreen() {
     setCollectedStamp(null);
     setScannedSite(null);
     
-    // Exit scanner and go back to previous screen
-    router.back();
+    // Exit scanner and land on the Passport tab
+    router.dismissTo(
+      stampId
+        ? {
+            pathname: '/passport',
+            // `t` makes every visit distinct so the same stamp can be highlighted again
+            params: { stamp: stampId, new: isNew ? '1' : '0', t: String(Date.now()) },
+          }
+        : '/passport'
+    );
   };
 
   /**
@@ -524,7 +536,7 @@ export default function ScannerScreen() {
           siteName={scannedSite?.name || ''}
           collectedDate={collectedStamp?.collectedAt || new Date()}
           onViewPassport={handleViewPassport}
-          onBackToScanner={handleViewPassport}
+          onBackToScanner={handleResumeScanning}
         />
 
         {/* Location Failed Sheet */}

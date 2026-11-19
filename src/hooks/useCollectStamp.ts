@@ -26,6 +26,8 @@ export function useCollectStamp() {
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         // Invalidate stamps to refresh Passport screen
         queryClient.invalidateQueries({ queryKey: ['stamps'] });
+        // Invalidate rewards so eligibility / next-reward progress updates
+        queryClient.invalidateQueries({ queryKey: ['rewards'] });
       }
     },
   });
