@@ -12,6 +12,7 @@
 export const colors = {
   // Primary palette
   primary: "#004987", // Navy blue for navigation, headers
+  primaryTint: "#E5EDF5", // Very light navy, active nav indicator background
   secondary: "#095495", // secondary blue accent color
   accent: "#F47B20", // Orange for CTAs, highlights
   background: "#FFFFFF", // Main canvas background
