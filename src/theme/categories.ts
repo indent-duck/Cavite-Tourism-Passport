@@ -4,7 +4,7 @@
  * the same everywhere.
  */
 
-import type { Category } from "@/data/types";
+import type { Category, EventCategory } from "@/data/types";
 import type { Ionicons } from "@expo/vector-icons";
 import { colors } from "./index";
 
@@ -22,6 +22,20 @@ export const CATEGORY_ICONS: Record<Category, keyof typeof Ionicons.glyphMap> = 
   Adventure: "trail-sign",
   Heritage: "library",
   Festival: "sparkles",
+};
+
+/** Event categories (Discover tab). Festival matches the Festival stamp color. */
+export const EVENT_CATEGORY_COLORS: Record<EventCategory, string> = {
+  Festival: colors.categoryFestival,
+  Cultural: colors.categoryHeritage,
+};
+
+export const EVENT_CATEGORY_ICONS: Record<
+  EventCategory,
+  keyof typeof Ionicons.glyphMap
+> = {
+  Festival: CATEGORY_ICONS.Festival,
+  Cultural: "color-palette",
 };
 
 /** Category color at low opacity, for tinted backgrounds (`alpha` is 2-digit hex) */

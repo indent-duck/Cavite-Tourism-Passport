@@ -1,3 +1,4 @@
+import { EventDateBlock } from "@/components/discover/EventDateBlock";
 import { ExpresswayCard } from "@/components/discover/ExpresswayCard";
 import { CaviteMap } from "@/components/map/CaviteMap";
 import { Card } from "@/components/ui/Card";
@@ -322,9 +323,6 @@ function EventRow({
   onPress: (id: string) => void;
 }) {
   const start = new Date(event.startDate);
-  const month = start
-    .toLocaleDateString("en-US", { month: "short" })
-    .toUpperCase();
   const isHappening = getEventStatus(event) === "happening";
 
   return (
@@ -336,10 +334,7 @@ function EventRow({
         day: "numeric",
       })}, ${event.municipality}`}
     >
-      <View style={styles.dateBlock}>
-        <Text style={styles.dateMonth}>{month}</Text>
-        <Text style={styles.dateDay}>{start.getDate()}</Text>
-      </View>
+      <EventDateBlock date={event.startDate} />
 
       <View style={styles.eventInfo}>
         <Text style={styles.eventTitle} numberOfLines={2}>
@@ -364,11 +359,11 @@ function EventRow({
 }
 
 const styles = StyleSheet.create({
-  // Bleeds past ScreenContainer's horizontal padding so carousels scroll edge
-  // to edge; `padded` re-applies it to everything else.
+  // Expects a full-bleed parent (Discover's body cancels ScreenContainer's
+  // padding) so carousels scroll edge to edge; `padded` re-applies the
+  // horizontal padding to everything else.
   container: {
     flex: 1,
-    marginHorizontal: -spacing.base,
     backgroundColor: colors.background,
   },
   contentContainer: {
@@ -609,23 +604,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     padding: spacing.md,
-  },
-  dateBlock: {
-    width: 52,
-    height: 56,
-    borderRadius: radii.md,
-    backgroundColor: colors.accentTint,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dateMonth: {
-    ...typography.labelSmall,
-    color: colors.accent,
-  },
-  dateDay: {
-    ...typography.headlineMedium,
-    fontFamily: "Inter_700Bold",
-    color: colors.text,
   },
   eventInfo: {
     flex: 1,

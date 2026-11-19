@@ -2,9 +2,9 @@ import { LocationMapSection } from '@/components/map/LocationMapSection';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { POINTS_PER_CATEGORY } from '@/data/types';
+import { EventPhoto } from '@/components/discover/EventPhoto';
 import { useEventById } from '@/hooks/useEventById';
-import { formatEventDate, getEventStatus } from '@/lib/event-utils';
+import { formatEventDate, getEventPoints, getEventStatus } from '@/lib/event-utils';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -88,6 +88,7 @@ export default function EventDetailScreen() {
   }
 
   const status = getEventStatus(event);
+  const points = getEventPoints(event);
   const statusLabel = status === 'happening' ? 'Happening now' : 'Upcoming';
   const statusColor = status === 'happening' ? colors.success : colors.primary;
 
@@ -105,8 +106,8 @@ export default function EventDetailScreen() {
       testID="event-detail-screen"
     >
       {/* Photo area */}
-      <View style={styles.photoPlaceholder}>
-        <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
+      <View style={styles.photoContainer}>
+        <EventPhoto event={event} iconSize={56} />
       </View>
 
       <View style={styles.content}>
@@ -125,9 +126,9 @@ export default function EventDetailScreen() {
               />
             }
           />
-          {event.festivalStamp?.available && (
+          {points !== undefined && (
             <Chip
-              label={`+${POINTS_PER_CATEGORY.Festival} pts`}
+              label={`+${points} pts`}
               selected={false}
               icon={
                 <Ionicons name="star-outline" size={16} color={colors.primary} />
@@ -146,7 +147,7 @@ export default function EventDetailScreen() {
         </View>
 
         {/* Festival stamp bonus card (conditional) */}
-        {event.festivalStamp?.available && (
+        {points !== undefined && (
           <View
             style={[
               styles.stampBonusCard,
@@ -173,7 +174,7 @@ export default function EventDetailScreen() {
                 ]}
               >
                 {status === 'happening' ? 'Happening Now' : 'Upcoming'}:{' '}
-                +{POINTS_PER_CATEGORY.Festival} Bonus Pts
+                +{points} Bonus Pts
               </Text>
               <Text style={styles.stampBonusSubtext}>
                 Available during event dates at {event.municipality}
@@ -234,11 +235,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     gap: spacing.md,
   },
-  photoPlaceholder: {
+  photoContainer: {
+    width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     paddingTop: spacing.base,

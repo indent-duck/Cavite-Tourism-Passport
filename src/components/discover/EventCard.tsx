@@ -1,68 +1,96 @@
-import type { Event } from '@/data/types';
-import { POINTS_PER_CATEGORY } from '@/data/types';
-import { formatDateBadge, getEventStatus } from '@/lib/event-utils';
 import { Card } from '@/components/ui/Card';
+import type { Event } from '@/data/types';
+import {
+  formatEventDate,
+  formatShortDateRange,
+  getEventPoints,
+  getEventStatus,
+  getEventTiming,
+} from '@/lib/event-utils';
 import { colors, radii, spacing, typography } from '@/theme';
+import { EVENT_CATEGORY_COLORS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
+import { EventDateBlock } from './EventDateBlock';
+import { EventPhoto } from './EventPhoto';
 
 export interface EventCardProps {
   event: Event;
   onPress: (id: string) => void;
 }
 
+/**
+ * EventCard Component
+ *
+ * Event summary for the Discover tab's Events list. Laid out like SiteCard:
+ * photo with the category tag (plus a date tile), then title, where and
+ * when, a short description, and a footer with relative timing and points.
+ */
 export function EventCard({ event, onPress }: EventCardProps) {
-  const status = getEventStatus(event);
-  const dateBadge = formatDateBadge(event.startDate, event.endDate);
+  const isHappening = getEventStatus(event) === 'happening';
+  const timing = getEventTiming(event);
+  const points = getEventPoints(event);
+  // Multi-day events lead with their date range; the tile only shows day one
+  const schedule = event.endDate
+    ? `${formatShortDateRange(event.startDate, event.endDate)} · ${event.time}`
+    : event.time;
+
+  const accessibilityLabel = [
+    `${event.title}, ${event.category}`,
+    `${formatEventDate(event.startDate, event.endDate)}, ${event.time}`,
+    `${event.municipality}, ${event.venue}`,
+    isHappening ? `Happening now, ${timing}` : timing,
+    points !== undefined ? `Earn ${points} points` : undefined,
+  ]
+    .filter(Boolean)
+    .join('. ');
 
   return (
-    <Card
-      onPress={() => onPress(event.id)}
-      accessibilityLabel={`${event.title}, ${dateBadge}, ${event.municipality}${status === 'happening' ? ', happening now' : ''}`}
-    >
-      {/* Photo area with date badge */}
+    <Card onPress={() => onPress(event.id)} accessibilityLabel={accessibilityLabel}>
+      {/* Photo with category tag and date tile */}
       <View style={styles.photoContainer}>
-        <View style={styles.photoPlaceholder}>
-          <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
+        <EventPhoto event={event} iconSize={48} />
+        <View
+          style={[styles.categoryTag, { backgroundColor: EVENT_CATEGORY_COLORS[event.category] }]}
+        >
+          <Text style={styles.categoryText}>{event.category}</Text>
         </View>
-        <View style={styles.dateBadge}>
-          <Text style={styles.dateBadgeText}>{dateBadge}</Text>
-        </View>
+        <EventDateBlock date={event.startDate} variant="raised" style={styles.dateBlock} />
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Location */}
-        <View style={styles.locationRow}>
-          <Ionicons name="location" size={14} color={colors.textSecondary} />
-          <Text style={styles.locationText}>{event.municipality}</Text>
+        <Text style={styles.title} numberOfLines={2}>
+          {event.title}
+        </Text>
+
+        <View style={styles.metaRow}>
+          <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+          <Text style={styles.metaText} numberOfLines={1}>
+            <Text style={styles.metaStrong}>{event.municipality}</Text> · {event.venue}
+          </Text>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{event.title}</Text>
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+          <Text style={styles.metaText} numberOfLines={1}>
+            {schedule}
+          </Text>
+        </View>
 
-        {/* Description */}
-        <Text style={styles.description} numberOfLines={3} ellipsizeMode="tail">
+        <Text style={styles.description} numberOfLines={2}>
           {event.description}
         </Text>
 
-        {/* Tags row */}
-        {(status === 'happening' || event.festivalStamp?.available) && (
-          <View style={styles.tagsRow}>
-            {status === 'happening' && (
-              <View style={styles.happeningTag}>
-                <Text style={styles.happeningTagText}>Happening now</Text>
-              </View>
-            )}
-            {event.festivalStamp?.available && (
-              <View style={styles.festivalChip}>
-                <Text style={styles.festivalChipText}>
-                  +{POINTS_PER_CATEGORY.Festival} pts
-                </Text>
-              </View>
-            )}
+        <View style={styles.footer}>
+          <View style={styles.timing}>
+            {isHappening && <View style={styles.liveDot} />}
+            <Text style={[styles.timingText, isHappening && styles.timingTextLive]}>
+              {isHappening ? `Happening now · ${timing}` : timing}
+            </Text>
           </View>
-        )}
+          {points !== undefined && <Text style={styles.points}>+{points} pts</Text>}
+        </View>
       </View>
     </Card>
   );
@@ -70,77 +98,87 @@ export function EventCard({ event, onPress }: EventCardProps) {
 
 const styles = StyleSheet.create({
   photoContainer: {
-    position: 'relative',
-  },
-  photoPlaceholder: {
+    width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  dateBadge: {
+  categoryTag: {
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
+    borderRadius: radii.chip,
   },
-  dateBadgeText: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: colors.text,
+  categoryText: {
+    ...typography.labelSmall,
+    color: colors.background,
+    fontFamily: 'Inter_700Bold',
+    textTransform: 'uppercase',
+  },
+  dateBlock: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
   },
   content: {
     padding: spacing.base,
+    gap: spacing.xs,
   },
-  locationRow: {
+  title: {
+    ...typography.titleMedium,
+    color: colors.text,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 2,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: spacing.xs,
   },
-  locationText: {
+  metaText: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+    flexShrink: 1,
   },
-  title: {
-    ...typography.headlineMedium,
-    fontFamily: 'Inter_700Bold',
-    fontWeight: '700',
+  metaStrong: {
+    fontFamily: 'Inter_600SemiBold',
     color: colors.text,
-    marginBottom: spacing.sm,
   },
   description: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
+    marginTop: spacing.xs,
   },
-  tagsRow: {
+  footer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
+    marginTop: spacing.sm,
   },
-  happeningTag: {
+  timing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.success,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.button,
   },
-  happeningTagText: {
+  timingText: {
     ...typography.labelMedium,
-    color: colors.background,
+    color: colors.textSecondary,
+    fontFamily: 'Inter_600SemiBold',
   },
-  festivalChip: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.button,
+  timingTextLive: {
+    color: colors.successDark,
   },
-  festivalChipText: {
-    ...typography.labelMedium,
-    color: colors.primary,
+  points: {
+    ...typography.labelLarge,
+    color: colors.accent,
+    fontFamily: 'Inter_700Bold',
   },
 });

@@ -70,6 +70,8 @@ export interface Itinerary {
 }
 
 // Event/festival
+export type EventCategory = 'Festival' | 'Cultural';
+
 export interface Event {
   id: string;
   title: string;
@@ -82,7 +84,8 @@ export interface Event {
   latitude: number;
   longitude: number;
   description: string;
-  category: 'Festival' | 'Cultural';
+  category: EventCategory;
+  imageUrl?: string; // Cover photo; cards fall back to a placeholder when absent
   festivalStamp?: {
     // Only for festivals offering stamps
     pointsBonus: number;
