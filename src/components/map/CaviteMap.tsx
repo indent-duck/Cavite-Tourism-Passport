@@ -7,10 +7,14 @@
 
 import type { Site } from '@/data/types';
 import { colors, radii, spacing, typography } from '@/theme';
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { Camera, Map, Marker, type CameraRef, type LngLat } from '@maplibre/maplibre-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+
+// Default top offset for 'right-below-controls' (Explore's floating filters)
+const BELOW_CONTROLS_TOP = spacing.xl * 4;
 
 // Cavite center coordinates
 const CAVITE_CENTER: LngLat = [120.8833, 14.25]; // [lng, lat]
@@ -18,6 +22,12 @@ const CAVITE_CENTER: LngLat = [120.8833, 14.25]; // [lng, lat]
 export interface CaviteMapProps {
   sites?: Site[];
   onSitePress?: (siteId: string) => void;
+  /** Sites the user has stamped; their pins get a check mark */
+  visitedSiteIds?: ReadonlySet<string>;
+  /** Pin drawn enlarged, e.g. the one whose preview is open */
+  selectedSiteId?: string | null;
+  /** Tap on the map itself (not a pin), e.g. to dismiss a preview */
+  onMapPress?: () => void;
   /**
    * Fixed map height. Omit to fill the parent (flex: 1) — the parent must
    * then have a bounded height.
@@ -46,21 +56,50 @@ export interface CaviteMapProps {
    * @default 'top-right'
    */
   controlsPosition?: 'top-right' | 'right-below-controls';
+  /**
+   * With 'right-below-controls': how far from the top the controls start,
+   * i.e. the measured height of the overlay above them. Defaults to 96.
+   */
+  controlsTop?: number;
 }
 
 export function CaviteMap({ 
   sites = [], 
   onSitePress, 
+  visitedSiteIds,
+  selectedSiteId,
+  onMapPress,
   height, 
   selectedLabel, 
   onMapInteractionChange,
   showControls = true,
   showInteractionBorder = true,
   controlsPosition = 'top-right',
+  controlsTop = BELOW_CONTROLS_TOP,
 }: CaviteMapProps) {
   const cameraRef = useRef<CameraRef>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  // A pin tap can also reach the map's own onPress; ignore map taps briefly
+  // after a pin tap so the pin's selection isn't immediately cleared.
+  const pinPressGuard = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (pinPressGuard.current) clearTimeout(pinPressGuard.current);
+  }, []);
+
+  const handlePinPress = (siteId: string) => {
+    if (pinPressGuard.current) clearTimeout(pinPressGuard.current);
+    pinPressGuard.current = setTimeout(() => {
+      pinPressGuard.current = null;
+    }, 400);
+    onSitePress?.(siteId);
+  };
+
+  const handleMapPress = () => {
+    if (pinPressGuard.current) return;
+    onMapPress?.();
+  };
 
   const sizeStyle = height != null ? { height } : styles.fill;
 
@@ -184,10 +223,11 @@ export function CaviteMap({
         style={styles.map} 
         mapStyle={mapStyle}
         onDidFinishLoadingMap={() => setIsMapLoaded(true)}
+        onPress={onMapPress ? handleMapPress : undefined}
         compass={true}
         compassPosition={
           controlsPosition === 'right-below-controls'
-            ? { top: spacing.xl * 4 + 48, right: spacing.base } // Below re-center button (Explore map)
+            ? { top: controlsTop + 48, right: spacing.base } // Below re-center button (Explore map)
             : { top: spacing.md + 48, right: spacing.md } // Below re-center button (Detail screens)
         }
         logo={false}
@@ -202,24 +242,48 @@ export function CaviteMap({
         />
 
         {/* Site markers */}
-        {sites.map((site) => (
-          <Marker
-            key={site.id}
-            id={site.id}
-            lngLat={[site.longitude, site.latitude]}
-            anchor="center"
-          >
-            <Pressable onPress={() => onSitePress?.(site.id)}>
-              <View style={[styles.marker, getCategoryMarkerStyle(site.category)]}>
-                <Ionicons 
-                  name={getCategoryIcon(site.category)} 
-                  size={16} 
-                  color={colors.background} 
-                />
+        {sites.map((site) => {
+          const isSelected = site.id === selectedSiteId;
+          const isVisited = visitedSiteIds?.has(site.id) ?? false;
+
+          return (
+            // Taps go through the Marker's own onPress: MapLibre hit-tests
+            // markers natively, so touch handlers on the child view never fire.
+            <Marker
+              key={site.id}
+              id={site.id}
+              lngLat={[site.longitude, site.latitude]}
+              anchor="center"
+              onPress={onSitePress ? () => handlePinPress(site.id) : undefined}
+            >
+              <View
+                accessible
+                accessibilityRole={onSitePress ? 'button' : 'image'}
+                accessibilityLabel={`${site.name}, ${site.category}${isVisited ? ', visited' : ''}`}
+                style={styles.markerHitArea}
+              >
+                <View
+                  style={[
+                    styles.marker,
+                    isSelected && styles.markerSelected,
+                    { backgroundColor: CATEGORY_COLORS[site.category] },
+                  ]}
+                >
+                  <Ionicons
+                    name={CATEGORY_ICONS[site.category]}
+                    size={isSelected ? 20 : 16}
+                    color={colors.background}
+                  />
+                </View>
+                {isVisited && (
+                  <View style={styles.visitedBadge}>
+                    <Ionicons name="checkmark" size={10} color={colors.background} />
+                  </View>
+                )}
               </View>
-            </Pressable>
-          </Marker>
-        ))}
+            </Marker>
+          );
+        })}
       </Map>
       </View>
 
@@ -230,7 +294,10 @@ export function CaviteMap({
           <Pressable 
             style={[
               styles.recenterButton,
-              controlsPosition === 'right-below-controls' && styles.recenterButtonBelowControls
+              controlsPosition === 'right-below-controls' && [
+                styles.recenterButtonBelowControls,
+                { top: controlsTop },
+              ],
             ]}
             onPress={handleRecenter}
             onPressIn={(e) => e.stopPropagation()}
@@ -245,7 +312,10 @@ export function CaviteMap({
         <View
           style={[
             styles.loadingBanner,
-            controlsPosition === 'right-below-controls' && styles.loadingBannerBelowControls,
+            controlsPosition === 'right-below-controls' && [
+              styles.loadingBannerBelowControls,
+              { top: controlsTop },
+            ],
           ]}
         >
           <ActivityIndicator size="small" color={colors.primary} />
@@ -263,42 +333,6 @@ export function CaviteMap({
       )}
     </View>
   );
-}
-
-// Helper: Get category-specific marker color
-function getCategoryMarkerStyle(category: string) {
-  switch (category) {
-    case 'Dining':
-      return { backgroundColor: '#F47B20' }; // accent
-    case 'Staycation':
-      return { backgroundColor: '#004987' }; // primary
-    case 'Adventure':
-      return { backgroundColor: '#2E9E5B' }; // success
-    case 'Heritage':
-      return { backgroundColor: '#8B5CF6' }; // purple
-    case 'Festival':
-      return { backgroundColor: '#EAB308' }; // yellow
-    default:
-      return { backgroundColor: colors.primary };
-  }
-}
-
-// Helper: Get category-specific icon
-function getCategoryIcon(category: string): any {
-  switch (category) {
-    case 'Dining':
-      return 'restaurant';
-    case 'Staycation':
-      return 'bed';
-    case 'Adventure':
-      return 'trail-sign';
-    case 'Heritage':
-      return 'library';
-    case 'Festival':
-      return 'musical-notes';
-    default:
-      return 'location';
-  }
 }
 
 const styles = StyleSheet.create({
@@ -319,6 +353,15 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  // Fixed box big enough for the selected pin plus the visited badge, so a
+  // pin growing on selection doesn't shift its anchor. Also the tap target:
+  // MapLibre hit-tests against the marker view's bounds.
+  markerHitArea: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   marker: {
     width: 32,
     height: 32,
@@ -327,6 +370,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.background,
+  },
+  markerSelected: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 3,
+  },
+  visitedBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.success,
+    borderWidth: 1.5,
+    borderColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   labelContainer: {
     position: 'absolute',
@@ -366,10 +428,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   loadingBannerBelowControls: {
-    // Explore map: the floating search row + chips cover the top ~88px, so sit
-    // in the re-center button's row instead and stop short of the button
-    // (40px wide + 8px gap).
-    top: spacing.xl * 4,
+    // Explore map: the floating search row + chips cover the top, so sit in
+    // the re-center button's row instead (top set from `controlsTop`) and
+    // stop short of the button (40px wide + 8px gap).
     right: spacing.base + 40 + spacing.sm,
   },
   loadingText: {
@@ -393,8 +454,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  // Below floating controls (search bar + chips); top set from `controlsTop`
   recenterButtonBelowControls: {
-    top: spacing.xl * 4, // Below floating controls (search bar + chips)
     right: spacing.base,
   },
   errorContainer: {

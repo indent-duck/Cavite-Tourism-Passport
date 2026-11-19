@@ -1,5 +1,6 @@
 import { colors, radii, spacing, typography } from '@/theme';
-import { POINTS_PER_CATEGORY, type Category, type Site } from '@/data/types';
+import { CATEGORY_COLORS } from '@/theme/categories';
+import { POINTS_PER_CATEGORY, type Site } from '@/data/types';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -29,15 +30,6 @@ export interface SiteHeaderProps {
    */
   testID?: string;
 }
-
-// Category colors for pills
-const CATEGORY_COLORS: Record<Category, string> = {
-  Dining: colors.categoryDining,
-  Staycation: colors.categoryStaycation,
-  Adventure: colors.categoryAdventure,
-  Heritage: colors.categoryHeritage,
-  Festival: colors.categoryFestival,
-};
 
 export function SiteHeader({ site, isVisited, testID }: SiteHeaderProps) {
   const points = POINTS_PER_CATEGORY[site.category];

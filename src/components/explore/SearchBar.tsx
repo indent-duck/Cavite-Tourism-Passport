@@ -32,7 +32,7 @@ export interface SearchBarProps {
 export function SearchBar({
   value,
   onChangeText,
-  placeholder = 'Search sites...',
+  placeholder = 'Search sites or towns',
   onClear,
 }: SearchBarProps) {
   const handleClear = () => {
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
+    height: 44,
     backgroundColor: colors.surface,
     borderRadius: radii.input,
     borderWidth: 1,

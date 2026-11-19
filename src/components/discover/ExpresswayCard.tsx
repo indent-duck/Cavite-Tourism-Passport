@@ -1,7 +1,8 @@
 import type { Expressway } from '@/data/types';
+import { Card } from '@/components/ui/Card';
 import { colors, radii, spacing, typography } from '@/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 export interface ExpresswayCardProps {
   expressway: Expressway;
@@ -15,16 +16,12 @@ export interface ExpresswayCardProps {
  */
 export function ExpresswayCard({ expressway, selected, onPress }: ExpresswayCardProps) {
   return (
-    <Pressable
+    <Card
       onPress={() => onPress(expressway.id)}
-      accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={`${expressway.name}, ${expressway.locationSpan}`}
-      style={({ pressed }) => [
-        styles.container,
-        selected && styles.containerSelected,
-        pressed && styles.containerPressed,
-      ]}
+      style={[styles.container, selected && styles.containerSelected]}
+      contentStyle={styles.content}
     >
       <View style={styles.header}>
         <View style={[styles.iconChip, selected && styles.iconChipSelected]}>
@@ -47,26 +44,27 @@ export function ExpresswayCard({ expressway, selected, onPress }: ExpresswayCard
       <Text style={styles.locationSpan} numberOfLines={1}>
         {expressway.locationSpan}
       </Text>
-    </Pressable>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  // A flat selector tile rather than a raised card: no shadow
   container: {
     width: 176,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: 'transparent',
-    borderRadius: radii.card,
-    padding: spacing.md,
-    gap: spacing.xs,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   containerSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryTint,
   },
-  containerPressed: {
-    opacity: 0.7,
+  content: {
+    padding: spacing.md,
+    gap: spacing.xs,
   },
   header: {
     flexDirection: 'row',

@@ -1,5 +1,6 @@
 import { Category, POINTS_PER_CATEGORY } from "@/data/types";
 import { colors, radii, spacing, typography } from "@/theme";
+import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -39,22 +40,6 @@ const MAIN_CATEGORIES: Category[] = [
   "Heritage",
   "Adventure",
 ];
-
-// Category icon mapping
-const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Dining: "restaurant",
-  Staycation: "bed",
-  Heritage: "business",
-  Adventure: "compass",
-};
-
-// Category color mapping
-const CATEGORY_COLORS: Record<string, string> = {
-  Dining: colors.categoryDining,
-  Staycation: colors.categoryStaycation,
-  Heritage: colors.categoryHeritage,
-  Adventure: colors.categoryAdventure,
-};
 
 export function PointsSummaryCard({
   points,

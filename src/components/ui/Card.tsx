@@ -1,93 +1,105 @@
-import { colors, radii, shadows, spacing } from '@/theme';
+import { colors, radii, shadows } from '@/theme';
 import React from 'react';
 import {
-    Animated,
-    Pressable,
-    StyleProp,
-    StyleSheet,
-    ViewStyle,
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 /**
  * Card Component
- * 
- * A container with white background, rounded corners, and subtle shadow.
- * Optionally pressable with spring animation feedback.
- * 
- * Validates: Requirements 1.2.3 (Card Component)
+ *
+ * The app's one card surface: white, rounded, with the standard card shadow.
+ * When pressable it shrinks slightly while pressed.
+ *
+ * Two layers, so the shadow isn't clipped on iOS: the outer layer draws the
+ * background, shadow and press animation (`style`); the inner layer clips
+ * children such as edge-to-edge photos to the rounded corners
+ * (`contentStyle`). There is no default padding, so put padding in
+ * `contentStyle` or on children.
+ *
+ * Usage:
+ * ```tsx
+ * <Card onPress={open} accessibilityLabel="Aguinaldo Shrine">
+ *   <Image ... />
+ *   <View style={{ padding: spacing.base }}>...</View>
+ * </Card>
+ * ```
  */
 
-export interface CardProps {
-  /** Content to render inside the card */
+export interface CardProps extends Omit<PressableProps, 'style' | 'children'> {
   children: React.ReactNode;
-  /** Optional press handler - makes the card touchable */
-  onPress?: () => void;
-  /** Optional custom styles to merge with base card styles */
+  /** Outer layer: size, margins, background/shadow overrides */
   style?: StyleProp<ViewStyle>;
-  /** Optional test identifier */
-  testID?: string;
+  /** Inner layer, clipped to the card's rounded corners */
+  contentStyle?: StyleProp<ViewStyle>;
 }
 
-export function Card({ children, onPress, style, testID }: CardProps) {
-  // Animated.Value pattern requires accessing .current during initialization
-  // eslint-disable-next-line react-hooks/refs
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.98,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 20,
-    }).start();
-  };
+const PRESSED_SCALE = 0.98;
+const SPRING = { damping: 20, stiffness: 400 };
 
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 20,
-    }).start();
-  };
+export function Card({
+  children,
+  style,
+  contentStyle,
+  onPress,
+  onPressIn,
+  onPressOut,
+  ...pressableProps
+}: CardProps) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.get() }],
+  }));
 
-  const cardContent = (
-    <Animated.View
-      style={[
-        styles.card,
-        style,
-        onPress && { transform: [{ scale: scaleAnim }] },
-      ]}
-      testID={testID}
-    >
-      {children}
-    </Animated.View>
-  );
+  const content = <View style={[styles.content, contentStyle]}>{children}</View>;
 
-  if (onPress) {
+  if (!onPress) {
     return (
-      <Pressable
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={styles.pressableContainer}
-      >
-        {cardContent}
-      </Pressable>
+      <View style={[styles.card, style]} testID={pressableProps.testID}>
+        {content}
+      </View>
     );
   }
 
-  return cardContent;
+  return (
+    <AnimatedPressable
+      accessibilityRole="button"
+      {...pressableProps}
+      onPress={onPress}
+      onPressIn={(event) => {
+        scale.set(withSpring(PRESSED_SCALE, SPRING));
+        onPressIn?.(event);
+      }}
+      onPressOut={(event) => {
+        scale.set(withSpring(1, SPRING));
+        onPressOut?.(event);
+      }}
+      style={[styles.card, style, animatedStyle]}
+    >
+      {content}
+    </AnimatedPressable>
+  );
 }
 
 const styles = StyleSheet.create({
-  pressableContainer: {
-    // No styles needed - just a wrapper for press handling
-  },
   card: {
     backgroundColor: colors.background,
     borderRadius: radii.card,
-    padding: spacing.base,
     ...shadows.card,
+  },
+  content: {
+    borderRadius: radii.card,
+    overflow: 'hidden',
   },
 });

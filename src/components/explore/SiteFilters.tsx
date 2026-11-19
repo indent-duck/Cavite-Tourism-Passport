@@ -1,6 +1,9 @@
 import { Chip } from "@/components/ui/Chip";
 import type { Category } from "@/data/types";
-import { spacing } from "@/theme";
+import { colors, spacing } from "@/theme";
+import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
+import { Ionicons } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +11,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { ListMapSwitch } from "./ListMapSwitch";
 import { SearchBar } from "./SearchBar";
 
 export type CategoryFilter = "All" | Category;
@@ -27,16 +29,20 @@ export interface SiteFiltersProps {
   onSearchChange: (query: string) => void;
   selectedCategory: CategoryFilter;
   onCategoryChange: (category: CategoryFilter) => void;
-  mode: "list" | "map";
-  onModeChange: (mode: "list" | "map") => void;
+  /** Sites matching the current search, per chip */
+  counts?: Partial<Record<CategoryFilter, number>>;
+  /** Rendered to the right of the search bar, e.g. the list/map switch */
+  trailing?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
 /**
  * SiteFilters Component
  *
- * Search bar + List/Map switch row with category chips below.
- * Shared by the Explore list view and the floating overlay on the map view.
+ * Search bar (with an optional trailing control) and category chips below.
+ * Each chip carries its category's icon and color (shared with site cards and
+ * map pins) and how many sites match the current search.
+ * Pinned at the top of the Explore Sites view in both list and map mode.
  *
  * Lays out edge-to-edge: it pads its own content horizontally so the chip
  * row can scroll to the screen edges. Inside a padded parent, pass a
@@ -47,21 +53,17 @@ export function SiteFilters({
   onSearchChange,
   selectedCategory,
   onCategoryChange,
-  mode,
-  onModeChange,
+  counts,
+  trailing,
   style,
 }: SiteFiltersProps) {
   return (
     <View style={[styles.container, style]}>
       <View style={styles.searchRow}>
-        <View style={styles.searchBarContainer}>
-          <SearchBar
-            value={searchQuery}
-            onChangeText={onSearchChange}
-            placeholder="Search sites..."
-          />
+        <View style={styles.searchBar}>
+          <SearchBar value={searchQuery} onChangeText={onSearchChange} />
         </View>
-        <ListMapSwitch value={mode} onValueChange={onModeChange} />
+        {trailing}
       </View>
 
       <ScrollView
@@ -70,15 +72,30 @@ export function SiteFilters({
         contentContainerStyle={styles.chipsContent}
         keyboardShouldPersistTaps="handled"
       >
-        {CATEGORY_FILTERS.map((category) => (
-          <Chip
-            key={category}
-            label={category}
-            selected={selectedCategory === category}
-            onPress={() => onCategoryChange(category)}
-            testID={`category-chip-${category}`}
-          />
-        ))}
+        {CATEGORY_FILTERS.map((category) => {
+          const selected = selectedCategory === category;
+          const color =
+            category === "All" ? colors.primary : CATEGORY_COLORS[category];
+
+          return (
+            <Chip
+              key={category}
+              label={category}
+              count={counts?.[category]}
+              selected={selected}
+              onPress={() => onCategoryChange(category)}
+              backgroundColor={selected ? color : undefined}
+              icon={
+                <Ionicons
+                  name={category === "All" ? "apps" : CATEGORY_ICONS[category]}
+                  size={14}
+                  color={selected ? colors.background : color}
+                />
+              }
+              testID={`category-chip-${category}`}
+            />
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -95,11 +112,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.base,
   },
-  searchBarContainer: {
+  searchBar: {
     flex: 1,
   },
   chipsContent: {
     gap: spacing.sm,
     paddingHorizontal: spacing.base,
+    // Room for the chips' padded touch area
+    paddingVertical: spacing.xs,
   },
 });

@@ -1,5 +1,6 @@
 import { ExpresswayCard } from "@/components/discover/ExpresswayCard";
 import { CaviteMap } from "@/components/map/CaviteMap";
+import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import {
   ABOUT_HERO,
@@ -11,24 +12,14 @@ import {
 import type { Event, Expressway } from "@/data/types";
 import { TAB_BAR_HEIGHT } from "@/lib/constants";
 import { getEventStatus } from "@/lib/event-utils";
-import { colors, radii, shadows, spacing, typography } from "@/theme";
+import { colors, radii, spacing, typography } from "@/theme";
+import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type HighlightCategory = ProvinceHighlight["category"];
-
-/** Same category colors and icons as passport stamps and site cards */
-const CATEGORY_STYLE: Record<
-  HighlightCategory,
-  { color: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  Heritage: { color: colors.categoryHeritage, icon: "library" },
-  Staycation: { color: colors.categoryStaycation, icon: "bed" },
-  Adventure: { color: colors.categoryAdventure, icon: "trail-sign" },
-  Dining: { color: colors.categoryDining, icon: "restaurant" },
-};
 
 const HIGHLIGHT_CARD_WIDTH = 248;
 const MAP_HEIGHT = 260;
@@ -287,19 +278,19 @@ function HighlightCard({
   highlight: ProvinceHighlight;
   onPress: () => void;
 }) {
-  const { color, icon } = CATEGORY_STYLE[highlight.category];
+  const color = CATEGORY_COLORS[highlight.category];
+  const icon = CATEGORY_ICONS[highlight.category];
 
   return (
-    <Pressable
+    <Card
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={`${highlight.title}. Explore ${highlight.cta}`}
-      style={({ pressed }) => [
+      style={[
         styles.highlightCard,
         // 8% tint of the category color
         { backgroundColor: `${color}14` },
-        pressed && styles.pressed,
       ]}
+      contentStyle={styles.highlightContent}
     >
       <View style={styles.highlightTop}>
         <View style={[styles.highlightIcon, { backgroundColor: color }]}>
@@ -319,7 +310,7 @@ function HighlightCard({
         </Text>
         <Ionicons name="arrow-forward" size={14} color={color} />
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
@@ -337,14 +328,13 @@ function EventRow({
   const isHappening = getEventStatus(event) === "happening";
 
   return (
-    <Pressable
+    <Card
       onPress={() => onPress(event.id)}
-      accessibilityRole="button"
+      contentStyle={styles.eventRow}
       accessibilityLabel={`${event.title}, ${start.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
       })}, ${event.municipality}`}
-      style={({ pressed }) => [styles.eventRow, pressed && styles.pressed]}
     >
       <View style={styles.dateBlock}>
         <Text style={styles.dateMonth}>{month}</Text>
@@ -369,7 +359,7 @@ function EventRow({
       </View>
 
       <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-    </Pressable>
+    </Card>
   );
 }
 
@@ -461,9 +451,14 @@ const styles = StyleSheet.create({
   },
 
   // Highlights carousel
+  // Tinted panel rather than a raised card: no shadow
   highlightCard: {
     width: HIGHLIGHT_CARD_WIDTH,
-    borderRadius: radii.card,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  highlightContent: {
+    flexGrow: 1,
     padding: spacing.base,
     gap: spacing.sm,
   },
@@ -613,10 +608,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    backgroundColor: colors.background,
-    borderRadius: radii.card,
     padding: spacing.md,
-    ...shadows.card,
   },
   dateBlock: {
     width: 52,

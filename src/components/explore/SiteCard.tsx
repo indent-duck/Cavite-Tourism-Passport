@@ -1,14 +1,21 @@
-import { POINTS_PER_CATEGORY, type Category, type Site } from "@/data/types";
-import { colors, radii, shadows, spacing, typography } from "@/theme";
+import { POINTS_PER_CATEGORY, type Site } from "@/data/types";
+import { formatDistance } from "@/lib/geo";
+import { Card } from "@/components/ui/Card";
+import { colors, radii, spacing, typography } from "@/theme";
+import { CATEGORY_COLORS } from "@/theme/categories";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { OpenStatusLabel } from "./OpenStatusLabel";
+import { SitePhoto } from "./SitePhoto";
 
 /**
  * SiteCard Component
  *
  * Displays site summary with visited indicator.
  * Used in Explore tab Sites view.
+ *
+ * Only the category tag sits on the photo; town, distance, opening status,
+ * points and visited state live in the text area below it.
  *
  * Validates: Requirements 2.2.4, 5.2
  */
@@ -25,6 +32,11 @@ export interface SiteCardProps {
   isVisited: boolean;
 
   /**
+   * Distance from the user, when their location is known
+   */
+  distanceMeters?: number;
+
+  /**
    * Callback when card is pressed
    */
   onPress: () => void;
@@ -35,68 +47,33 @@ export interface SiteCardProps {
   testID?: string;
 }
 
-// Category colors for tags
-const CATEGORY_COLORS: Record<Category, string> = {
-  Dining: colors.categoryDining,
-  Staycation: colors.categoryStaycation,
-  Adventure: colors.categoryAdventure,
-  Heritage: colors.categoryHeritage,
-  Festival: colors.categoryFestival,
-};
-
-export function SiteCard({ site, isVisited, onPress, testID }: SiteCardProps) {
+export function SiteCard({
+  site,
+  isVisited,
+  distanceMeters,
+  onPress,
+  testID,
+}: SiteCardProps) {
   const points = POINTS_PER_CATEGORY[site.category];
-  const categoryColor = CATEGORY_COLORS[site.category];
+  const distance =
+    distanceMeters !== undefined ? formatDistance(distanceMeters) : undefined;
 
   return (
-    <Pressable
+    <Card
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.container,
-        pressed && styles.containerPressed,
-      ]}
       testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={`${site.name}, ${site.category}, ${site.address}. Earn ${points} points.${isVisited ? " Visited." : ""}`}
+      accessibilityLabel={`${site.name}, ${site.category}, ${site.municipality}${distance ? `, ${distance} away` : ""}. Earn ${points} points.${isVisited ? " Visited." : ""}`}
     >
-      {/* Photo with overlays */}
+      {/* Photo with category tag */}
       <View style={styles.photoContainer}>
-        {site.imageUrl ? (
-          <Image
-            source={{ uri: site.imageUrl }}
-            style={styles.photo}
-            contentFit="cover"
-            transition={200}
-            cachePolicy="memory-disk"
-            recyclingKey={site.id}
-            accessible={false}
-          />
-        ) : (
-          <View style={styles.photo}>
-            <Ionicons name="image-outline" size={48} color={colors.textSecondary} />
-          </View>
-        )}
-
-        {/* Category tag overlay (top-left) */}
-        <View style={[styles.categoryTag, { backgroundColor: categoryColor }]}>
+        <SitePhoto site={site} iconSize={48} />
+        <View
+          style={[
+            styles.categoryTag,
+            { backgroundColor: CATEGORY_COLORS[site.category] },
+          ]}
+        >
           <Text style={styles.categoryText}>{site.category}</Text>
-        </View>
-
-        {/* Visited indicator overlay (bottom-left) */}
-        {isVisited && (
-          <View style={styles.visitedBadge}>
-            <Ionicons
-              name="checkmark-circle"
-              size={16}
-              color={colors.success}
-            />
-            <Text style={styles.visitedText}>Visited</Text>
-          </View>
-        )}
-
-        {/* Points badge (top-right) */}
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsText}>+{points} pts</Text>
         </View>
       </View>
 
@@ -106,43 +83,42 @@ export function SiteCard({ site, isVisited, onPress, testID }: SiteCardProps) {
           {site.name}
         </Text>
 
-        <View style={styles.addressRow}>
+        <View style={styles.metaRow}>
           <Ionicons
             name="location-outline"
-            size={16}
+            size={14}
             color={colors.textSecondary}
-            style={styles.addressIcon}
           />
-          <Text style={styles.address} numberOfLines={2}>
-            {site.address}
+          <Text style={styles.metaText} numberOfLines={1}>
+            {site.municipality}
+            {distance && <Text style={styles.distance}> · {distance}</Text>}
           </Text>
         </View>
+
+        <OpenStatusLabel operatingHours={site.operatingHours} />
+
+        <View style={styles.footer}>
+          <Text style={styles.points}>+{points} pts</Text>
+          {isVisited && (
+            <View style={styles.visitedBadge}>
+              <Ionicons
+                name="checkmark-circle"
+                size={16}
+                color={colors.success}
+              />
+              <Text style={styles.visitedText}>Visited</Text>
+            </View>
+          )}
+        </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  containerPressed: {
-    opacity: 0.7,
-  },
   photoContainer: {
     width: "100%",
     aspectRatio: 16 / 9,
-    position: "relative",
-  },
-  photo: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
   },
   categoryTag: {
     position: "absolute",
@@ -158,58 +134,49 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     textTransform: "uppercase",
   },
-  visitedBadge: {
-    position: "absolute",
-    bottom: spacing.sm,
-    left: spacing.sm,
+  content: {
+    padding: spacing.base,
+    gap: spacing.xs,
+  },
+  name: {
+    ...typography.titleMedium,
+    color: colors.text,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 2,
+  },
+  metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.chip,
+    gap: 4,
+  },
+  metaText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    flexShrink: 1,
+  },
+  distance: {
+    fontFamily: "Inter_600SemiBold",
+    color: colors.text,
+  },
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: spacing.sm,
+  },
+  points: {
+    ...typography.labelLarge,
+    color: colors.accent,
+    fontFamily: "Inter_700Bold",
+  },
+  visitedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
   },
   visitedText: {
     ...typography.labelMedium,
     color: colors.success,
     fontFamily: "Inter_600SemiBold",
-  },
-  pointsBadge: {
-    position: "absolute",
-    top: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.chip,
-  },
-  pointsText: {
-    ...typography.labelMedium,
-    color: colors.background,
-    fontFamily: "Inter_600SemiBold",
-  },
-  content: {
-    padding: spacing.base,
-  },
-  name: {
-    ...typography.titleMedium,
-    color: colors.text,
-    fontFamily: "Inter_700Bold",
-    marginBottom: spacing.xs,
-  },
-  addressRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  addressIcon: {
-    marginTop: 2,
-    marginRight: spacing.xs,
-  },
-  address: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontFamily: "Inter_400Regular",
-    flex: 1,
   },
 });

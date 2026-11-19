@@ -1,5 +1,6 @@
-import { Category, Stamp } from '@/data/types';
+import { Stamp } from '@/data/types';
 import { colors, radii, spacing, typography } from '@/theme';
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -8,22 +9,6 @@ interface StampSlotProps {
 }
 
 const MONO_FONT = Platform.select({ ios: 'Menlo', default: 'monospace' });
-
-const CATEGORY_COLORS: Record<Category, string> = {
-  Dining: colors.categoryDining,
-  Staycation: colors.categoryStaycation,
-  Adventure: colors.categoryAdventure,
-  Heritage: colors.categoryHeritage,
-  Festival: colors.categoryFestival,
-};
-
-const CATEGORY_ICONS: Record<Category, keyof typeof Ionicons.glyphMap> = {
-  Dining: 'restaurant',
-  Staycation: 'bed',
-  Adventure: 'trail-sign',
-  Heritage: 'library',
-  Festival: 'sparkles',
-};
 
 /**
  * Hash a string to generate a deterministic rotation angle

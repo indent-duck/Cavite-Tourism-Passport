@@ -6,7 +6,7 @@ import type { Itinerary } from '@/data/types';
  * Hook for fetching all itineraries
  * 
  * Wraps getItineraries API call with React Query for caching and state management.
- * Returns all 4 itineraries (Day Tour A, Day Tour B, Overnight Tour A, Overnight Tour B).
+ * Returns all 4 itineraries (2 day tours, 2 overnight tours).
  * 
  * Validates: Requirements 6.1 (Data Hooks)
  */

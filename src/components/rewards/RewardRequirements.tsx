@@ -1,4 +1,5 @@
 import { colors, radii, shadows, spacing, typography } from '@/theme';
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Category, POINTS_PER_CATEGORY, RewardEligibility } from '@/data/types';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -41,37 +42,7 @@ export function RewardRequirements({
   // Count completed categories
   const completedCount = mainCategories.length - missingCategories.length;
 
-  // Get icon for category
-  const getCategoryIcon = (category: Category): keyof typeof Ionicons.glyphMap => {
-    switch (category) {
-      case 'Dining':
-        return 'restaurant';
-      case 'Staycation':
-        return 'bed';
-      case 'Adventure':
-        return 'compass';
-      case 'Heritage':
-        return 'business';
-      default:
-        return 'checkmark-circle';
-    }
-  };
 
-  // Get color for category
-  const getCategoryColor = (category: Category): string => {
-    switch (category) {
-      case 'Dining':
-        return colors.categoryDining;
-      case 'Staycation':
-        return colors.categoryStaycation;
-      case 'Adventure':
-        return colors.categoryAdventure;
-      case 'Heritage':
-        return colors.categoryHeritage;
-      default:
-        return colors.textSecondary;
-    }
-  };
 
   // Check if category is collected
   const isCategoryCollected = (category: Category): boolean => {
@@ -179,8 +150,8 @@ export function RewardRequirements({
         <View style={styles.categoryList}>
           {mainCategories.map((category) => {
             const collected = isCategoryCollected(category);
-            const categoryColor = getCategoryColor(category);
-            const iconName = getCategoryIcon(category);
+            const categoryColor = CATEGORY_COLORS[category];
+            const iconName = CATEGORY_ICONS[category];
             const points = POINTS_PER_CATEGORY[category];
 
             return (

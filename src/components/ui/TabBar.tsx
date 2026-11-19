@@ -50,7 +50,7 @@ const INDICATOR_HEIGHT = 30;
 const SCAN_BUTTON_SIZE = 60;
 const SCAN_RING_WIDTH = 4;
 /** How far the Scan button rises above the top edge of the bar. */
-const SCAN_OVERHANG =
+export const SCAN_OVERHANG =
   SCAN_BUTTON_SIZE - INDICATOR_HEIGHT - (TAB_BAR_HEIGHT - INDICATOR_HEIGHT - 18) / 2;
 
 export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {

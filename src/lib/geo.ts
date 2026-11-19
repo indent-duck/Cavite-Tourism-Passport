@@ -32,3 +32,10 @@ export function getDistanceMeters(
 
   return R * c;
 }
+
+/** "850 m" under a kilometre, "2.3 km" under 10 km, then "14 km" */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters / 10) * 10} m`;
+  const km = meters / 1000;
+  return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+}

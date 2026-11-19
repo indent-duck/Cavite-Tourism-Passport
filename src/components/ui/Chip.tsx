@@ -11,7 +11,15 @@ export interface ChipProps {
   testID?: string;
   backgroundColor?: string;
   textColor?: string;
+  /** Optional count shown after the label, e.g. number of matching items */
+  count?: number;
 }
+
+// Pads the touch area to the 44pt platform minimum without changing visuals
+const HIT_SLOP = {
+  default: { top: 4, bottom: 4 },
+  small: { top: 6, bottom: 6 },
+} as const;
 
 /**
  * Chip Component
@@ -25,6 +33,7 @@ export interface ChipProps {
  * - Selected: primary blue background, white text, no border
  * - Padding: 12px horizontal (default), 8px horizontal (small)
  * - Icon spacing: 6px from text
+ * - Touch area: padded to 44px tall via hitSlop
  *
  * Note: When providing an icon, ensure it uses the appropriate color:
  * - Unselected state: colors.primary
@@ -49,6 +58,7 @@ export function Chip({
   testID,
   backgroundColor,
   textColor: customTextColor,
+  count,
 }: ChipProps) {
   const handlePress = () => {
     if (onPress) {
@@ -65,6 +75,7 @@ export function Chip({
     <Pressable
       onPress={handlePress}
       disabled={!onPress}
+      hitSlop={HIT_SLOP[size]}
       style={({ pressed }) => [
         styles.container,
         isSmall ? styles.containerSmall : styles.containerDefault,
@@ -76,7 +87,7 @@ export function Chip({
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={label}
+      accessibilityLabel={count === undefined ? label : `${label}, ${count}`}
     >
       {icon && <View style={styles.iconContainer}>{icon}</View>}
       <Text
@@ -88,6 +99,7 @@ export function Chip({
         numberOfLines={1}
       >
         {label}
+        {count !== undefined && <Text style={styles.count}> {count}</Text>}
       </Text>
     </Pressable>
   );
@@ -126,6 +138,9 @@ const styles = StyleSheet.create({
   label: {
     ...typography.labelLarge,
     fontWeight: "600",
+  },
+  count: {
+    opacity: 0.7,
   },
   labelSmall: {
     ...typography.labelMedium,

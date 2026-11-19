@@ -279,7 +279,7 @@ export const mockSites: Site[] = [
 export const mockItineraries: Itinerary[] = [
   {
     id: "itin-001",
-    title: "Day Tour A: Heritage Trail",
+    title: "Heritage Trail",
     type: "Day Tour",
     description: "Explore historical landmarks of Cavite",
     duration: "8 hours",
@@ -292,7 +292,7 @@ export const mockItineraries: Itinerary[] = [
   },
   {
     id: "itin-002",
-    title: "Day Tour B: Tagaytay Escape",
+    title: "Tagaytay Escape",
     type: "Day Tour",
     description: "Scenic views and local cuisine",
     duration: "10 hours",
@@ -300,7 +300,7 @@ export const mockItineraries: Itinerary[] = [
   },
   {
     id: "itin-003",
-    title: "Overnight Tour A: Coastal Adventure",
+    title: "Coastal Adventure",
     type: "Overnight Tour",
     description: "Beach resort and water activities",
     duration: "2 days",
@@ -313,7 +313,7 @@ export const mockItineraries: Itinerary[] = [
   },
   {
     id: "itin-004",
-    title: "Overnight Tour B: Complete Cavite Experience",
+    title: "Complete Cavite Experience",
     type: "Overnight Tour",
     description: "Mix of heritage, nature, and relaxation",
     duration: "2 days",

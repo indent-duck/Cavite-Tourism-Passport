@@ -1,28 +1,38 @@
 import { ItineraryCard } from "@/components/explore/ItineraryCard";
+import { ListMapSwitch } from "@/components/explore/ListMapSwitch";
 import { SiteCard } from "@/components/explore/SiteCard";
 import {
   CATEGORY_FILTERS,
   SiteFilters,
   type CategoryFilter,
 } from "@/components/explore/SiteFilters";
+import { SitePreviewCard } from "@/components/explore/SitePreviewCard";
 import { CaviteMap } from "@/components/map/CaviteMap";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { StateView } from "@/components/ui/StateView";
-import type { Itinerary, Site } from "@/data/types";
+import { SCAN_OVERHANG } from "@/components/ui/TabBar";
+import type { Category, Itinerary, Site } from "@/data/types";
 import { POINTS_PER_CATEGORY } from "@/data/types";
 import { useItineraries } from "@/hooks/useItineraries";
 import { useSites } from "@/hooks/useSites";
 import { useStamps } from "@/hooks/useStamps";
+import { useUserLocation } from "@/hooks/useUserLocation";
 import { TAB_BAR_HEIGHT } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
-import { colors, radii, shadows, spacing } from "@/theme";
+import { getDistanceMeters } from "@/lib/geo";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
+  Linking,
+  Pressable,
   StyleSheet,
+  Text,
   View,
   type ListRenderItem,
   type StyleProp,
@@ -37,16 +47,31 @@ type ItineraryWithProgress = {
   stampedCount: number;
   totalStops: number;
   pointsAvailable: number;
+  stopCategories: Category[];
 };
 
+/**
+ * Bottom offset for full-width floating UI (the map preview card): clears the
+ * tab bar's raised Scan button, which overlaps the bottom-center of the screen
+ */
+const FLOATING_BOTTOM = SCAN_OVERHANG + spacing.base;
+
 const CardSeparator = () => <View style={styles.separator} />;
+
+/** Itinerary list order: in progress, then not started, then completed */
+function progressRank({ stampedCount, totalStops }: ItineraryWithProgress) {
+  if (totalStops > 0 && stampedCount >= totalStops) return 2;
+  return stampedCount > 0 ? 0 : 1;
+}
 
 /**
  * Explore Tab Screen
  *
  * Contains Sites and Itineraries toggle views.
- * - Sites view: search, category filter, list/map toggle
- * - Itineraries view: curated tour cards with progress
+ * - Sites view: stamp progress, search, category filter with counts,
+ *   "Nearest" sort, and a floating list/map switch. On the map, tapping a
+ *   pin opens a preview card instead of leaving the map.
+ * - Itineraries view: curated tour cards with progress, in-progress first
  *
  * Layout: the map (once first opened) stays mounted as the bottom layer of
  * the body, and the lists render on an opaque layer above it. Switching
@@ -94,6 +119,17 @@ export default function ExploreScreen() {
   // The map is mounted lazily on first open, then kept alive
   const [isMapMounted, setIsMapMounted] = useState(false);
 
+  // Pin whose preview card is open on the map
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
+
+  // Height of the search + chips rows pinned over the Sites view; the list
+  // starts below them and the map's controls sit under them
+  const [filtersHeight, setFiltersHeight] = useState(0);
+
+  // "Nearest" sort; distances show on cards whenever location is known
+  const [sortByDistance, setSortByDistance] = useState(false);
+  const location = useUserLocation();
+
   // Fetch data (Requirement 6.1)
   const {
     data: sites,
@@ -123,26 +159,77 @@ export default function ExploreScreen() {
     [stamps],
   );
 
-  // Filter sites client-side (Requirement 8.1)
-  const filteredSites = useMemo(() => {
+  const stampedSiteCount = useMemo(
+    () => (sites ?? []).filter((site) => visitedSiteIds.has(site.id)).length,
+    [sites, visitedSiteIds],
+  );
+
+  // Sites matching the search box, before the category filter (Requirement 8.1)
+  const searchMatches = useMemo(() => {
     if (!sites) return [];
-
     const query = searchQuery.trim().toLowerCase();
+    if (query === "") return sites;
 
-    return sites.filter((site) => {
-      const matchesCategory =
-        selectedCategory === "All" || site.category === selectedCategory;
+    // Case-insensitive match on name, address, or municipality
+    return sites.filter((site) =>
+      [site.name, site.address, site.municipality].some((field) =>
+        field.toLowerCase().includes(query),
+      ),
+    );
+  }, [sites, searchQuery]);
 
-      // Case-insensitive match on name, address, or municipality
-      const matchesSearch =
-        query === "" ||
-        [site.name, site.address, site.municipality].some((field) =>
-          field.toLowerCase().includes(query),
-        );
+  // Per-chip counts for the current search
+  const categoryCounts = useMemo(() => {
+    const counts: Partial<Record<CategoryFilter, number>> = {
+      All: searchMatches.length,
+    };
+    for (const filter of CATEGORY_FILTERS) {
+      if (filter !== "All") {
+        counts[filter] = searchMatches.filter(
+          (site) => site.category === filter,
+        ).length;
+      }
+    }
+    return counts;
+  }, [searchMatches]);
 
-      return matchesCategory && matchesSearch;
-    });
-  }, [sites, selectedCategory, searchQuery]);
+  const filteredSites = useMemo(
+    () =>
+      selectedCategory === "All"
+        ? searchMatches
+        : searchMatches.filter((site) => site.category === selectedCategory),
+    [searchMatches, selectedCategory],
+  );
+
+  const distances = useMemo(() => {
+    const coords = location.coords;
+    if (!coords || !sites) return undefined;
+    return new Map(
+      sites.map((site) => [
+        site.id,
+        getDistanceMeters(
+          coords.latitude,
+          coords.longitude,
+          site.latitude,
+          site.longitude,
+        ),
+      ]),
+    );
+  }, [location.coords, sites]);
+
+  // List order; the map keeps `filteredSites` so its camera doesn't refit
+  // when only the sort changes
+  const listedSites = useMemo(() => {
+    if (!sortByDistance || !distances) return filteredSites;
+    return [...filteredSites].sort(
+      (a, b) => (distances.get(a.id) ?? 0) - (distances.get(b.id) ?? 0),
+    );
+  }, [filteredSites, sortByDistance, distances]);
+
+  // Preview closes on its own if filters hide its site
+  const selectedSite = selectedSiteId
+    ? filteredSites.find((site) => site.id === selectedSiteId)
+    : undefined;
 
   // Calculate itinerary progress (Requirement 2.3.1, 8.3)
   const itinerariesWithProgress = useMemo<ItineraryWithProgress[]>(() => {
@@ -150,7 +237,7 @@ export default function ExploreScreen() {
 
     const sitesById = new Map(sites.map((site) => [site.id, site]));
 
-    return itineraries.map((itinerary) => {
+    const withProgress = itineraries.map((itinerary) => {
       const stops = itinerary.siteIds
         .map((siteId) => sitesById.get(siteId))
         .filter((site): site is Site => site !== undefined);
@@ -165,8 +252,18 @@ export default function ExploreScreen() {
           (sum, site) => sum + POINTS_PER_CATEGORY[site.category],
           0,
         ),
+        stopCategories: [...new Set(stops.map((site) => site.category))],
       };
     });
+
+    // In progress first, then not started, then completed; day tours before
+    // overnight within each group (sort is stable, so API order breaks ties)
+    return withProgress.sort(
+      (a, b) =>
+        progressRank(a) - progressRank(b) ||
+        Number(a.itinerary.type !== "Day Tour") -
+          Number(b.itinerary.type !== "Day Tour"),
+    );
   }, [itineraries, sites, visitedSiteIds]);
 
   // Sites view waits for stamps too, so "Visited" badges don't pop in late.
@@ -192,7 +289,33 @@ export default function ExploreScreen() {
 
   const handleModeChange = (mode: "list" | "map") => {
     if (mode === "map") setIsMapMounted(true);
+    setSelectedSiteId(null);
     setIsMapView(mode === "map");
+  };
+
+  const handleToggleNearest = async () => {
+    if (sortByDistance) {
+      setSortByDistance(false);
+      return;
+    }
+
+    if (location.permissionStatus !== "granted") {
+      if (!location.canAskAgain) {
+        Alert.alert(
+          "Location access is off",
+          "Allow location access in Settings to sort sites by distance.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+      const result = await location.requestPermission();
+      if (!result.granted) return;
+    }
+
+    setSortByDistance(true);
   };
 
   const handleSitePress = (siteId: string) => {
@@ -203,18 +326,32 @@ export default function ExploreScreen() {
     router.push(`/itineraries/${itineraryId}`);
   };
 
-  const isMapMode = activeView === "Sites" && isMapView;
+  const isSitesView = activeView === "Sites";
+  const isMapMode = isSitesView && isMapView;
 
-  const filters = (mode: "list" | "map", style: StyleProp<ViewStyle>) => (
-    <SiteFilters
-      searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
-      selectedCategory={selectedCategory}
-      onCategoryChange={setSelectedCategory}
-      mode={mode}
-      onModeChange={handleModeChange}
-      style={style}
-    />
+  // One instance for both modes, so the search input keeps its text and
+  // focus when switching between list and map
+  const pinnedFilters = (
+    <View
+      style={[styles.pinnedFilters, !isMapMode && styles.pinnedFiltersList]}
+      onLayout={(event) => setFiltersHeight(event.nativeEvent.layout.height)}
+    >
+      <SiteFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        counts={sitesReady ? categoryCounts : undefined}
+        trailing={
+          <ListMapSwitch
+            value={isMapView ? "map" : "list"}
+            onValueChange={handleModeChange}
+          />
+        }
+        // Let touches in empty gaps fall through to the map
+        style={styles.boxNone}
+      />
+    </View>
   );
 
   /** Loading/error/empty state for the Sites view, or null when there are results */
@@ -283,19 +420,21 @@ export default function ExploreScreen() {
     <SiteCard
       site={site}
       isVisited={visitedSiteIds.has(site.id)}
+      distanceMeters={distances?.get(site.id)}
       onPress={() => handleSitePress(site.id)}
       testID={`site-card-${site.id}`}
     />
   );
 
   const renderItinerary: ListRenderItem<ItineraryWithProgress> = ({
-    item: { itinerary, stampedCount, totalStops, pointsAvailable },
+    item: { itinerary, stampedCount, totalStops, pointsAvailable, stopCategories },
   }) => (
     <ItineraryCard
       itinerary={itinerary}
       stampedCount={stampedCount}
       totalStops={totalStops}
       pointsAvailable={pointsAvailable}
+      stopCategories={stopCategories}
       onPress={() => handleItineraryPress(itinerary.id)}
       testID={`itinerary-card-${itinerary.id}`}
     />
@@ -316,6 +455,77 @@ export default function ExploreScreen() {
   );
 
   const mapOverlay = isMapMode ? renderSitesState(styles.mapOverlayContent) : null;
+
+  const totalSites = sites?.length ?? 0;
+  const progressPercent =
+    totalSites > 0 ? Math.round((stampedSiteCount / totalSites) * 100) : 0;
+  const resultsLabel = `${filteredSites.length} ${
+    selectedCategory === "All" ? "" : `${selectedCategory} `
+  }${filteredSites.length === 1 ? "site" : "sites"}`;
+  const isLocating = sortByDistance && location.isLocating;
+
+  const sitesListHeader = (
+    <View>
+      {sitesReady && totalSites > 0 && (
+        <View
+          style={styles.progressStrip}
+          accessible
+          accessibilityLabel={`${stampedSiteCount} of ${totalSites} sites stamped`}
+        >
+          <View style={styles.progressStripText}>
+            <Ionicons name="ribbon" size={16} color={colors.accent} />
+            <Text style={styles.progressStripLabel}>
+              <Text style={styles.progressStripCount}>
+                {stampedSiteCount} of {totalSites}
+              </Text>{" "}
+              sites stamped
+            </Text>
+          </View>
+          <View style={styles.progressTrack}>
+            <View
+              style={[styles.progressFill, { width: `${progressPercent}%` }]}
+            />
+          </View>
+        </View>
+      )}
+
+      {sitesReady && filteredSites.length > 0 && (
+        <View style={styles.resultsRow}>
+          <Text style={styles.resultsLabel}>{resultsLabel}</Text>
+          <Pressable
+            onPress={handleToggleNearest}
+            hitSlop={spacing.sm}
+            accessibilityRole="button"
+            accessibilityState={{ selected: sortByDistance }}
+            accessibilityLabel="Sort by nearest"
+            style={({ pressed }) => [
+              styles.sortPill,
+              sortByDistance && styles.sortPillActive,
+              pressed && styles.pressed,
+            ]}
+          >
+            {isLocating ? (
+              <ActivityIndicator size="small" color={colors.background} />
+            ) : (
+              <Ionicons
+                name="navigate"
+                size={12}
+                color={sortByDistance ? colors.background : colors.primary}
+              />
+            )}
+            <Text
+              style={[
+                styles.sortPillText,
+                sortByDistance && styles.sortPillTextActive,
+              ]}
+            >
+              {isLocating ? "Locating…" : "Nearest"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <ScreenContainer edges={["left", "right"]} testID="explore-screen">
@@ -348,69 +558,83 @@ export default function ExploreScreen() {
           >
             <CaviteMap
               sites={filteredSites}
-              onSitePress={handleSitePress}
-              selectedLabel={
-                sitesReady && filteredSites.length > 0
-                  ? `${filteredSites.length} ${filteredSites.length === 1 ? "site" : "sites"}`
-                  : undefined
-              }
+              onSitePress={setSelectedSiteId}
+              visitedSiteIds={visitedSiteIds}
+              selectedSiteId={selectedSite?.id ?? null}
+              onMapPress={() => setSelectedSiteId(null)}
               showControls={true}
               showInteractionBorder={false}
               controlsPosition="right-below-controls"
+              controlsTop={filtersHeight > 0 ? filtersHeight : undefined}
             />
 
             {isMapMode && (
               <>
-                {/* Floating controls over map */}
-                {filters("map", styles.floatingFilters)}
-
                 {mapOverlay && (
                   <View style={styles.mapOverlayCard}>{mapOverlay}</View>
+                )}
+
+                {selectedSite && (
+                  <SitePreviewCard
+                    site={selectedSite}
+                    isVisited={visitedSiteIds.has(selectedSite.id)}
+                    distanceMeters={distances?.get(selectedSite.id)}
+                    onPress={() => handleSitePress(selectedSite.id)}
+                    onClose={() => setSelectedSiteId(null)}
+                    style={styles.previewCard}
+                  />
                 )}
               </>
             )}
           </View>
         )}
 
-        {/* List layer — opaque, covers the map when it is mounted */}
-        {!isMapMode && (
-          <View style={styles.listLayer}>
-            {activeView === "Sites" ? (
-              // Sites — List View (Requirement 2.2.1–2.2.4)
-              <FlatList
-                data={sitesReady ? filteredSites : []}
-                keyExtractor={(site) => site.id}
-                renderItem={renderSite}
-                // Header is an element (not a component), so the search
-                // input keeps focus while results change.
-                ListHeaderComponent={filters("list", styles.listFilters)}
-                ListEmptyComponent={renderSitesState() ?? undefined}
-                ItemSeparatorComponent={CardSeparator}
-                contentContainerStyle={listContentStyle}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                showsVerticalScrollIndicator={false}
-                testID="explore-sites-list"
-              />
-            ) : (
-              // Itinerary Cards (Requirement 2.3.1)
-              <FlatList
-                data={
-                  itinerariesPending || itinerariesFailure
-                    ? []
-                    : itinerariesWithProgress
-                }
-                keyExtractor={({ itinerary }) => itinerary.id}
-                renderItem={renderItinerary}
-                ListEmptyComponent={renderItinerariesState()}
-                ItemSeparatorComponent={CardSeparator}
-                contentContainerStyle={listContentStyle}
-                showsVerticalScrollIndicator={false}
-                testID="explore-itineraries-list"
-              />
-            )}
-          </View>
-        )}
+        {/* List layer — opaque, covers the map when it is mounted. Stays
+            mounted (hidden) in map mode, like the map in list mode, so
+            switching back doesn't rebuild every card and keeps the scroll
+            position. */}
+        <View style={[styles.listLayer, isMapMode && styles.hidden]}>
+          {isSitesView ? (
+            // Sites — List View (Requirement 2.2.1–2.2.4)
+            <FlatList
+              data={sitesReady ? listedSites : []}
+              keyExtractor={(site) => site.id}
+              renderItem={renderSite}
+              ListHeaderComponent={sitesListHeader}
+              ListEmptyComponent={renderSitesState() ?? undefined}
+              ItemSeparatorComponent={CardSeparator}
+              // Starts below the pinned search + chips rows
+              contentContainerStyle={[
+                listContentStyle,
+                { paddingTop: filtersHeight },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              showsVerticalScrollIndicator={false}
+              testID="explore-sites-list"
+            />
+          ) : (
+            // Itinerary Cards (Requirement 2.3.1)
+            <FlatList
+              data={
+                itinerariesPending || itinerariesFailure
+                  ? []
+                  : itinerariesWithProgress
+              }
+              keyExtractor={({ itinerary }) => itinerary.id}
+              renderItem={renderItinerary}
+              ListEmptyComponent={renderItinerariesState()}
+              ItemSeparatorComponent={CardSeparator}
+              contentContainerStyle={listContentStyle}
+              showsVerticalScrollIndicator={false}
+              testID="explore-itineraries-list"
+            />
+          )}
+        </View>
+
+        {/* Search, list/map switch and chips — pinned at the top of the
+            Sites view in both modes */}
+        {isSitesView && pinnedFilters}
       </View>
     </ScreenContainer>
   );
@@ -434,25 +658,106 @@ const styles = StyleSheet.create({
     left: 0,
     backgroundColor: colors.background,
   },
+  // Hidden but mounted: display none also hides it from screen readers
+  hidden: {
+    display: "none",
+  },
   listContent: {
     paddingHorizontal: spacing.base,
-  },
-  // SiteFilters pads itself; cancel the list's horizontal padding so the
-  // chip row scrolls edge to edge.
-  listFilters: {
-    marginHorizontal: -spacing.base,
   },
   separator: {
     height: spacing.md,
   },
-  floatingFilters: {
+  pressed: {
+    opacity: 0.7,
+  },
+
+  // Stamp progress
+  progressStrip: {
+    backgroundColor: colors.accentTint,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  progressStripText: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  progressStripLabel: {
+    ...typography.bodySmall,
+    color: colors.text,
+  },
+  progressStripCount: {
+    fontFamily: "Inter_700Bold",
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: radii.full,
+    backgroundColor: colors.background,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: radii.full,
+    backgroundColor: colors.accent,
+  },
+
+  // Result count + sort
+  resultsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  resultsLabel: {
+    ...typography.labelLarge,
+    color: colors.textSecondary,
+  },
+  sortPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    height: 32,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  sortPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sortPillText: {
+    ...typography.labelMedium,
+    color: colors.primary,
+  },
+  sortPillTextActive: {
+    color: colors.background,
+  },
+
+  // Pinned filters: float over the map, or sit on an opaque bar the list
+  // scrolls under
+  pinnedFilters: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    // Let touches in empty gaps fall through to the map
     pointerEvents: "box-none",
   },
+  pinnedFiltersList: {
+    backgroundColor: colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  boxNone: {
+    pointerEvents: "box-none",
+  },
+
+  // Map mode
   mapOverlayCard: {
     position: "absolute",
     top: "35%",
@@ -464,5 +769,11 @@ const styles = StyleSheet.create({
   },
   mapOverlayContent: {
     paddingVertical: spacing.lg,
+  },
+  previewCard: {
+    position: "absolute",
+    left: spacing.base,
+    right: spacing.base,
+    bottom: FLOATING_BOTTOM,
   },
 });

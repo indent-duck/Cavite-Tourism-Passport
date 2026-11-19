@@ -1,9 +1,10 @@
 import type { Event } from '@/data/types';
 import { POINTS_PER_CATEGORY } from '@/data/types';
 import { formatDateBadge, getEventStatus } from '@/lib/event-utils';
-import { colors, radii, shadows, spacing, typography } from '@/theme';
+import { Card } from '@/components/ui/Card';
+import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 export interface EventCardProps {
   event: Event;
@@ -15,12 +16,9 @@ export function EventCard({ event, onPress }: EventCardProps) {
   const dateBadge = formatDateBadge(event.startDate, event.endDate);
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        pressed && styles.cardPressed,
-      ]}
+    <Card
       onPress={() => onPress(event.id)}
+      accessibilityLabel={`${event.title}, ${dateBadge}, ${event.municipality}${status === 'happening' ? ', happening now' : ''}`}
     >
       {/* Photo area with date badge */}
       <View style={styles.photoContainer}>
@@ -66,20 +64,11 @@ export function EventCard({ event, onPress }: EventCardProps) {
           </View>
         )}
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.background,
-    borderRadius: radii.card,
-    overflow: 'hidden',
-    ...shadows.card,
-  },
-  cardPressed: {
-    opacity: 0.8,
-  },
   photoContainer: {
     position: 'relative',
   },
