@@ -24,7 +24,7 @@ import { getDistanceMeters } from "@/lib/geo";
 import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -57,6 +57,14 @@ type ItineraryWithProgress = {
 const FLOATING_BOTTOM = SCAN_OVERHANG + spacing.base;
 
 const CardSeparator = () => <View style={styles.separator} />;
+
+const handleSitePress = (siteId: string) => {
+  router.push(`/sites/${siteId}`);
+};
+
+const handleItineraryPress = (itineraryId: string) => {
+  router.push(`/itineraries/${itineraryId}`);
+};
 
 /** Itinerary list order: in progress, then not started, then completed */
 function progressRank({ stampedCount, totalStops }: ItineraryWithProgress) {
@@ -318,13 +326,8 @@ export default function ExploreScreen() {
     setSortByDistance(true);
   };
 
-  const handleSitePress = (siteId: string) => {
-    router.push(`/sites/${siteId}`);
-  };
-
-  const handleItineraryPress = (itineraryId: string) => {
-    router.push(`/itineraries/${itineraryId}`);
-  };
+  // Stable so the memoized map doesn't re-render on unrelated state changes
+  const handleMapPress = useCallback(() => setSelectedSiteId(null), []);
 
   const isSitesView = activeView === "Sites";
   const isMapMode = isSitesView && isMapView;
@@ -333,8 +336,17 @@ export default function ExploreScreen() {
   // focus when switching between list and map
   const pinnedFilters = (
     <View
-      style={[styles.pinnedFilters, !isMapMode && styles.pinnedFiltersList]}
-      onLayout={(event) => setFiltersHeight(event.nativeEvent.layout.height)}
+      style={[
+        styles.pinnedFilters,
+        !isMapMode && styles.pinnedFiltersList,
+        !isSitesView && styles.hidden,
+      ]}
+      onLayout={(event) => {
+        // Ignore the 0 reported while hidden on the Itineraries view, so the
+        // list's top padding doesn't jump when switching back
+        const { height } = event.nativeEvent.layout;
+        if (height > 0) setFiltersHeight(height);
+      }}
     >
       <SiteFilters
         searchQuery={searchQuery}
@@ -416,28 +428,36 @@ export default function ExploreScreen() {
     );
   };
 
-  const renderSite: ListRenderItem<Site> = ({ item: site }) => (
-    <SiteCard
-      site={site}
-      isVisited={visitedSiteIds.has(site.id)}
-      distanceMeters={distances?.get(site.id)}
-      onPress={() => handleSitePress(site.id)}
-      testID={`site-card-${site.id}`}
-    />
+  // Stable renderItems: FlatList cells only re-render when their inputs
+  // change, not on every screen render (e.g. switching Sites/Itineraries)
+  const renderSite = useCallback<ListRenderItem<Site>>(
+    ({ item: site }) => (
+      <SiteCard
+        site={site}
+        isVisited={visitedSiteIds.has(site.id)}
+        distanceMeters={distances?.get(site.id)}
+        onPress={() => handleSitePress(site.id)}
+        testID={`site-card-${site.id}`}
+      />
+    ),
+    [visitedSiteIds, distances],
   );
 
-  const renderItinerary: ListRenderItem<ItineraryWithProgress> = ({
-    item: { itinerary, stampedCount, totalStops, pointsAvailable, stopCategories },
-  }) => (
-    <ItineraryCard
-      itinerary={itinerary}
-      stampedCount={stampedCount}
-      totalStops={totalStops}
-      pointsAvailable={pointsAvailable}
-      stopCategories={stopCategories}
-      onPress={() => handleItineraryPress(itinerary.id)}
-      testID={`itinerary-card-${itinerary.id}`}
-    />
+  const renderItinerary = useCallback<ListRenderItem<ItineraryWithProgress>>(
+    ({
+      item: { itinerary, stampedCount, totalStops, pointsAvailable, stopCategories },
+    }) => (
+      <ItineraryCard
+        itinerary={itinerary}
+        stampedCount={stampedCount}
+        totalStops={totalStops}
+        pointsAvailable={pointsAvailable}
+        stopCategories={stopCategories}
+        onPress={() => handleItineraryPress(itinerary.id)}
+        testID={`itinerary-card-${itinerary.id}`}
+      />
+    ),
+    [],
   );
 
   const listContentStyle = [
@@ -561,7 +581,7 @@ export default function ExploreScreen() {
               onSitePress={setSelectedSiteId}
               visitedSiteIds={visitedSiteIds}
               selectedSiteId={selectedSite?.id ?? null}
-              onMapPress={() => setSelectedSiteId(null)}
+              onMapPress={handleMapPress}
               showControls={true}
               showInteractionBorder={false}
               controlsPosition="right-below-controls"
@@ -590,12 +610,14 @@ export default function ExploreScreen() {
         )}
 
         {/* List layer — opaque, covers the map when it is mounted. Stays
-            mounted (hidden) in map mode, like the map in list mode, so
-            switching back doesn't rebuild every card and keeps the scroll
-            position. */}
+            mounted (hidden) in map mode, like the map in list mode. Both
+            lists stay mounted too and the inactive one is hidden, so
+            switching Sites/Itineraries is a style change rather than
+            tearing down one list and building the other — and each keeps
+            its scroll position. */}
         <View style={[styles.listLayer, isMapMode && styles.hidden]}>
-          {isSitesView ? (
-            // Sites — List View (Requirement 2.2.1–2.2.4)
+          {/* Sites — List View (Requirement 2.2.1–2.2.4) */}
+          <View style={[styles.fill, !isSitesView && styles.hidden]}>
             <FlatList
               data={sitesReady ? listedSites : []}
               keyExtractor={(site) => site.id}
@@ -613,8 +635,10 @@ export default function ExploreScreen() {
               showsVerticalScrollIndicator={false}
               testID="explore-sites-list"
             />
-          ) : (
-            // Itinerary Cards (Requirement 2.3.1)
+          </View>
+
+          {/* Itinerary Cards (Requirement 2.3.1) */}
+          <View style={[styles.fill, isSitesView && styles.hidden]}>
             <FlatList
               data={
                 itinerariesPending || itinerariesFailure
@@ -629,12 +653,13 @@ export default function ExploreScreen() {
               showsVerticalScrollIndicator={false}
               testID="explore-itineraries-list"
             />
-          )}
+          </View>
         </View>
 
         {/* Search, list/map switch and chips — pinned at the top of the
-            Sites view in both modes */}
-        {isSitesView && pinnedFilters}
+            Sites view in both modes; hidden (not unmounted) on Itineraries
+            so the search text, focus and chip scroll survive */}
+        {pinnedFilters}
       </View>
     </ScreenContainer>
   );
@@ -657,6 +682,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     backgroundColor: colors.background,
+  },
+  fill: {
+    flex: 1,
   },
   // Hidden but mounted: display none also hides it from screen readers
   hidden: {

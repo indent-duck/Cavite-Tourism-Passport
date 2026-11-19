@@ -10,7 +10,7 @@ import { colors, radii, spacing, typography } from '@/theme';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { Camera, Map, Marker, type CameraRef, type LngLat } from '@maplibre/maplibre-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 // Default top offset for 'right-below-controls' (Explore's floating filters)
@@ -63,7 +63,7 @@ export interface CaviteMapProps {
   controlsTop?: number;
 }
 
-export function CaviteMap({ 
+function CaviteMapView({
   sites = [], 
   onSitePress, 
   visitedSiteIds,
@@ -479,3 +479,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+/**
+ * Memoized: the map renders a native marker per site, so it should only
+ * re-render when its own props change. Pass stable callbacks (setters or
+ * useCallback) and memoized `sites`/`visitedSiteIds` to benefit.
+ */
+export const CaviteMap = memo(CaviteMapView);
