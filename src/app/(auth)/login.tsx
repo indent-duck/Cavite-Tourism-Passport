@@ -104,19 +104,11 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Official Badge */}
-        <View style={styles.badge}>
-          <View style={styles.badgeDot} />
-          <Text style={styles.badgeText}>OFFICIAL DIGITAL PASS</Text>
-        </View>
-
         {/* Headline */}
         <Text style={styles.headline}>Cavite Tourism Passport</Text>
 
         {/* Description */}
-        <Text style={styles.description}>
-          Explore historic Cavite, collect official stamps, and redeem exclusive provincial rewards.
-        </Text>
+        <Text style={styles.description}>Explore Cavite and collect stamps.</Text>
 
         {/* Form Card */}
         <View style={styles.formCard}>
@@ -193,19 +185,6 @@ export default function LoginScreen() {
             <Text style={styles.signupLink}>Sign up</Text>
           </Pressable>
         </View>
-
-        {/* Provincial Footnote */}
-        <View style={styles.footer}>
-          <View style={styles.footerHeader}>
-            <Ionicons name="shield" size={14} color={colors.textSecondary} />
-            <Text style={styles.footerTitle}>
-              LALAWIGAN NG KABITE • REPUBLIC OF THE PHILIPPINES
-            </Text>
-          </View>
-          <Text style={styles.footerSubtext}>
-            Department of Tourism &amp; Cultural Heritage Office
-          </Text>
-        </View>
       </View>
     </ScreenContainer>
   );
@@ -240,30 +219,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 2,
     marginTop: -4,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    backgroundColor: colors.surface,
-    borderRadius: radii.full,
-    marginBottom: spacing.xs,
-    gap: 6,
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.accent,
-  },
-  badgeText: {
-    ...typography.labelSmall,
-    color: colors.primary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
   },
   headline: {
     ...typography.displayLargeMobile,
@@ -334,30 +289,5 @@ const styles = StyleSheet.create({
     ...typography.labelLarge,
     color: colors.accent,
     fontWeight: '700',
-  },
-  footer: {
-    marginTop: 'auto',
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    alignItems: 'center',
-    opacity: 0.7,
-  },
-  footerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: 4,
-  },
-  footerTitle: {
-    ...typography.labelSmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-  },
-  footerSubtext: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontSize: 11,
   },
 });

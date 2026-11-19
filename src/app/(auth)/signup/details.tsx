@@ -188,16 +188,9 @@ export default function SignupDetailsScreen() {
           </View>
         </View>
 
-        {/* Header with Badge */}
+        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.finalStepBadge}>
-            <Ionicons name="shield-checkmark" size={18} color={colors.accent} />
-            <Text style={styles.finalStepText}>FINAL STEP</Text>
-          </View>
           <Text style={styles.headline}>Your personal details</Text>
-          <Text style={styles.description}>
-            Complete your profile to generate your unique official Cavite Passport ID.
-          </Text>
         </View>
 
         {/* Form */}
@@ -206,7 +199,6 @@ export default function SignupDetailsScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Full Name</Text>
-              <Text style={styles.labelHint}>As shown on valid ID</Text>
             </View>
             <View style={styles.inputContainer}>
               <Ionicons
@@ -236,7 +228,6 @@ export default function SignupDetailsScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Residential Address</Text>
-              <Text style={styles.labelHintAccent}>Cavite Local</Text>
             </View>
             <View style={styles.inputContainer}>
               <Ionicons
@@ -385,23 +376,6 @@ export default function SignupDetailsScreen() {
             <PasswordCriteria password={password} />
           </View>
 
-          {/* Passport Preview Card */}
-          <View style={styles.previewCard}>
-            <View style={styles.previewLeft}>
-              <View style={styles.previewIcon}>
-                <Ionicons name="book" size={22} color="#F89C48" />
-              </View>
-              <View>
-                <Text style={styles.previewLabel}>PASSPORT READY TO ISSUE</Text>
-                <Text style={styles.previewId}>CVT-2025-XXXXX</Text>
-              </View>
-            </View>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
-          </View>
-
           {/* Create Account Button */}
           <View style={styles.buttonContainer}>
             <Button
@@ -413,17 +387,6 @@ export default function SignupDetailsScreen() {
               icon={<Ionicons name="checkmark" size={20} color={colors.background} />}
             />
           </View>
-        </View>
-
-        {/* Trust Seal Footer */}
-        <View style={styles.trustSeal}>
-          <View style={styles.trustSealIcon}>
-            <Ionicons name="shield-checkmark" size={15} color={colors.primary} />
-          </View>
-          <Text style={styles.trustSealText}>
-            Your data is encrypted and securely managed under the{' '}
-            <Text style={styles.trustSealBold}>Philippine Data Privacy Act of 2012</Text>.
-          </Text>
         </View>
       </View>
     </ScreenContainer>
@@ -496,28 +459,9 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.xl,
   },
-  finalStepBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    marginBottom: spacing.xs,
-  },
-  finalStepText: {
-    ...typography.labelMedium,
-    color: colors.accent,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
   headline: {
     ...typography.displayLargeMobile,
     color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  description: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
   },
   form: {
     gap: spacing.md,
@@ -534,15 +478,6 @@ const styles = StyleSheet.create({
   label: {
     ...typography.labelMedium,
     color: colors.primary,
-    fontWeight: '600',
-  },
-  labelHint: {
-    ...typography.labelSmall,
-    color: colors.textSecondary,
-  },
-  labelHintAccent: {
-    ...typography.labelSmall,
-    color: colors.accent,
     fontWeight: '600',
   },
   inputContainer: {
@@ -618,83 +553,7 @@ const styles = StyleSheet.create({
   criteriaContainer: {
     marginTop: -4,
   },
-  previewCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: radii.input,
-    padding: 14,
-    marginTop: spacing.sm,
-  },
-  previewLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  previewIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.card / 2,
-    backgroundColor: '#0B2A4A', // passport-leather
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewLabel: {
-    ...typography.labelSmall,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-  },
-  previewId: {
-    ...typography.titleMedium,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.background,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-  },
-  verifiedText: {
-    ...typography.labelSmall,
-    color: colors.success,
-    fontWeight: '600',
-  },
   buttonContainer: {
     marginTop: spacing.sm,
-  },
-  trustSeal: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: radii.input,
-    padding: 12,
-    gap: 10,
-    marginTop: spacing.xl,
-  },
-  trustSealIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#d4e3ff', // primary-fixed
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  trustSealText: {
-    flex: 1,
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  trustSealBold: {
-    fontWeight: '600',
-    color: colors.text,
   },
 });

@@ -107,30 +107,13 @@ export default function SignupEmailScreen() {
           </View>
         </View>
 
-        {/* Delight Badge - Book Icon */}
-        <View style={styles.delightBadge}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="book" size={24} color={colors.primary} />
-          </View>
-          <View style={styles.delightTextContainer}>
-            <Text style={styles.delightLabel}>OFFICIAL TOURISM IDENTITY</Text>
-            <Text style={styles.delightSubtext}>Province of Cavite</Text>
-          </View>
-        </View>
-
         {/* Headline */}
-        <Text style={styles.headline}>Create your digital passport</Text>
-
-        {/* Description */}
-        <Text style={styles.description}>
-          Begin your journey through Cavite&apos;s heritage sites, dining experiences, and cultural festivals.
-        </Text>
+        <Text style={styles.headline}>Create your passport</Text>
 
         {/* Email Input */}
         <View style={styles.inputSection}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Email Address</Text>
-            <Text style={styles.labelHint}>Official verification</Text>
           </View>
           <TextInput
             value={email}
@@ -143,22 +126,6 @@ export default function SignupEmailScreen() {
             autoCapitalize="none"
             error={emailError}
           />
-          {!emailError && (
-            <Text style={styles.hint}>We will never share your private details.</Text>
-          )}
-        </View>
-
-        {/* Info Card - Civic Exploration ID */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoIconContainer}>
-            <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
-          </View>
-          <View style={styles.infoTextContainer}>
-            <Text style={styles.infoTitle}>Civic Exploration ID</Text>
-            <Text style={styles.infoBody}>
-              Your passport is an official identity linked to the Provincial Tourism Office.
-            </Text>
-          </View>
         </View>
 
         {/* Terms Checkbox */}
@@ -175,9 +142,9 @@ export default function SignupEmailScreen() {
             </View>
           </Pressable>
           <Text style={styles.termsText}>
-            By continuing, you agree to the{' '}
+            I agree to the{' '}
             <Pressable onPress={() => router.push('/privacy')}>
-              <Text style={styles.termsLink}>Provincial Tourism Terms of Service</Text>
+              <Text style={styles.termsLink}>Terms of Service</Text>
             </Pressable>{' '}
             &{' '}
             <Pressable onPress={() => router.push('/privacy')}>
@@ -259,43 +226,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderRadius: radii.full,
   },
-  delightBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: spacing.md,
-    marginBottom: spacing.base,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.input,
-    backgroundColor: '#d4e3ff', // primary-fixed
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  delightTextContainer: {
-    flex: 1,
-  },
-  delightLabel: {
-    ...typography.labelSmall,
-    color: colors.primary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  delightSubtext: {
-    ...typography.labelMedium,
-    color: colors.textSecondary,
-  },
   headline: {
     ...typography.displayLargeMobile,
     color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  description: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
     marginBottom: spacing.xl,
   },
   inputSection: {
@@ -312,46 +245,6 @@ const styles = StyleSheet.create({
     ...typography.labelMedium,
     color: colors.text,
     fontWeight: '600',
-  },
-  labelHint: {
-    ...typography.labelSmall,
-    color: colors.accent,
-    fontWeight: '600',
-  },
-  hint: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    paddingHorizontal: 4,
-    minHeight: 16,
-    marginTop: spacing.xs,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  infoIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#d4e3ff', // primary-fixed
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  infoTextContainer: {
-    flex: 1,
-  },
-  infoTitle: {
-    ...typography.titleMedium,
-    color: colors.primary,
-    marginBottom: 2,
-  },
-  infoBody: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
   },
   termsContainer: {
     flexDirection: 'row',

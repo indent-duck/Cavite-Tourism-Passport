@@ -205,7 +205,7 @@ export default function SignupVerifyScreen() {
           <View style={styles.helpTextContainer}>
             <Text style={styles.helpTitle}>Can&apos;t find the email?</Text>
             <Text style={styles.helpBody}>
-              Check your spam folder or wait a few minutes for the email to arrive. If you still don&apos;t receive it, try resending the code.
+              Check your spam folder or resend the code.
             </Text>
           </View>
         </View>
