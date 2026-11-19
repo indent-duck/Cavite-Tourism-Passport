@@ -431,23 +431,27 @@ export const mockEvents: Event[] = [
 ];
 
 // Expressways
+// locationSpan and length are TBD - pending Tourism Office confirmation
 export const mockExpressways: Expressway[] = [
   {
     id: "expressway-001",
     name: "CAVITEX",
-    locationSpan: "placeholder, to be confirmed",
+    locationSpan: "Parañaque – Kawit",
+    length: "14 km",
     description: "Placeholder: awaiting Tourism Office content",
   },
   {
     id: "expressway-002",
     name: "CAVITEX C5 Link",
-    locationSpan: "placeholder, to be confirmed",
+    locationSpan: "Taguig – Las Piñas",
+    length: "7.7 km",
     description: "Placeholder: awaiting Tourism Office content",
   },
   {
     id: "expressway-003",
     name: "CALAX",
-    locationSpan: "placeholder, to be confirmed",
+    locationSpan: "Kawit – Biñan, Laguna",
+    length: "45 km",
     description: "Placeholder: awaiting Tourism Office content",
   },
 ];

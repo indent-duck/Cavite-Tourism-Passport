@@ -1,6 +1,7 @@
 import { ItineraryCard } from "@/components/explore/ItineraryCard";
 import { SiteCard } from "@/components/explore/SiteCard";
 import {
+  CATEGORY_FILTERS,
   SiteFilters,
   type CategoryFilter,
 } from "@/components/explore/SiteFilters";
@@ -17,8 +18,8 @@ import { TAB_BAR_HEIGHT } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
 import { colors, radii, shadows, spacing } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -66,6 +67,26 @@ export default function ExploreScreen() {
   // Category filter for Sites view (Requirement 2.2.2)
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("All");
+
+  // Other screens (e.g. Discover → About Cavite) can open Explore with a
+  // category preset via `?category=<Category>`. Apply it once, then clear the
+  // param so the same link works again after the user changes the filter.
+  const { category: categoryParam } = useLocalSearchParams<{
+    category?: string;
+  }>();
+  const [appliedCategoryParam, setAppliedCategoryParam] = useState<string>();
+  if (categoryParam !== appliedCategoryParam) {
+    setAppliedCategoryParam(categoryParam);
+    const preset = CATEGORY_FILTERS.find((filter) => filter === categoryParam);
+    if (preset) {
+      setActiveView("Sites");
+      setSearchQuery("");
+      setSelectedCategory(preset);
+    }
+  }
+  useEffect(() => {
+    if (categoryParam) router.setParams({ category: undefined });
+  }, [categoryParam]);
 
   // List/Map view toggle for Sites view (Requirement 2.2.3)
   const [isMapView, setIsMapView] = useState(false);

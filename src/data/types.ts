@@ -94,7 +94,8 @@ export interface Event {
 export interface Expressway {
   id: string;
   name: string;
-  locationSpan: string; // e.g., "placeholder, to be confirmed"
+  locationSpan: string; // Endpoints, e.g., "Parañaque – Kawit"
+  length?: string; // e.g., "45 km"
   description: string;
 }
 

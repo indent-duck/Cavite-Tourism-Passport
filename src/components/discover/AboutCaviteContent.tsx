@@ -1,635 +1,668 @@
+import { ExpresswayCard } from "@/components/discover/ExpresswayCard";
 import { CaviteMap } from "@/components/map/CaviteMap";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import {
+  ABOUT_HERO,
+  HISTORY_TIMELINE,
+  PROVINCE_HIGHLIGHTS,
+  SIGNATURE_DISHES,
+  type ProvinceHighlight,
+} from "@/data/about-cavite-content";
 import type { Event, Expressway } from "@/data/types";
-import { colors, radii, spacing, typography } from "@/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { TAB_BAR_HEIGHT } from "@/lib/constants";
+import { getEventStatus } from "@/lib/event-utils";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+type HighlightCategory = ProvinceHighlight["category"];
+
+/** Same category colors and icons as passport stamps and site cards */
+const CATEGORY_STYLE: Record<
+  HighlightCategory,
+  { color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  Heritage: { color: colors.categoryHeritage, icon: "library" },
+  Staycation: { color: colors.categoryStaycation, icon: "bed" },
+  Adventure: { color: colors.categoryAdventure, icon: "trail-sign" },
+  Dining: { color: colors.categoryDining, icon: "restaurant" },
+};
+
+const HIGHLIGHT_CARD_WIDTH = 248;
+const MAP_HEIGHT = 260;
 
 interface AboutCaviteContentProps {
-  onEventPress: (id: string) => void;
   expressways: Expressway[];
+  /** Upcoming events to preview, already filtered and sorted */
   events: Event[];
+  /** Site IDs present in the catalog; timeline items only link to these */
+  knownSiteIds: ReadonlySet<string>;
+  onEventPress: (id: string) => void;
+  onViewAllEvents: () => void;
+  onSitePress: (id: string) => void;
+  onExploreCategory: (category: HighlightCategory) => void;
 }
-
-const EXPRESSWAY_DISTANCES: Record<string, string> = {
-  "exp-1": "54 km",
-  "exp-2": "7.2 km",
-  "exp-3": "45 km",
-};
 
 export function AboutCaviteContent({
   expressways,
   events,
+  knownSiteIds,
   onEventPress,
+  onViewAllEvents,
+  onSitePress,
+  onExploreCategory,
 }: AboutCaviteContentProps) {
-  const [selectedExpressway, setSelectedExpressway] = useState<string | null>(
-    null,
-  );
+  const insets = useSafeAreaInsets();
+  const [selectedExpresswayId, setSelectedExpresswayId] = useState<
+    string | null
+  >(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
 
-  // Handle map interaction state changes
-  const handleMapInteractionChange = (isInteracting: boolean) => {
-    setIsMapInteracting(isInteracting);
-  };
+  const selectedExpressway = expressways.find(
+    (expressway) => expressway.id === selectedExpresswayId,
+  );
+
+  const toggleExpressway = (id: string) =>
+    setSelectedExpresswayId((current) => (current === id ? null : id));
+
+  const stats = [
+    { value: "1898", label: "Independence" },
+    { value: String(ABOUT_HERO.citiesAndTowns), label: "Cities & towns" },
+    { value: String(expressways.length), label: "Expressways" },
+  ];
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      contentContainerStyle={[
+        styles.contentContainer,
+        { paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.base },
+      ]}
       showsVerticalScrollIndicator={false}
+      // Locked while the user drags the map
       scrollEnabled={!isMapInteracting}
       nestedScrollEnabled={false}
+      testID="about-cavite-scroll"
     >
-      {/* 1. Hero Card with Stats */}
-      <View style={styles.heroCard}>
-        {/* Badge at top */}
-        <View style={styles.heroBadge}>
-          <Ionicons name="book" size={16} color="#FFB800" />
-          <Text style={styles.heroBadgeText}>HISTORIC HEARTLAND</Text>
-        </View>
+      {/* Hero */}
+      <View style={[styles.padded, styles.section]}>
+        <View style={styles.heroCard}>
+          <MaterialCommunityIcons
+            name="flag-variant"
+            size={160}
+            color={colors.background}
+            style={styles.heroWatermark}
+          />
 
-        <Text style={styles.heroTitle}>
-          Land of the Brave & Historic Horizons
-        </Text>
-        <Text style={styles.heroDescription}>
-          Welcome to Cavite—the undisputed Cradle of Philippine Independence.
-          This province pulses with historic valor, scenic bayshore coasts along
-          Manila Bay, and a lush tapestry of inland Tagaytay ridges flanked by
-          temperate volcanic cliffs of the Tagaytay Ridge. As the storied
-          bastion of Caviteño patriots dueling Manila&apos;s imperial
-          gatekeepers in the late Spanish era, and the revered birthplace of our
-          nation&apos;s historic, maritime history, and agricultural tapestry.
-        </Text>
+          <View style={styles.heroBadge}>
+            <Ionicons name="book" size={14} color={colors.passportFoil} />
+            <Text style={styles.heroBadgeText}>{ABOUT_HERO.eyebrow}</Text>
+          </View>
+          <Text style={styles.heroTitle} accessibilityRole="header">
+            {ABOUT_HERO.title}
+          </Text>
+          <Text style={styles.heroDescription}>{ABOUT_HERO.description}</Text>
 
-        {/* Stats row - no boxes, inline layout */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValueYellow}>1898</Text>
-            <Text style={styles.statLabel}>INDEPENDENCE</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>23</Text>
-            <Text style={styles.statLabel}>MUNICIPALITIES</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValueYellow}>7</Text>
-            <Text style={styles.statLabel}>EXPRESSWAYS</Text>
+          <View style={styles.statsRow}>
+            {stats.map((stat, index) => (
+              <View
+                key={stat.label}
+                style={[styles.statItem, index > 0 && styles.statDivider]}
+              >
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </View>
+            ))}
           </View>
         </View>
       </View>
 
-      {/* 2. Province Highlights */}
+      {/* Province Highlights */}
       <View style={styles.section}>
-        <View style={styles.provinceHighlightsHeader}>
-          <Text style={styles.provinceHighlightsTitle}>
-            Province Highlights
-          </Text>
-          <Text style={styles.essenceBadge}>ESSENCE OF CAVITE</Text>
-        </View>
-        <View style={styles.highlightCard}>
-          <View style={styles.highlightImagePlaceholder}>
-            <Ionicons
-              name="image-outline"
-              size={48}
-              color={colors.textSecondary}
+        <SectionHeader
+          eyebrow="ESSENCE OF CAVITE"
+          title="Province Highlights"
+          style={styles.padded}
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={HIGHLIGHT_CARD_WIDTH + spacing.md}
+          snapToAlignment="start"
+          contentContainerStyle={styles.carouselContent}
+        >
+          {PROVINCE_HIGHLIGHTS.map((highlight) => (
+            <HighlightCard
+              key={highlight.id}
+              highlight={highlight}
+              onPress={() => onExploreCategory(highlight.category)}
             />
-          </View>
-          <View style={styles.categoryTag}>
-            <Text style={styles.categoryTagText}>Heritage & Landscape</Text>
-          </View>
-          <Text style={styles.highlightTitle}>
-            Gateway to Philippine Independence
-          </Text>
-          <Text style={styles.highlightDescription}>
-            Cavite played a pivotal role in Philippine history as the birthplace
-            of independence and home to numerous historical landmarks.
-          </Text>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* History timeline */}
+      <View style={[styles.padded, styles.section]}>
+        <SectionHeader eyebrow="ROAD TO 1898" title="A Revolutionary Past" />
+        <View style={styles.timelineCard}>
+          {HISTORY_TIMELINE.map((milestone, index) => {
+            const isLast = index === HISTORY_TIMELINE.length - 1;
+            const siteId =
+              milestone.siteId && knownSiteIds.has(milestone.siteId)
+                ? milestone.siteId
+                : undefined;
+
+            return (
+              <View key={milestone.year} style={styles.timelineRow}>
+                <View style={styles.timelineRail}>
+                  <View style={styles.timelineDot} />
+                  {!isLast && <View style={styles.timelineLine} />}
+                </View>
+
+                <View
+                  style={[
+                    styles.timelineBody,
+                    !isLast && styles.timelineBodySpaced,
+                  ]}
+                >
+                  <Text style={styles.timelineYear}>{milestone.year}</Text>
+                  <Text style={styles.timelineTitle}>{milestone.title}</Text>
+                  <Text style={styles.timelineDescription}>
+                    {milestone.description}
+                  </Text>
+                  {siteId && (
+                    <Pressable
+                      onPress={() => onSitePress(siteId)}
+                      hitSlop={spacing.sm}
+                      accessibilityRole="link"
+                      accessibilityLabel={`Visit the ${milestone.title} site`}
+                      style={({ pressed }) => [
+                        styles.inlineLink,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text style={styles.inlineLinkText}>Visit the site</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={14}
+                        color={colors.primary}
+                      />
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+            );
+          })}
         </View>
       </View>
 
-      {/* 3. Historical & Topographical Riches */}
-      <View style={styles.section}>
-        <View style={styles.contentCard}>
-          <View style={styles.cardImagePlaceholder}>
-            <Ionicons
-              name="image-outline"
-              size={48}
-              color={colors.textSecondary}
-            />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>
-              Historical and Topographical Riches
-            </Text>
-            <Text style={styles.cardDescription}>
-              From the temperate volcanic cliffs of the Tagaytay Ridge to the
-              storied bastion of Caviteño patriots dueling Manila&apos;s
-              imperial gatekeepers, the island bastion of Corregidor guarding
-              Manila Bay, and the revered birthplace of our nation&apos;s
-              historic, maritime history, and agricultural tapestry.
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* 4. Culinary Delights */}
-      <View style={styles.section}>
-        <View style={styles.contentCard}>
-          <View style={styles.cardImagePlaceholder}>
-            <Ionicons
-              name="restaurant-outline"
-              size={48}
-              color={colors.textSecondary}
-            />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Culinary Delights</Text>
-            <Text style={styles.cardDescription}>
-              Cavite&apos;s distinct coastal flavors with hearty upland
-              cuisines:
-            </Text>
-
-            {/* Culinary items grid - simple text cards */}
-            <View style={styles.culinaryGrid}>
-              <View style={styles.culinaryTextCard}>
-                <Text style={styles.culinaryItemName}>Kaweng Barako</Text>
-                <Text style={styles.culinaryItemDescription}>
-                  Liberato style
-                </Text>
+      {/* Signature dishes */}
+      <View style={[styles.padded, styles.section]}>
+        <SectionHeader
+          eyebrow="TASTE OF THE PROVINCE"
+          title="Culinary Delights"
+          actionLabel="Places to eat"
+          onAction={() => onExploreCategory("Dining")}
+        />
+        <View style={styles.dishGrid}>
+          {SIGNATURE_DISHES.map((dish) => (
+            <View key={dish.id} style={styles.dishCard}>
+              <View style={styles.dishIcon}>
+                <MaterialCommunityIcons
+                  name={dish.icon}
+                  size={20}
+                  color={colors.accent}
+                />
               </View>
-              <View style={styles.culinaryTextCard}>
-                <Text style={styles.culinaryItemName}>Pancit Puso</Text>
-                <Text style={styles.culinaryItemDescription}>
-                  Cavite City tradition
-                </Text>
-              </View>
-              <View style={styles.culinaryTextCard}>
-                <Text style={styles.culinaryItemName}>Tambalang Burong</Text>
-                <Text style={styles.culinaryItemDescription}>
-                  Gen-tri rich coconut
-                </Text>
-              </View>
-              <View style={styles.culinaryTextCard}>
-                <Text style={styles.culinaryItemName}>Panutsa</Text>
-                <Text style={styles.culinaryItemDescription}>
-                  Silang sweet treat
-                </Text>
-              </View>
+              <Text style={styles.dishName}>{dish.name}</Text>
+              <Text style={styles.dishOrigin}>{dish.origin}</Text>
             </View>
-          </View>
+          ))}
         </View>
       </View>
 
-      {/* 6. Expressways & Province Map */}
+      {/* Getting there: map + expressways */}
       <View style={styles.section}>
-        <View style={styles.mapSectionHeader}>
-          <Text style={styles.mapSectionTitle}>Expressways & Province Map</Text>
-          <View style={styles.interactiveBadge}>
-            <Text style={styles.interactiveBadgeText}>Interactive</Text>
-          </View>
-        </View>
-
-        {/* Map */}
-        <View style={styles.mapContainer}>
+        <SectionHeader
+          eyebrow="GETTING THERE"
+          title="Expressways"
+          style={styles.padded}
+        />
+        <View style={styles.padded}>
           <CaviteMap
-            height={300}
-            selectedLabel={
-              selectedExpressway &&
-              expressways.find((e) => e.id === selectedExpressway)
-                ? `Selected: ${expressways.find((e) => e.id === selectedExpressway)?.name}`
-                : undefined
-            }
-            onMapInteractionChange={handleMapInteractionChange}
+            height={MAP_HEIGHT}
+            selectedLabel={selectedExpressway?.name}
+            onMapInteractionChange={setIsMapInteracting}
           />
         </View>
 
-        <Text style={styles.mapInstruction}>
-          Tap expressway cards below or town pins on map
-        </Text>
-
-        {/* Expressway Gateways Section */}
-        <Text style={styles.gatewaysHeading}>EXPRESSWAY GATEWAYS</Text>
-        <View style={styles.expresswaysContainer}>
-          {expressways.map((expressway) => (
-            <Pressable
-              key={expressway.id}
-              style={({ pressed }) => [
-                styles.expresswayCard,
-                selectedExpressway === expressway.id &&
-                  styles.expresswayCardSelected,
-                pressed && styles.expresswayCardPressed,
-              ]}
-              onPress={() =>
-                setSelectedExpressway(
-                  selectedExpressway === expressway.id ? null : expressway.id,
-                )
-              }
-            >
-              <View style={styles.expresswayHeader}>
-                <Ionicons
-                  name="git-network-outline"
-                  size={24}
-                  color={colors.textSecondary}
-                />
-                {EXPRESSWAY_DISTANCES[expressway.id] && (
-                  <View style={styles.distanceBadge}>
-                    <Text style={styles.distanceBadgeText}>
-                      {EXPRESSWAY_DISTANCES[expressway.id]}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.expresswayName}>{expressway.name}</Text>
-              <Text style={styles.expresswayLocationSpan}>
-                {expressway.locationSpan}
-              </Text>
-              <Text style={styles.expresswayDescription} numberOfLines={2}>
-                {expressway.description}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {expressways.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.carouselContent,
+              styles.expresswayRow,
+            ]}
+          >
+            {expressways.map((expressway) => (
+              <ExpresswayCard
+                key={expressway.id}
+                expressway={expressway}
+                selected={expressway.id === selectedExpresswayId}
+                onPress={toggleExpressway}
+              />
+            ))}
+          </ScrollView>
+        )}
       </View>
 
-      {/* 7. Festival Calendar */}
+      {/* Upcoming festivals */}
       {events.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.festivalCalendarHeader}>
-            <Text style={styles.sectionTitle}>Quick Festival Calendar</Text>
-            <Text style={styles.viewAllLink}>View all →</Text>
+        <View style={[styles.padded, styles.section]}>
+          <SectionHeader
+            eyebrow="MARK YOUR CALENDAR"
+            title="Upcoming Festivals"
+            actionLabel="View all"
+            onAction={onViewAllEvents}
+          />
+          <View style={styles.eventList}>
+            {events.map((event) => (
+              <EventRow key={event.id} event={event} onPress={onEventPress} />
+            ))}
           </View>
-          {events.map((event) => (
-            <Pressable
-              key={event.id}
-              style={({ pressed }) => [
-                styles.eventCard,
-                pressed && styles.eventCardPressed,
-              ]}
-              onPress={() => onEventPress(event.id)}
-            >
-              <View style={styles.eventImagePlaceholder}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={32}
-                  color={colors.textSecondary}
-                />
-              </View>
-              <View style={styles.eventInfo}>
-                <Text style={styles.eventTitle}>{event.title}</Text>
-                <Text style={styles.eventDate}>{event.municipality}</Text>
-                <Text style={styles.eventDescription} numberOfLines={2}>
-                  {event.description}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
         </View>
       )}
     </ScrollView>
   );
 }
 
+function HighlightCard({
+  highlight,
+  onPress,
+}: {
+  highlight: ProvinceHighlight;
+  onPress: () => void;
+}) {
+  const { color, icon } = CATEGORY_STYLE[highlight.category];
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${highlight.title}. Explore ${highlight.cta}`}
+      style={({ pressed }) => [
+        styles.highlightCard,
+        // 8% tint of the category color
+        { backgroundColor: `${color}14` },
+        pressed && styles.pressed,
+      ]}
+    >
+      <View style={styles.highlightTop}>
+        <View style={[styles.highlightIcon, { backgroundColor: color }]}>
+          <Ionicons name={icon} size={18} color={colors.background} />
+        </View>
+        <Text style={[styles.highlightTag, { color }]}>
+          {highlight.category.toUpperCase()}
+        </Text>
+      </View>
+
+      <Text style={styles.highlightTitle}>{highlight.title}</Text>
+      <Text style={styles.highlightDescription}>{highlight.description}</Text>
+
+      <View style={styles.highlightCta}>
+        <Text style={[styles.highlightCtaText, { color }]}>
+          {highlight.cta}
+        </Text>
+        <Ionicons name="arrow-forward" size={14} color={color} />
+      </View>
+    </Pressable>
+  );
+}
+
+function EventRow({
+  event,
+  onPress,
+}: {
+  event: Event;
+  onPress: (id: string) => void;
+}) {
+  const start = new Date(event.startDate);
+  const month = start
+    .toLocaleDateString("en-US", { month: "short" })
+    .toUpperCase();
+  const isHappening = getEventStatus(event) === "happening";
+
+  return (
+    <Pressable
+      onPress={() => onPress(event.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`${event.title}, ${start.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+      })}, ${event.municipality}`}
+      style={({ pressed }) => [styles.eventRow, pressed && styles.pressed]}
+    >
+      <View style={styles.dateBlock}>
+        <Text style={styles.dateMonth}>{month}</Text>
+        <Text style={styles.dateDay}>{start.getDate()}</Text>
+      </View>
+
+      <View style={styles.eventInfo}>
+        <Text style={styles.eventTitle} numberOfLines={2}>
+          {event.title}
+        </Text>
+        <View style={styles.eventMeta}>
+          <Ionicons name="location" size={12} color={colors.textSecondary} />
+          <Text style={styles.eventMunicipality} numberOfLines={1}>
+            {event.municipality}
+          </Text>
+          {isHappening && (
+            <View style={styles.happeningTag}>
+              <Text style={styles.happeningTagText}>Happening now</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  // Bleeds past ScreenContainer's horizontal padding so carousels scroll edge
+  // to edge; `padded` re-applies it to everything else.
   container: {
     flex: 1,
+    marginHorizontal: -spacing.base,
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 0,
-    paddingBottom: 100, // Account for tab bar
+    paddingTop: spacing.xs,
+  },
+  padded: {
+    paddingHorizontal: spacing.base,
+  },
+  section: {
+    marginBottom: spacing.xxl,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  carouselContent: {
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
   },
 
-  // Hero Card
+  // Hero
   heroCard: {
     backgroundColor: colors.primary,
     borderRadius: radii.card,
     padding: spacing.lg,
-    marginBottom: spacing.base,
     gap: spacing.md,
+    overflow: "hidden",
+  },
+  heroWatermark: {
+    position: "absolute",
+    right: -spacing.xxl,
+    top: -spacing.lg,
+    opacity: 0.06,
   },
   heroBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    alignSelf: "flex-start",
   },
   heroBadgeText: {
-    ...typography.labelMedium,
-    color: "#FFB800",
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 1,
+    ...typography.labelSmall,
+    color: colors.passportFoil,
+    letterSpacing: 1.2,
   },
   heroTitle: {
-    ...typography.headlineLarge,
+    ...typography.displayLargeMobile,
     fontFamily: "Inter_700Bold",
     color: colors.background,
   },
   heroDescription: {
     ...typography.bodyMedium,
     color: colors.background,
-    lineHeight: 20,
-    opacity: 0.9,
-    textAlign: "justify" as const,
+    opacity: 0.85,
   },
   statsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: `${colors.background}40`,
   },
   statItem: {
+    flex: 1,
     alignItems: "center",
-    gap: spacing.xs,
+    gap: 2,
+  },
+  statDivider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: `${colors.background}40`,
   },
   statValue: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: "700" as const,
-    color: colors.background,
-  },
-  statValueYellow: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: "700" as const,
-    color: "#FFB800",
+    ...typography.headlineLarge,
+    fontFamily: "Inter_700Bold",
+    color: colors.passportFoil,
   },
   statLabel: {
-    fontSize: 9,
-    lineHeight: 12,
-    fontWeight: "600" as const,
+    ...typography.labelSmall,
     color: colors.background,
-    textAlign: "center",
-    letterSpacing: 0.5,
+    opacity: 0.85,
+    textTransform: "uppercase",
   },
 
-  // Sections
-  section: {
-    marginBottom: spacing.base,
+  // Highlights carousel
+  highlightCard: {
+    width: HIGHLIGHT_CARD_WIDTH,
+    borderRadius: radii.card,
+    padding: spacing.base,
+    gap: spacing.sm,
   },
-
-  // Province Highlights Header
-  provinceHighlightsHeader: {
+  highlightTop: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.base,
-    marginTop: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  provinceHighlightsTitle: {
+  highlightIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  highlightTag: {
+    ...typography.labelSmall,
+    letterSpacing: 1,
+  },
+  highlightTitle: {
     ...typography.headlineSmall,
     fontFamily: "Inter_700Bold",
     color: colors.text,
   },
-  essenceBadge: {
-    ...typography.labelMedium,
-    fontFamily: "Inter_700Bold",
-    color: colors.textSecondary,
-    letterSpacing: 1,
-  },
-
-  // Content Cards (Historical & Culinary)
-  contentCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    overflow: "hidden",
-  },
-  cardImagePlaceholder: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    backgroundColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardContent: {
-    padding: spacing.base,
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    ...typography.headlineMedium,
-    fontFamily: "Inter_700Bold",
-    color: colors.primary, // Blue color
-  },
-  cardDescription: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-
-  // Province Highlights
-  highlightCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.card,
-    overflow: "hidden",
-  },
-  highlightImagePlaceholder: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    backgroundColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  categoryTag: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.success,
-    borderRadius: radii.button,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    margin: spacing.base,
-  },
-  categoryTagText: {
-    ...typography.bodySmall,
-    color: colors.background,
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  highlightTitle: {
-    ...typography.headlineMedium,
-    fontFamily: "Inter_700Bold",
-    color: colors.primary, // Blue color
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.xs,
-  },
   highlightDescription: {
     ...typography.bodyMedium,
     color: colors.textSecondary,
-    margin: spacing.base,
-    marginTop: 0,
+    flexGrow: 1,
   },
-
-  // Culinary Grid
-  culinaryGrid: {
+  highlightCta: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  culinaryTextCard: {
-    width: "48%",
-    backgroundColor: colors.background,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  culinaryItemName: {
-    ...typography.titleMedium,
-    fontFamily: "Inter_600SemiBold",
-    color: "#8B4513", // Brown color from reference
-    marginBottom: spacing.xs,
-  },
-  culinaryItemDescription: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-
-  // Map Section
-  mapSectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.base,
-    gap: spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
-  mapSectionTitle: {
-    ...typography.headlineLarge,
-    fontFamily: "Inter_700Bold",
-    color: colors.text,
-    flex: 1,
-    flexShrink: 1,
-  },
-  interactiveBadge: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.button,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    flexShrink: 0,
-  },
-  interactiveBadgeText: {
-    ...typography.bodySmall,
-    fontFamily: "Inter_600SemiBold",
-    color: colors.background,
-    fontSize: 10,
-  },
-  mapContainer: {
-    height: 300,
-    borderRadius: radii.card,
-    overflow: "hidden",
-    marginBottom: spacing.sm,
-  },
-  mapInstruction: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  gatewaysHeading: {
-    ...typography.labelMedium,
-    fontFamily: "Inter_700Bold",
-    color: colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
+  highlightCtaText: {
+    ...typography.labelLarge,
   },
 
-  // Expressways
-  expresswaysContainer: {
-    gap: spacing.base,
-    marginBottom: spacing.base,
-  },
-  expresswayCard: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    gap: spacing.sm,
-  },
-  expresswayCardSelected: {
-    borderWidth: 2,
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}0D`,
-  },
-  expresswayCardPressed: {
-    opacity: 0.7,
-  },
-  expresswayHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  distanceBadge: {
-    backgroundColor: colors.primary,
-    borderRadius: radii.button,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  distanceBadgeText: {
-    ...typography.bodySmall,
-    color: colors.background,
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  expresswayName: {
-    ...typography.headlineMedium,
-    color: colors.text,
-  },
-  expresswayLocationSpan: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  expresswayDescription: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-  },
-
-  // Festival Calendar
-  sectionTitle: {
-    ...typography.headlineLarge,
-    fontFamily: "Inter_700Bold",
-    color: colors.text,
-  },
-  festivalCalendarHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  viewAllLink: {
-    ...typography.bodyMedium,
-    color: colors.accent,
-    fontFamily: "Inter_600SemiBold",
-  },
-  eventCard: {
-    flexDirection: "row",
+  // Timeline
+  timelineCard: {
     backgroundColor: colors.surface,
     borderRadius: radii.card,
     padding: spacing.base,
-    marginBottom: spacing.base,
-    gap: spacing.base,
   },
-  eventCardPressed: {
-    opacity: 0.7,
+  timelineRow: {
+    flexDirection: "row",
+    gap: spacing.md,
   },
-  eventImagePlaceholder: {
-    width: 80,
-    height: 80,
-    backgroundColor: colors.border,
-    borderRadius: radii.card,
-    justifyContent: "center",
+  timelineRail: {
+    width: 12,
     alignItems: "center",
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: radii.full,
+    backgroundColor: colors.accent,
+    borderWidth: 2,
+    borderColor: colors.accentTint,
+    marginTop: 4,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: colors.border,
+    marginTop: spacing.xs,
+  },
+  timelineBody: {
+    flex: 1,
+    gap: 2,
+  },
+  timelineBodySpaced: {
+    paddingBottom: spacing.lg,
+  },
+  timelineYear: {
+    ...typography.labelLarge,
+    fontFamily: "Inter_700Bold",
+    color: colors.accent,
+  },
+  timelineTitle: {
+    ...typography.titleMedium,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.text,
+  },
+  timelineDescription: {
+    ...typography.bodyMedium,
+    color: colors.textSecondary,
+  },
+  inlineLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 2,
+    marginTop: spacing.xs,
+  },
+  inlineLinkText: {
+    ...typography.labelLarge,
+    color: colors.primary,
+  },
+
+  // Dishes
+  dishGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  },
+  dishCard: {
+    // Two columns: grow to fill, wrap once a third wouldn't fit
+    flexGrow: 1,
+    flexBasis: "40%",
+    backgroundColor: colors.surface,
+    borderRadius: radii.card,
+    padding: spacing.md,
+    gap: 2,
+  },
+  dishIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentTint,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  dishName: {
+    ...typography.titleMedium,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.textTertiary,
+  },
+  dishOrigin: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
+
+  // Expressways
+  expresswayRow: {
+    paddingTop: spacing.md,
+  },
+
+  // Upcoming festivals
+  eventList: {
+    gap: spacing.md,
+  },
+  eventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radii.card,
+    padding: spacing.md,
+    ...shadows.card,
+  },
+  dateBlock: {
+    width: 52,
+    height: 56,
+    borderRadius: radii.md,
+    backgroundColor: colors.accentTint,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateMonth: {
+    ...typography.labelSmall,
+    color: colors.accent,
+  },
+  dateDay: {
+    ...typography.headlineMedium,
+    fontFamily: "Inter_700Bold",
+    color: colors.text,
   },
   eventInfo: {
     flex: 1,
     gap: spacing.xs,
   },
   eventTitle: {
-    ...typography.headlineSmall,
+    ...typography.titleMedium,
+    fontFamily: "Inter_600SemiBold",
     color: colors.text,
   },
-  eventDate: {
+  eventMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  eventMunicipality: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+    flexShrink: 1,
   },
-  eventDescription: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
+  happeningTag: {
+    backgroundColor: colors.successLight,
+    borderRadius: radii.button,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    marginLeft: spacing.xs,
+  },
+  happeningTagText: {
+    ...typography.labelSmall,
+    color: colors.successDark,
   },
 });

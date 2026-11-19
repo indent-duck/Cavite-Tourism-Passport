@@ -3,12 +3,14 @@ import { EventCard } from '@/components/discover/EventCard';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { StateView } from '@/components/ui/StateView';
-import type { Event } from '@/data/types';
+import { FESTIVAL_PREVIEW_COUNT } from '@/data/about-cavite-content';
+import type { Category, Event } from '@/data/types';
 import { useEvents } from '@/hooks/useEvents';
 import { useExpressways } from '@/hooks/useExpressways';
+import { useSites } from '@/hooks/useSites';
 import { TAB_BAR_HEIGHT } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
-import { getEventStatus } from '@/lib/event-utils';
+import { getUpcomingEvents } from '@/lib/event-utils';
 import { colors, spacing, typography } from '@/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -19,6 +21,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type DiscoverView = 'events' | 'about';
 
 const handleEventPress = (id: string) => router.push(`/events/${id}`);
+const handleSitePress = (id: string) => router.push(`/sites/${id}`);
+// Opens the Explore tab with its category filter preset
+const handleExploreCategory = (category: Category) =>
+  router.navigate({ pathname: '/explore', params: { category } });
 
 const CardSeparator = () => <View style={styles.separator} />;
 
@@ -66,6 +72,7 @@ export default function DiscoverScreen() {
         <AboutCaviteView
           eventsQuery={eventsQuery}
           expresswaysQuery={expresswaysQuery}
+          onViewAllEvents={() => setSelectedView('events')}
         />
       )}
     </ScreenContainer>
@@ -80,15 +87,7 @@ function EventsView({ query }: EventsViewProps) {
   const insets = useSafeAreaInsets();
 
   // Upcoming and ongoing events, soonest first
-  const upcomingEvents = useMemo(
-    () =>
-      (query.data ?? [])
-        .filter((event) => getEventStatus(event) !== 'past')
-        .sort(
-          (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-        ),
-    [query.data],
-  );
+  const upcomingEvents = useMemo(() => getUpcomingEvents(query.data ?? []), [query.data]);
 
   const isReady = !query.isLoading && !query.isError;
   const data = isReady ? upcomingEvents : [];
@@ -148,9 +147,26 @@ function EventsView({ query }: EventsViewProps) {
 interface AboutCaviteViewProps {
   eventsQuery: ReturnType<typeof useEvents>;
   expresswaysQuery: ReturnType<typeof useExpressways>;
+  onViewAllEvents: () => void;
 }
 
-function AboutCaviteView({ eventsQuery, expresswaysQuery }: AboutCaviteViewProps) {
+function AboutCaviteView({
+  eventsQuery,
+  expresswaysQuery,
+  onViewAllEvents,
+}: AboutCaviteViewProps) {
+  // Only used to decide which history milestones can link to a site, so the
+  // view doesn't wait on it.
+  const sitesQuery = useSites();
+  const knownSiteIds = useMemo(
+    () => new Set(sitesQuery.data?.map((site) => site.id)),
+    [sitesQuery.data],
+  );
+  const previewEvents = useMemo(
+    () => getUpcomingEvents(eventsQuery.data ?? []).slice(0, FESTIVAL_PREVIEW_COUNT),
+    [eventsQuery.data],
+  );
+
   // Loading state
   if (eventsQuery.isLoading || expresswaysQuery.isLoading) {
     return <StateView variant="loading" />;
@@ -177,8 +193,12 @@ function AboutCaviteView({ eventsQuery, expresswaysQuery }: AboutCaviteViewProps
   return (
     <AboutCaviteContent
       expressways={expresswaysQuery.data ?? []}
-      events={eventsQuery.data ?? []}
+      events={previewEvents}
+      knownSiteIds={knownSiteIds}
       onEventPress={handleEventPress}
+      onViewAllEvents={onViewAllEvents}
+      onSitePress={handleSitePress}
+      onExploreCategory={handleExploreCategory}
     />
   );
 }

@@ -86,3 +86,12 @@ export function formatDateBadge(startDate: string, endDate?: string): string {
   const endMonth = end.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
   return `${month} ${day}-${endMonth} ${end.getDate()}`;
 }
+
+/**
+ * Upcoming and ongoing events, soonest first (past events removed)
+ */
+export function getUpcomingEvents(events: readonly Event[]): Event[] {
+  return events
+    .filter((event) => getEventStatus(event) !== 'past')
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+}
