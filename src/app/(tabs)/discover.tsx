@@ -153,9 +153,19 @@ function EventsView({ query }: EventsViewProps) {
     }
   };
 
-  const renderEvent: SectionListRenderItem<Event, EventSection> = ({ item }) => (
-    <EventCard event={item} onPress={handleEventPress} />
-  );
+  // SectionList puts no separator between a section's last card and the next
+  // month header, so that gap lives here: transparent space inside the card's
+  // cell. Kept out of the header's padding, whose opaque background would
+  // otherwise cut off the card's shadow and look glued to its underside.
+  const renderEvent: SectionListRenderItem<Event, EventSection> = ({ item, index, section }) => {
+    const endsSection =
+      index === section.data.length - 1 && section !== sections[sections.length - 1];
+    return (
+      <View style={endsSection && styles.sectionEnd}>
+        <EventCard event={item} onPress={handleEventPress} />
+      </View>
+    );
+  };
 
   const renderSectionHeader = ({ section }: { section: EventSection }) => (
     <View style={styles.sectionHeader} accessibilityRole="header">
@@ -324,20 +334,28 @@ const styles = StyleSheet.create({
   separator: {
     height: spacing.base,
   },
+  // Bottom padding keeps the first month header as far below the filters as
+  // the old header padding did
   headingSection: {
     gap: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  // Space between a section's last card and the next month header
+  sectionEnd: {
+    paddingBottom: spacing.xl,
   },
   heading: {
     ...typography.headlineLarge,
     color: colors.text,
     fontFamily: 'Inter_700Bold',
   },
-  // Sticky, so it needs a solid background to cover cards scrolling under it
+  // Sticky, so it needs a solid background to cover cards scrolling under it.
+  // Top padding stays small: the gap above it comes from `sectionEnd`.
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.md,
     backgroundColor: colors.background,
   },
