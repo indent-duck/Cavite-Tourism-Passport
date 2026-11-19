@@ -1,5 +1,5 @@
-import { colors, shadows, spacing, typography } from "@/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
+import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -66,14 +66,19 @@ export function Header({
       testID={testID}
     >
       <View style={styles.leftContent}>
-        <Text style={styles.userName}>{userName}</Text>
+        <Text style={styles.userName} numberOfLines={1}>
+          {userName}
+        </Text>
+        {/* Same pill shape/icon as the Rewards Hub badge, recolored for blue */}
         <Pressable
           onPress={handlePointsPress}
-          style={styles.pointsContainer}
+          style={styles.pointsPill}
           hitSlop={spacing.sm}
         >
-          <Ionicons name="star" size={16} color={colors.accent} />
-          <Text style={styles.pointsText}>{points} pts</Text>
+          <MaterialIcons name="stars" size={16} color={colors.accent} />
+          <Text style={styles.pointsText}>
+            {points.toLocaleString("en-US")} pts
+          </Text>
         </Pressable>
       </View>
 
@@ -86,33 +91,46 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.base,
     backgroundColor: colors.secondary,
-    ...shadows.tabBar,
+    borderBottomLeftRadius: radii.card,
+    borderBottomRightRadius: radii.card,
+    ...shadows.header,
+    // Keep the header (and its shadow) drawn above the tab content below it
+    zIndex: 1,
   },
   leftContent: {
     flex: 1,
   },
   userName: {
-    ...typography.headlineLarge,
+    ...typography.headlineSmall,
     color: colors.background,
     fontFamily: "Inter_700Bold",
-    fontSize: 18,
   },
-  pointsContainer: {
+  pointsPill: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 2,
+    alignSelf: "flex-start",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.onPrimaryOverlay,
+    borderWidth: 1,
+    borderColor: colors.onPrimaryBorder,
+    borderRadius: radii.chip,
   },
   pointsText: {
-    ...typography.bodyMedium,
-    color: colors.accent,
-    marginLeft: spacing.xs,
+    ...typography.labelMedium,
+    fontSize: 13,
+    color: colors.background,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.2,
   },
   rightSlot: {
     marginLeft: spacing.md,
-    marginTop: spacing.sm,
+    flexShrink: 0,
   },
 });

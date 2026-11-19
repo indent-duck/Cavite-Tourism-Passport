@@ -34,6 +34,10 @@ export const colors = {
   // Structural colors
   border: "#E5E7EB", // Dividers, input borders
 
+  // On-brand overlays (translucent white layered on blue surfaces like the Header)
+  onPrimaryOverlay: "rgba(255, 255, 255, 0.15)", // Pill/chip fill on blue
+  onPrimaryBorder: "rgba(255, 255, 255, 0.3)", // Pill/chip hairline on blue
+
   // Passport-specific colors
   passportCream: "#FFFDF7", // Passport body tint/background
   passportHeaderBorder: "#F47B20", // Orange border on passport header (reuses accent)
@@ -206,6 +210,14 @@ export const shadows = {
     shadowColor: "#1B2A49",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  // Downward-cast shadow for top bars (mirror of tabBar)
+  header: {
+    shadowColor: "#1B2A49",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 8,
   },

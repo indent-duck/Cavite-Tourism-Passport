@@ -47,19 +47,29 @@ export function PromoChip({ testID }: PromoChipProps) {
 
   const startDate = formatDate(promoPeriod.startDate);
   const endDate = formatDate(promoPeriod.endDate);
-  
+
   // Get year from end date
-  const endDateObj = typeof promoPeriod.endDate === 'string' 
-    ? new Date(promoPeriod.endDate) 
+  const endDateObj = typeof promoPeriod.endDate === 'string'
+    ? new Date(promoPeriod.endDate)
     : promoPeriod.endDate;
   const year = endDateObj.getFullYear();
-  
-  const promoText = `Promo: ${startDate} - ${endDate}, ${year}`;
+
+  // Short visible label so it doesn't crowd the user name on small phones;
+  // the full range stays available to screen readers.
+  const promoText = `Promo · ends ${endDate}`;
+  const promoLabel = `Promo period: ${startDate} to ${endDate}, ${year}`;
 
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={styles.container}
+      testID={testID}
+      accessible
+      accessibilityLabel={promoLabel}
+    >
       <View style={styles.dot} />
-      <Text style={styles.text}>{promoText}</Text>
+      <Text style={styles.text} numberOfLines={1}>
+        {promoText}
+      </Text>
     </View>
   );
 }
@@ -70,9 +80,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.onPrimaryOverlay,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: colors.onPrimaryBorder,
     borderRadius: radii.chip,
   },
   dot: {

@@ -4,6 +4,9 @@ import { TabBar } from '@/components/ui/TabBar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePathname, useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View } from 'react-native';
+import { colors } from '@/theme';
 
 /**
  * Tabs Layout
@@ -25,10 +28,17 @@ export default function TabsLayout() {
     router.push('/rewards' as any);
   };
 
+  const showHeader = !!user && !pathname.includes('/account');
+
   return (
-    <>
+    // White backing so the gaps under the Header's rounded bottom corners
+    // match the tab screens instead of the navigator's default gray
+    <View style={styles.root}>
+      {/* Light icons over the blue Header; dark icons on Account's white top */}
+      <StatusBar style={showHeader ? 'light' : 'dark'} />
+
       {/* Header at the top of all tab screens except Account */}
-      {user && !pathname.includes('/account') && (
+      {showHeader && (
         <Header
           userName={user.name}
           points={user.points}
@@ -49,6 +59,13 @@ export default function TabsLayout() {
         <Tabs.Screen name="discover" />
         <Tabs.Screen name="account" />
       </Tabs>
-    </>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+});
