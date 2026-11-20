@@ -1,5 +1,4 @@
 import { AccordionRow } from '@/components/ui/AccordionRow';
-import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -99,13 +98,6 @@ export default function PrivacyScreen() {
     } catch {
       Alert.alert('Unable to open', fallback);
     }
-  };
-
-  const handleDownload = () => {
-    Alert.alert(
-      'PDF copy coming soon',
-      'A downloadable copy of this policy will be available in a future update.',
-    );
   };
 
   return (
@@ -353,15 +345,6 @@ export default function PrivacyScreen() {
             This digital portal adheres to the ISO/IEC 27001 baseline privacy framework
             and the National Privacy Commission of the Philippines.
           </Text>
-          <Button
-            title="Download PDF copy"
-            variant="outline"
-            size="compact"
-            fullWidth
-            icon={<Ionicons name="download-outline" size={18} color={colors.primary} />}
-            onPress={handleDownload}
-            testID="privacy-download-pdf"
-          />
         </View>
       </View>
     </ScreenContainer>
@@ -949,6 +932,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     maxWidth: 300,
-    marginBottom: spacing.sm,
   },
 });

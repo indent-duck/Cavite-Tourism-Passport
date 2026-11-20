@@ -10,8 +10,9 @@ export const CLAIM_QR_FORMAT = 'cvt:claim:<claimId>:<token>'; // TBD
 export const REDEMPTION_LOCATION = 'Provincial Tourism Center, Trece Martires'; // TBD
 
 // Scanner constants
-// Only true in __DEV__
-export const DEV_SKIP_LOCATION_CHECK = true;
+// Skips the geofence check in development builds only; preview and production
+// builds always verify the scan location
+export const DEV_SKIP_LOCATION_CHECK = __DEV__;
 
 /**
  * Parse site QR code payload and extract siteId

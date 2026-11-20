@@ -2,7 +2,7 @@ import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
     BackHandler,
     Platform,
@@ -23,7 +23,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  * - Close button with semi-transparent background
  * - Bottom instructional text
  * - Optional "Stamped your physical passport instead?" link (stamp requests)
- * - Debounced scanning to prevent duplicate reads
+ * - One read per scan, and a code still in view when scanning resumes is
+ *   ignored until it leaves the frame
  * - Android back button handling
  * 
  * Validates: Requirements 3.3 (Viewfinder UI and scanning logic)
@@ -37,7 +38,9 @@ export interface ScannerViewfinderProps {
   onScanCode: (payload: string) => void;
 
   /**
-   * Whether scanning should be paused (e.g., while modal is visible)
+   * Whether scanning should be paused (e.g., while modal is visible).
+   * The parent must pause after `onScanCode`: no other code is read until
+   * `isPaused` goes from true back to false.
    * @default false
    */
   isPaused?: boolean;
@@ -57,13 +60,20 @@ export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
   // Get safe area insets for proper positioning
   const insets = useSafeAreaInsets();
   
-  // Track last scanned payload and timestamp for debouncing
-  const lastScanRef = useRef<{
-    payload: string;
-    timestamp: number;
-  } | null>(null);
+  // Set on a read and cleared when the parent resumes scanning. The camera
+  // reports a code many times a second, so this keeps a burst to one read.
+  const isLockedRef = useRef(false);
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  // The last code read and when it was last seen. While it stays in view it's
+  // ignored, so closing a result doesn't read the same code again at once.
+  const lastCodeRef = useRef<{ data: string; seenAt: number } | null>(null);
+
+  useEffect(() => {
+    if (isPaused) return;
+    isLockedRef.current = false;
+    // The pause counts as time in view: a code still in frame stays ignored
+    if (lastCodeRef.current) lastCodeRef.current.seenAt = Date.now();
+  }, [isPaused]);
 
   // Handle Android back button
   useEffect(() => {
@@ -79,40 +89,22 @@ export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
   }, []);
 
   const handleBarcodeScanned = ({ data }: { data: string }) => {
-    // Don't process if paused or already processing
-    if (isPaused || isProcessing) {
+    if (isPaused || isLockedRef.current) {
       return;
     }
 
     const now = Date.now();
-    const lastScan = lastScanRef.current;
+    const lastCode = lastCodeRef.current;
 
-    // Debounce: ignore if same payload scanned within 2 seconds
-    if (
-      lastScan &&
-      lastScan.payload === data &&
-      now - lastScan.timestamp < 2000
-    ) {
+    // Same code, still in view (or back within the gap): keep ignoring it
+    if (lastCode && lastCode.data === data && now - lastCode.seenAt < SAME_CODE_GAP_MS) {
+      lastCode.seenAt = now;
       return;
     }
 
-    // Update last scan reference
-    lastScanRef.current = {
-      payload: data,
-      timestamp: now,
-    };
-
-    // Set processing flag to prevent multiple simultaneous scans
-    setIsProcessing(true);
-
-    // Fire callback
+    lastCodeRef.current = { data, seenAt: now };
+    isLockedRef.current = true;
     onScanCode(data);
-
-    // Reset processing flag after a short delay
-    // This gives the parent time to show a modal or start verification
-    setTimeout(() => {
-      setIsProcessing(false);
-    }, 500);
   };
 
   const handleClose = () => {
@@ -190,6 +182,9 @@ export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
     </View>
   );
 };
+
+/** How long the last code must be out of view before it can be read again */
+const SAME_CODE_GAP_MS = 2000;
 
 const RETICLE_SIZE = 256;
 const BRACKET_LENGTH = 48;

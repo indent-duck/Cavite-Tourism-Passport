@@ -1,113 +1,118 @@
 import { Button } from '@/components/ui/Button';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ResultSheet } from './ResultSheet';
-import type { SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * Invalid QR Sheet
- * 
+ *
  * Displays invalid QR code modal with:
  * - Error icon
  * - "Invalid QR Code" title
  * - Troubleshooting tips (3 items)
- * - "Try Again" and "Cancel" buttons
- * 
+ * - "Scan again" (keeps the scanner open) and "Close scanner" buttons
+ *
  * Matches design: design/screens/06-scanner/qr_modal_invalid_qr_code/screen.png
  */
 
 export interface InvalidQrSheetProps {
+  visible: boolean;
+  /** Tapping outside the modal or pressing back */
+  onDismiss: () => void;
   onTryAgain: () => void;
-  onCancel: () => void;
+  onClose: () => void;
 }
 
-export const InvalidQrSheet = forwardRef<SimpleModalSheetRef, InvalidQrSheetProps>(
-  ({ onTryAgain, onCancel }, ref) => {
-    return (
-      <ResultSheet ref={ref} heightPercentage={70}>
-        <View style={styles.container}>
-          {/* Error Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="alert-circle" size={48} color={colors.error} />
-            </View>
-          </View>
-
-          {/* Title and Message */}
-          <View style={styles.messageContainer}>
-            <Text style={styles.title}>Invalid QR Code</Text>
-            <Text style={styles.subtitle}>
-              This QR code is not recognized as a registered Cavite Tourism partner establishment.
-            </Text>
-          </View>
-
-          {/* Troubleshooting Tips */}
-          <View style={styles.tipsContainer}>
-            <View style={styles.tipsHeader}>
-              <Ionicons name="bulb-outline" size={20} color={colors.primary} />
-              <Text style={styles.tipsTitle}>Troubleshooting Tips</Text>
-            </View>
-
-            <View style={styles.tipsList}>
-              <View style={styles.tipItem}>
-                <View style={styles.tipNumber}>
-                  <Text style={styles.tipNumberText}>1</Text>
-                </View>
-                <Text style={styles.tipText}>
-                  Make sure you are scanning the official <Text style={styles.bold}>Cavite Tourism Passport</Text> standee or counter plaque.
-                </Text>
-              </View>
-
-              <View style={styles.tipItem}>
-                <View style={styles.tipNumber}>
-                  <Text style={styles.tipNumberText}>2</Text>
-                </View>
-                <Text style={styles.tipText}>
-                  Ensure adequate lighting and hold your camera steady within the viewfinder frame.
-                </Text>
-              </View>
-
-              <View style={styles.tipItem}>
-                <View style={styles.tipNumber}>
-                  <Text style={styles.tipNumberText}>3</Text>
-                </View>
-                <Text style={styles.tipText}>
-                  Maintain a distance of 15-30 cm from the code to prevent motion blur or glare.
-                </Text>
-              </View>
-            </View>
-
-            {/* Official Seal Partner Note */}
-            <View style={styles.sealNote}>
-              <View style={styles.sealIconContainer}>
-                <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
-              </View>
-              <View style={styles.sealTextContainer}>
-                <Text style={styles.sealTitle}>Official Seal Partner</Text>
-                <Text style={styles.sealText}>Look for the Gold Provincial seal</Text>
-              </View>
-              <Ionicons name="shield" size={24} color={colors.accent} />
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Dismiss"
-              onPress={onTryAgain}
-              variant="primary"
-              fullWidth
-            />
+export function InvalidQrSheet({ visible, onDismiss, onTryAgain, onClose }: InvalidQrSheetProps) {
+  return (
+    <ResultSheet visible={visible} onDismiss={onDismiss} heightPercentage={70}>
+      <View style={styles.container}>
+        {/* Error Icon */}
+        <View style={styles.iconContainer}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="alert-circle" size={48} color={colors.error} />
           </View>
         </View>
-      </ResultSheet>
-    );
-  }
-);
 
-InvalidQrSheet.displayName = 'InvalidQrSheet';
+        {/* Title and Message */}
+        <View style={styles.messageContainer}>
+          <Text style={styles.title}>Invalid QR Code</Text>
+          <Text style={styles.subtitle}>
+            This QR code is not recognized as a registered Cavite Tourism partner establishment.
+          </Text>
+        </View>
+
+        {/* Troubleshooting Tips */}
+        <View style={styles.tipsContainer}>
+          <View style={styles.tipsHeader}>
+            <Ionicons name="bulb-outline" size={20} color={colors.primary} />
+            <Text style={styles.tipsTitle}>Troubleshooting Tips</Text>
+          </View>
+
+          <View style={styles.tipsList}>
+            <View style={styles.tipItem}>
+              <View style={styles.tipNumber}>
+                <Text style={styles.tipNumberText}>1</Text>
+              </View>
+              <Text style={styles.tipText}>
+                Make sure you are scanning the official <Text style={styles.bold}>Cavite Tourism Passport</Text> standee or counter plaque.
+              </Text>
+            </View>
+
+            <View style={styles.tipItem}>
+              <View style={styles.tipNumber}>
+                <Text style={styles.tipNumberText}>2</Text>
+              </View>
+              <Text style={styles.tipText}>
+                Ensure adequate lighting and hold your camera steady within the viewfinder frame.
+              </Text>
+            </View>
+
+            <View style={styles.tipItem}>
+              <View style={styles.tipNumber}>
+                <Text style={styles.tipNumberText}>3</Text>
+              </View>
+              <Text style={styles.tipText}>
+                Maintain a distance of 15-30 cm from the code to prevent motion blur or glare.
+              </Text>
+            </View>
+          </View>
+
+          {/* Official Seal Partner Note */}
+          <View style={styles.sealNote}>
+            <View style={styles.sealIconContainer}>
+              <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
+            </View>
+            <View style={styles.sealTextContainer}>
+              <Text style={styles.sealTitle}>Official Seal Partner</Text>
+              <Text style={styles.sealText}>Look for the Gold Provincial seal</Text>
+            </View>
+            <Ionicons name="shield" size={24} color={colors.accent} />
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Scan again"
+            onPress={onTryAgain}
+            variant="primary"
+            fullWidth
+            testID="invalid-qr-try-again"
+          />
+          <Button
+            title="Close scanner"
+            onPress={onClose}
+            variant="text"
+            fullWidth
+            testID="invalid-qr-close"
+          />
+        </View>
+      </View>
+    </ResultSheet>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -223,5 +228,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: '100%',
     marginTop: spacing.base,
+    gap: spacing.sm,
   },
 });

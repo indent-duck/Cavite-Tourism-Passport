@@ -4,71 +4,118 @@ import { InvalidQrSheet } from '@/components/scanner/InvalidQrSheet';
 import { LocationFailedSheet } from '@/components/scanner/LocationFailedSheet';
 import { NoInternetSheet } from '@/components/scanner/NoInternetSheet';
 import { ScannerViewfinder } from '@/components/scanner/ScannerViewfinder';
-import { type SimpleModalSheetRef } from '@/components/scanner/SimpleModalSheet';
 import { SuccessSheet } from '@/components/scanner/SuccessSheet';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { mockSites } from '@/data/mock-data';
-import type { Site, Stamp } from '@/data/types';
+import type { CollectStampResult, Site, Stamp } from '@/data/types';
 import { useCollectStamp } from '@/hooks/useCollectStamp';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useLocationServices } from '@/hooks/useLocationServices';
+import { useOnAppFocus } from '@/hooks/useOnAppFocus';
 import { useCameraPermission, useLocationPermission } from '@/hooks/usePermissions';
+import { useScanLocation, type ScanCoords } from '@/hooks/useScanLocation';
+import { parseSiteQr } from '@/lib/constants';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, BackHandler, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 /**
  * Scanner Screen
  * 
  * Opens from the center Scan tab button.
- * Implements three-stage permission gate before showing scanner viewfinder:
+ * Gates the scanner viewfinder behind these screens:
  * 1. Primer screen: explains why camera and location are needed
  * 2. System prompts: sequential camera and location permission requests
  * 3. Blocked screen: shown when either permission is denied
- * 
- * After permissions are granted, shows full-screen camera viewfinder with QR detection.
+ * 4. Location-off screen: permissions are granted but the device's location
+ *    setting is off, so a scan couldn't be verified
+ * Permissions and the location setting are re-checked whenever the user comes
+ * back to the app, so changes made in Settings show up right away.
+ *
+ * Once all of that is in place, shows full-screen camera viewfinder with QR detection.
  * On QR scan, reads location and calls collectStamp mutation.
- * The viewfinder and blocked screen link to the stamp request form, for a
- * stamp received in the physical passport instead (no QR code on-site).
+ * The viewfinder, blocked and location-off screens link to the stamp request
+ * form, for a stamp received in the physical passport instead (no QR code on-site).
  * 
  * Validates: Requirements 3.2 (Permission primer and blocked screens), 3.4 (Location read and mutation trigger)
  */
 
-type PermissionStage = 'primer' | 'requesting' | 'blocked' | 'granted';
-type ModalState = null | 'success' | 'invalid' | 'alreadyScanned' | 'locationFailed' | 'offline';
+type ScannerStage =
+  | 'checking'
+  | 'primer'
+  | 'requesting'
+  | 'blocked'
+  | 'locationOff'
+  | 'ready';
+
+/** What the last scan (or dev panel test) came back with, shown in a result popup */
+type ScanResult =
+  | { kind: 'success'; stamp: Stamp }
+  | { kind: 'invalid' }
+  | { kind: 'alreadyScanned'; stamp: Stamp }
+  | { kind: 'locationFailed'; payload: string; site: Site | null }
+  // `payload` is missing only for the dev panel's simulated outage
+  | { kind: 'offline'; payload?: string };
+
+/** The catalog site a QR payload points to, for the location-failed popup */
+function findSite(payload: string): Site | null {
+  const siteId = parseSiteQr(payload);
+  return mockSites.find((site) => site.id === siteId) ?? null;
+}
+
+function toScanResult(outcome: CollectStampResult, payload: string): ScanResult {
+  if (outcome.success) {
+    return { kind: 'success', stamp: outcome.stamp };
+  }
+  switch (outcome.reason) {
+    case 'invalid':
+      return { kind: 'invalid' };
+    case 'alreadyScanned':
+      return { kind: 'alreadyScanned', stamp: outcome.existingStamp };
+    case 'locationFailed':
+      return { kind: 'locationFailed', payload, site: findSite(payload) };
+    case 'offline':
+      return { kind: 'offline', payload };
+  }
+}
 
 export default function ScannerScreen() {
   const cameraPermission = useCameraPermission();
   const locationPermission = useLocationPermission();
+  const locationServices = useLocationServices();
   const collectStampMutation = useCollectStamp();
   const { data: currentUser } = useCurrentUser();
   const [isRequesting, setIsRequesting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [modalState, setModalState] = useState<ModalState>(null);
-  const [scannedSite, setScannedSite] = useState<Site | null>(null);
-  const [collectedStamp, setCollectedStamp] = useState<Stamp | null>(null);
+  // The last result stays set after its popup closes, so the popup keeps its
+  // content while it fades out
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [isResultOpen, setIsResultOpen] = useState(false);
+  // Android: set once the in-app "turn on location" dialog fails (declined, or
+  // no Google Play services), so the button opens the location settings instead
+  const [turnOnFailed, setTurnOnFailed] = useState(false);
 
-  // Refs for bottom sheets
-  const successSheetRef = useRef<SimpleModalSheetRef>(null);
-  const invalidQrSheetRef = useRef<SimpleModalSheetRef>(null);
-  const alreadyScannedSheetRef = useRef<SimpleModalSheetRef>(null);
-  const locationFailedSheetRef = useRef<SimpleModalSheetRef>(null);
-  const noInternetSheetRef = useRef<SimpleModalSheetRef>(null);
-
-  // Determine the current stage based on permission statuses
-  const getStage = (): PermissionStage => {
+  // Determine the current stage based on permission statuses and the location setting
+  const getStage = (): ScannerStage => {
     if (isRequesting) {
       return 'requesting';
+    }
+
+    // Saved statuses take a moment to load; until then they read as
+    // 'undetermined', which would flash the primer screen
+    if (!cameraPermission.isLoaded || !locationPermission.isLoaded) {
+      return 'checking';
     }
 
     const cameraGranted = cameraPermission.status === 'granted';
     const locationGranted = locationPermission.status === 'granted';
 
     if (cameraGranted && locationGranted) {
-      return 'granted';
+      if (locationServices.isOn === null) return 'checking';
+      return locationServices.isOn ? 'ready' : 'locationOff';
     } else if (
       cameraPermission.status === 'denied' ||
       locationPermission.status === 'denied'
@@ -80,6 +127,18 @@ export default function ScannerScreen() {
   };
 
   const stage = getStage();
+
+  // Starts watching the position once the camera is up, so a fix is ready by scan time
+  const scanLocation = useScanLocation(stage === 'ready');
+
+  // Re-check when the user comes back to the app (from Settings, or on Android
+  // the quick-settings panel), so granting a permission or switching location
+  // on or off there updates this screen right away
+  useOnAppFocus(() => {
+    void cameraPermission.refresh();
+    void locationPermission.refresh();
+    void locationServices.refresh();
+  });
 
   // Determine which permission is missing for the blocked screen
   const missingPermission = (): string => {
@@ -136,6 +195,25 @@ export default function ScannerScreen() {
     Linking.openSettings();
   };
 
+  // "Turn on location" on the location-off screen. Android first tries the
+  // in-app dialog; if that fails, the button opens the location settings.
+  // iOS can't turn location on for the user, so it opens Settings.
+  const handleTurnOnLocation = async () => {
+    if (Platform.OS === 'android' && !turnOnFailed) {
+      const isOn = await locationServices.turnOn();
+      if (!isOn) setTurnOnFailed(true);
+      return;
+    }
+    await locationServices.openSettings();
+  };
+
+  const turnOnLocationTitle =
+    Platform.OS === 'ios'
+      ? 'Open Settings'
+      : turnOnFailed
+        ? 'Open location settings'
+        : 'Turn on location';
+
   // Close button handler
   const handleClose = () => {
     router.back();
@@ -148,356 +226,141 @@ export default function ScannerScreen() {
   };
 
   // ============================================================================
-  // Dev Test Panel Handlers
-  // ============================================================================
-
-  /**
-   * Dev test: Trigger success modal with a valid unscanned site
-   */
-  const handleDevTestSuccess = async (payload: string) => {
-    console.log('[Scanner] Dev test: Success with payload', payload);
-    setIsVerifying(true);
-
-    // For dev testing, use mock coordinates (we skip location check anyway)
-    const mockCoords = { latitude: 0, longitude: 0 };
-
-    collectStampMutation.mutate(
-      { payload, coords: mockCoords },
-      {
-        onSuccess: (result) => {
-          console.log('[Scanner] Dev test mutation result:', result);
-
-          if (result.success) {
-            setCollectedStamp(result.stamp);
-            setModalState('success');
-            setIsVerifying(false);
-            // Small delay to ensure state updates before opening sheet
-            setTimeout(() => {
-              successSheetRef.current?.present();
-            }, 100);
-          } else {
-            setIsVerifying(false);
-            console.warn('[Scanner] Dev test failed:', result.reason);
-            // This shouldn't happen for success test, but handle it
-            setModalState('invalid');
-            setTimeout(() => {
-              invalidQrSheetRef.current?.present();
-            }, 100);
-          }
-        },
-        onError: (error) => {
-          setIsVerifying(false);
-          console.error('[Scanner] Dev test mutation error:', error);
-          setModalState('offline');
-          setTimeout(() => {
-            noInternetSheetRef.current?.present();
-          }, 100);
-        },
-      }
-    );
-  };
-
-  /**
-   * Dev test: Trigger invalid QR modal
-   */
-  const handleDevTestInvalid = () => {
-    console.log('[Scanner] Dev test: Invalid QR');
-    setModalState('invalid');
-    // Direct call without timeout
-    invalidQrSheetRef.current?.present();
-  };
-
-  /**
-   * Dev test: Trigger already scanned modal with a scanned site
-   */
-  const handleDevTestAlreadyScanned = async (payload: string) => {
-    console.log('[Scanner] Dev test: Already scanned with payload', payload);
-    setIsVerifying(true);
-
-    // For dev testing, use mock coordinates
-    const mockCoords = { latitude: 0, longitude: 0 };
-
-    collectStampMutation.mutate(
-      { payload, coords: mockCoords },
-      {
-        onSuccess: (result) => {
-          console.log('[Scanner] Dev test mutation result:', result);
-
-          if (!result.success && result.reason === 'alreadyScanned') {
-            const siteId = payload.replace('cvt:site:', '');
-            const site = mockSites.find((s) => s.id === siteId);
-            setScannedSite(site || null);
-            setCollectedStamp(result.existingStamp);
-            setModalState('alreadyScanned');
-            setIsVerifying(false);
-            // Small delay to ensure state updates before opening sheet
-            setTimeout(() => {
-              alreadyScannedSheetRef.current?.present();
-            }, 100);
-          } else {
-            setIsVerifying(false);
-            console.warn('[Scanner] Dev test: Expected alreadyScanned, got:', result);
-            setModalState('invalid');
-            setTimeout(() => {
-              invalidQrSheetRef.current?.present();
-            }, 100);
-          }
-        },
-        onError: (error) => {
-          setIsVerifying(false);
-          console.error('[Scanner] Dev test mutation error:', error);
-          setModalState('offline');
-          setTimeout(() => {
-            noInternetSheetRef.current?.present();
-          }, 100);
-        },
-      }
-    );
-  };
-
-  /**
-   * Dev test: Trigger location failed modal
-   * Note: Since DEV_SKIP_LOCATION_CHECK is true, we directly show the modal
-   */
-  const handleDevTestLocationFailed = (payload: string) => {
-    console.log('[Scanner] Dev test: Location failed');
-    const siteId = payload.replace('cvt:site:', '');
-    const site = mockSites.find((s) => s.id === siteId);
-    setScannedSite(site || null);
-    setModalState('locationFailed');
-    setTimeout(() => {
-      locationFailedSheetRef.current?.present();
-    }, 100);
-  };
-
-  /**
-   * Dev test: Trigger offline modal
-   */
-  const handleDevTestOffline = () => {
-    console.log('[Scanner] Dev test: Offline');
-    setModalState('offline');
-    setTimeout(() => {
-      noInternetSheetRef.current?.present();
-    }, 100);
-  };
-
-  // ============================================================================
   // QR Code Scanning
   // ============================================================================
 
+  const showResult = (next: ScanResult) => {
+    setResult(next);
+    setIsResultOpen(true);
+  };
+
   /**
-   * Handle QR code scan
-   * 
-   * Called when viewfinder detects a QR code.
-   * Shows "Verifying..." state, reads location, and calls collectStamp mutation.
-   * 
+   * Verify a scanned code
+   *
+   * Shows "Verifying...", reads the device location, and calls the
+   * collectStamp mutation, then opens the popup for the result. "Try again"
+   * on the location-failed and offline popups runs it again for the same code.
+   *
    * Validates: Requirements 3.4 (Location read and mutation trigger)
    */
-  const handleScanCode = async (payload: string) => {
+  const verifyCode = async (
+    payload: string,
+    readCoords: () => Promise<ScanCoords | null> = scanLocation.getCoords,
+  ) => {
+    setIsResultOpen(false);
     setIsVerifying(true);
 
+    let next: ScanResult;
     try {
-      // Read device location with 10-second timeout
-      let coords: { latitude: number; longitude: number } | null = null;
-      
-      try {
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 10000, // 10-second timeout
-        });
-        coords = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        };
-      } catch (locationError) {
-        // Location read timed out or services are off
-        // Set coords to null, which will trigger locationFailed from mock
-        console.warn('Location read failed:', locationError);
-        coords = null;
+      // Null when location is off or there's no fix within 10 seconds
+      const coords = await readCoords();
+      if (!coords && !(await locationServices.refresh())) {
+        // Location was switched off without the app noticing: the
+        // "Turn on location" screen takes over instead of a failed check
+        setIsVerifying(false);
+        return;
       }
-
-      // Call collectStamp mutation
-      collectStampMutation.mutate(
-        { payload, coords },
-        {
-          onSuccess: (result) => {
-            setIsVerifying(false);
-
-            // Show the appropriate modal based on result
-            if (result.success) {
-              setCollectedStamp(result.stamp);
-              setModalState('success');
-              successSheetRef.current?.present();
-            } else {
-              // For error cases, try to find the site info from the payload
-              const siteId = payload.replace('cvt:site:', '');
-              const site = mockSites.find((s) => s.id === siteId);
-              setScannedSite(site || null);
-
-              // Set existing stamp for alreadyScanned case
-              if (result.reason === 'alreadyScanned') {
-                setCollectedStamp(result.existingStamp);
-              }
-
-              switch (result.reason) {
-                case 'invalid':
-                  setModalState('invalid');
-                  invalidQrSheetRef.current?.present();
-                  break;
-                case 'alreadyScanned':
-                  setModalState('alreadyScanned');
-                  alreadyScannedSheetRef.current?.present();
-                  break;
-                case 'locationFailed':
-                  setModalState('locationFailed');
-                  locationFailedSheetRef.current?.present();
-                  break;
-                case 'offline':
-                  setModalState('offline');
-                  noInternetSheetRef.current?.present();
-                  break;
-              }
-            }
-          },
-          onError: (error) => {
-            setIsVerifying(false);
-            console.error('Stamp collection error:', error);
-            // Treat mutation errors as offline errors
-            setModalState('offline');
-            noInternetSheetRef.current?.present();
-          },
-        }
-      );
+      const outcome = await collectStampMutation.mutateAsync({ payload, coords });
+      next = toScanResult(outcome, payload);
     } catch (error) {
-      setIsVerifying(false);
-      console.error('Scan handling error:', error);
-      // Treat unexpected errors as offline errors
-      setModalState('offline');
-      noInternetSheetRef.current?.present();
+      // Treat mutation errors as offline errors
+      console.error('Stamp collection error:', error);
+      next = { kind: 'offline', payload };
+    }
+
+    setIsVerifying(false);
+    showResult(next);
+  };
+
+  const handleScanCode = (payload: string) => {
+    void verifyCode(payload);
+  };
+
+  // ============================================================================
+  // Dev Test Panel Handlers
+  // ============================================================================
+
+  // Dev tests don't wait for a GPS fix: dev builds skip the location check
+  // (DEV_SKIP_LOCATION_CHECK)
+  const readMockCoords = async () => ({ latitude: 0, longitude: 0 });
+
+  /** Dev test: "Success" and "Already Scanned" run a real verification */
+  const handleDevTestScan = (payload: string) => {
+    void verifyCode(payload, readMockCoords);
+  };
+
+  const handleDevTestInvalid = () => {
+    showResult({ kind: 'invalid' });
+  };
+
+  const handleDevTestLocationFailed = (payload: string) => {
+    showResult({ kind: 'locationFailed', payload, site: findSite(payload) });
+  };
+
+  const handleDevTestOffline = () => {
+    showResult({ kind: 'offline' });
+  };
+
+  // ============================================================================
+  // Result Popup Actions
+  // ============================================================================
+
+  /** "Scan again", or closing a popup by tapping outside it or pressing back */
+  const resumeScanning = () => {
+    setIsResultOpen(false);
+  };
+
+  /** "Close scanner": exits the scanner and returns to the previous screen */
+  const closeScanner = () => {
+    setIsResultOpen(false);
+    router.back();
+  };
+
+  /** "Try again" on the location-failed and offline popups: verifies the same code again */
+  const retryCode = (payload: string | undefined) => {
+    if (payload) {
+      void verifyCode(payload);
+    } else {
+      resumeScanning();
     }
   };
 
-  // ============================================================================
-  // Modal Action Handlers
-  // ============================================================================
-
   /**
-   * "View in Passport" button handler for success/already scanned
-   * Closes modal, exits scanner, and opens the Passport tab with the stamp
-   * highlighted (a fresh stamp also gets the "stamp slam" animation)
+   * "Dismiss" on the success and already-scanned popups: exits the scanner and
+   * opens the Passport tab with the stamp highlighted (a fresh stamp also gets
+   * the "stamp slam" animation)
    */
-  const handleViewPassport = () => {
-    const stampId = collectedStamp?.id;
-    const isNew = modalState === 'success';
-
-    // Close the modals
-    successSheetRef.current?.close();
-    alreadyScannedSheetRef.current?.close();
-    
-    // Reset state
-    setModalState(null);
-    setCollectedStamp(null);
-    setScannedSite(null);
-    
-    // Exit scanner and land on the Passport tab
-    router.dismissTo(
-      stampId
-        ? {
-            pathname: '/passport',
-            // `t` makes every visit distinct so the same stamp can be highlighted again
-            params: { stamp: stampId, new: isNew ? '1' : '0', t: String(Date.now()) },
-          }
-        : '/passport'
-    );
-  };
-
-  /**
-   * "Scan Another Code" / "Back to Scanner" / "Try Again" / "Dismiss" button handler
-   * Closes modal, exits scanner, and returns to previous screen
-   */
-  const handleResumeScanning = () => {
-    // Close all modals
-    successSheetRef.current?.close();
-    invalidQrSheetRef.current?.close();
-    alreadyScannedSheetRef.current?.close();
-    locationFailedSheetRef.current?.close();
-    noInternetSheetRef.current?.close();
-    
-    // Reset state
-    setModalState(null);
-    setCollectedStamp(null);
-    setScannedSite(null);
-    
-    // Exit scanner and go back to previous screen
-    router.back();
-  };
-
-  /**
-   * "Check Location & Retry" / "Dismiss" button handler
-   * Closes modal, exits scanner, and returns to previous screen
-   */
-  const handleRetryLocation = () => {
-    // Close modal
-    locationFailedSheetRef.current?.close();
-    
-    // Reset state
-    setModalState(null);
-    setScannedSite(null);
-    
-    // Exit scanner and go back to previous screen
-    router.back();
-  };
-
-  /**
-   * "Retry Connection" / "Dismiss" button handler
-   * Closes modal, exits scanner, and returns to previous screen
-   */
-  const handleRetryConnection = () => {
-    // Close modal
-    noInternetSheetRef.current?.close();
-    
-    // Reset state
-    setModalState(null);
-    
-    // Exit scanner and go back to previous screen
-    router.back();
-  };
-
-  /**
-   * "Cancel" / "Dismiss" / "Close Scanner" button handler (UNUSED NOW)
-   * All Dismiss buttons now close scanner and return to previous screen
-   */
-  const handleCloseScanner = () => {
-    // Close all modals
-    invalidQrSheetRef.current?.close();
-    locationFailedSheetRef.current?.close();
-    noInternetSheetRef.current?.close();
-    
-    // Reset state
-    setModalState(null);
-    setCollectedStamp(null);
-    setScannedSite(null);
-    
-    // Exit scanner and go back to previous screen
-    router.back();
+  const openInPassport = (stamp: Stamp, isNew: boolean) => {
+    setIsResultOpen(false);
+    router.dismissTo({
+      pathname: '/passport',
+      // `t` makes every visit distinct so the same stamp can be highlighted again
+      params: { stamp: stamp.id, new: isNew ? '1' : '0', t: String(Date.now()) },
+    });
   };
 
   // Render based on stage
-  if (stage === 'granted') {
+  if (stage === 'checking') {
+    // Blank for the moment it takes to read the saved statuses. Dark like the
+    // camera, which is what usually comes next.
+    return <View style={styles.checking} testID="scanner-checking" />;
+  }
+
+  if (stage === 'ready') {
     return (
       <View style={styles.fullScreen}>
         {/* Scanner Viewfinder */}
         <ScannerViewfinder
           onScanCode={handleScanCode}
-          isPaused={isVerifying || modalState !== null}
+          isPaused={isVerifying || isResultOpen}
           onRequestStamp={handleRequestStamp}
         />
 
         {/* Dev Test Panel (only visible in __DEV__) */}
         <DevTestPanel
-          onTriggerSuccess={handleDevTestSuccess}
+          onTriggerSuccess={handleDevTestScan}
           onTriggerInvalid={handleDevTestInvalid}
-          onTriggerAlreadyScanned={handleDevTestAlreadyScanned}
+          onTriggerAlreadyScanned={handleDevTestScan}
           onTriggerLocationFailed={handleDevTestLocationFailed}
           onTriggerOffline={handleDevTestOffline}
         />
@@ -512,57 +375,56 @@ export default function ScannerScreen() {
           </View>
         )}
 
-        {/* Result Modal Bottom Sheets - Always rendered, controlled by refs */}
-        
-        {/* Success Sheet */}
-        <SuccessSheet
-          ref={successSheetRef}
-          stamp={collectedStamp || {
-            id: '',
-            userId: '',
-            siteId: '',
-            siteName: '',
-            siteCategory: 'Heritage',
-            municipality: '',
-            pointsEarned: 0,
-            collectedAt: new Date(),
-          }}
-          totalBalance={currentUser?.points || 0}
-          onViewPassport={handleViewPassport}
-          onScanAnother={handleResumeScanning}
-        />
+        {/* Result popup for the last scan. Tapping outside it or pressing
+            back closes it and resumes scanning. */}
+        {result?.kind === 'success' && (
+          <SuccessSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            stamp={result.stamp}
+            totalBalance={currentUser?.points || 0}
+            onViewPassport={() => openInPassport(result.stamp, true)}
+          />
+        )}
 
-        {/* Invalid QR Sheet */}
-        <InvalidQrSheet
-          ref={invalidQrSheetRef}
-          onTryAgain={handleResumeScanning}
-          onCancel={handleResumeScanning}
-        />
+        {result?.kind === 'invalid' && (
+          <InvalidQrSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            onTryAgain={resumeScanning}
+            onClose={closeScanner}
+          />
+        )}
 
-        {/* Already Scanned Sheet */}
-        <AlreadyScannedSheet
-          ref={alreadyScannedSheetRef}
-          siteName={scannedSite?.name || ''}
-          collectedDate={collectedStamp?.collectedAt || new Date()}
-          onViewPassport={handleViewPassport}
-          onBackToScanner={handleResumeScanning}
-        />
+        {result?.kind === 'alreadyScanned' && (
+          <AlreadyScannedSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            siteName={result.stamp.siteName}
+            collectedDate={result.stamp.collectedAt}
+            onViewPassport={() => openInPassport(result.stamp, false)}
+          />
+        )}
 
-        {/* Location Failed Sheet */}
-        <LocationFailedSheet
-          ref={locationFailedSheetRef}
-          targetSiteName={scannedSite?.name || ''}
-          targetMunicipality={scannedSite?.municipality || ''}
-          onRetry={handleRetryLocation}
-          onDismiss={handleRetryLocation}
-        />
+        {result?.kind === 'locationFailed' && (
+          <LocationFailedSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            targetSiteName={result.site?.name || ''}
+            targetMunicipality={result.site?.municipality || ''}
+            onTryAgain={() => retryCode(result.payload)}
+            onClose={closeScanner}
+          />
+        )}
 
-        {/* No Internet Sheet */}
-        <NoInternetSheet
-          ref={noInternetSheetRef}
-          onRetry={handleRetryConnection}
-          onClose={handleRetryConnection}
-        />
+        {result?.kind === 'offline' && (
+          <NoInternetSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            onTryAgain={() => retryCode(result.payload)}
+            onClose={closeScanner}
+          />
+        )}
       </View>
     );
   }
@@ -618,6 +480,59 @@ export default function ScannerScreen() {
               variant="text"
               fullWidth
               testID="scanner-blocked-request-stamp"
+            />
+          </View>
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (stage === 'locationOff') {
+    return (
+      <ScreenContainer
+        scrollable={false}
+        edges={['top', 'left', 'right', 'bottom']}
+        testID="scanner-location-off"
+      >
+        {/* Close button */}
+        <View style={styles.closeButtonContainer}>
+          <Pressable
+            onPress={handleClose}
+            hitSlop={spacing.md}
+            accessibilityRole="button"
+            accessibilityLabel="Close scanner"
+          >
+            <Ionicons name="close" size={24} color={colors.text} />
+          </Pressable>
+        </View>
+
+        <View style={styles.container}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="location-outline" size={64} color={colors.textSecondary} />
+          </View>
+
+          <Text style={styles.title}>Turn on location</Text>
+          <Text style={styles.subtitle}>
+            {"Your phone's location is off. It's needed to confirm you're at the site when you scan its QR code."}
+            {Platform.OS === 'ios' &&
+              ' Turn on Location Services in Settings > Privacy & Security.'}
+          </Text>
+
+          <View style={styles.buttonGroup}>
+            <Button
+              title={turnOnLocationTitle}
+              onPress={handleTurnOnLocation}
+              variant="accent"
+              fullWidth
+              testID="scanner-turn-on-location"
+            />
+            {/* The request form doesn't need location (it's reviewed by staff) */}
+            <Button
+              title="Stamped your physical passport instead?"
+              onPress={handleRequestStamp}
+              variant="text"
+              fullWidth
+              testID="scanner-location-off-request-stamp"
             />
           </View>
         </View>
@@ -700,6 +615,10 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
   fullScreen: {
     flex: 1,
+  },
+  checking: {
+    flex: 1,
+    backgroundColor: colors.text, // Same as the viewfinder before the camera loads
   },
   container: {
     flex: 1,

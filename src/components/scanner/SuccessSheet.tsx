@@ -2,106 +2,108 @@ import { Button } from '@/components/ui/Button';
 import type { Stamp } from '@/data/types';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ResultSheet } from './ResultSheet';
-import { type SimpleModalSheetRef } from './SimpleModalSheet';
 
 /**
  * Success Result Sheet
- * 
+ *
  * Displays stamp collected success modal with:
  * - Circular stamp badge (site name, municipality, verification code, date/time)
  * - Points earned label
  * - Total balance
- * - "View in Passport" and "Scan Another Code" buttons
- * 
+ * - "Dismiss" button, which opens the stamp in the Passport
+ *
  * Matches design: design/screens/06-scanner/qr_modal_stamp_collected_success/screen.png
  */
 
 export interface SuccessSheetProps {
+  visible: boolean;
+  /** Tapping outside the modal or pressing back */
+  onDismiss: () => void;
   stamp: Stamp;
   totalBalance: number;
   onViewPassport: () => void;
-  onScanAnother: () => void;
 }
 
-export const SuccessSheet = forwardRef<SimpleModalSheetRef, SuccessSheetProps>(
-  ({ stamp, totalBalance, onViewPassport, onScanAnother }, ref) => {
-    // Format date and time
-    const formatDateTime = (date: Date): string => {
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      }).format(date);
-    };
+export function SuccessSheet({
+  visible,
+  onDismiss,
+  stamp,
+  totalBalance,
+  onViewPassport,
+}: SuccessSheetProps) {
+  // Format date and time
+  const formatDateTime = (date: Date): string => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+  };
 
-    return (
-      <ResultSheet ref={ref} heightPercentage={80}>
-        <View style={styles.container}>
-          {/* Stamp Badge */}
-          <View style={styles.stampContainer}>
-            <View style={styles.stampBadge}>
-              <View style={styles.stampInner}>
-                <Text style={styles.stampLabel}>CAVITE TOURISM</Text>
-                <Text style={styles.stampSiteName}>{stamp.siteName}</Text>
-                <Text style={styles.stampMunicipality}>
-                  {stamp.municipality} • Cavite
-                </Text>
-                <Text style={styles.stampCode}>#{stamp.id.slice(0, 8).toUpperCase()}</Text>
-              </View>
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-              </View>
+  return (
+    <ResultSheet visible={visible} onDismiss={onDismiss} heightPercentage={80}>
+      <View style={styles.container}>
+        {/* Stamp Badge */}
+        <View style={styles.stampContainer}>
+          <View style={styles.stampBadge}>
+            <View style={styles.stampInner}>
+              <Text style={styles.stampLabel}>CAVITE TOURISM</Text>
+              <Text style={styles.stampSiteName}>{stamp.siteName}</Text>
+              <Text style={styles.stampMunicipality}>
+                {stamp.municipality} • Cavite
+              </Text>
+              <Text style={styles.stampCode}>#{stamp.id.slice(0, 8).toUpperCase()}</Text>
             </View>
-            <Text style={styles.dateTime}>{formatDateTime(stamp.collectedAt)}</Text>
-          </View>
-
-          {/* Success Message */}
-          <View style={styles.messageContainer}>
-            <Text style={styles.title}>Stamp Collected!</Text>
-            <Text style={styles.subtitle}>
-              You have earned exploration points for this visit.
-            </Text>
-          </View>
-
-          {/* Points Display */}
-          <View style={styles.pointsContainer}>
-            <View style={styles.pointsEarned}>
-              <View style={styles.starIconContainer}>
-                <Ionicons name="star" size={24} color={colors.accent} />
-              </View>
-              <View>
-                <Text style={styles.pointsLabel}>VISIT REWARD</Text>
-                <Text style={styles.pointsValue}>+{stamp.pointsEarned} pts</Text>
-              </View>
-            </View>
-            <View style={styles.pointsBalance}>
-              <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
-              <Text style={styles.balanceValue}>{totalBalance} pts</Text>
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={24} color={colors.success} />
             </View>
           </View>
+          <Text style={styles.dateTime}>{formatDateTime(stamp.collectedAt)}</Text>
+        </View>
 
-          {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Dismiss"
-              onPress={onViewPassport}
-              variant="primary"
-              fullWidth
-            />
+        {/* Success Message */}
+        <View style={styles.messageContainer}>
+          <Text style={styles.title}>Stamp Collected!</Text>
+          <Text style={styles.subtitle}>
+            You have earned exploration points for this visit.
+          </Text>
+        </View>
+
+        {/* Points Display */}
+        <View style={styles.pointsContainer}>
+          <View style={styles.pointsEarned}>
+            <View style={styles.starIconContainer}>
+              <Ionicons name="star" size={24} color={colors.accent} />
+            </View>
+            <View>
+              <Text style={styles.pointsLabel}>VISIT REWARD</Text>
+              <Text style={styles.pointsValue}>+{stamp.pointsEarned} pts</Text>
+            </View>
+          </View>
+          <View style={styles.pointsBalance}>
+            <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
+            <Text style={styles.balanceValue}>{totalBalance} pts</Text>
           </View>
         </View>
-      </ResultSheet>
-    );
-  }
-);
 
-SuccessSheet.displayName = 'SuccessSheet';
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Dismiss"
+            onPress={onViewPassport}
+            variant="primary"
+            fullWidth
+          />
+        </View>
+      </View>
+    </ResultSheet>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
