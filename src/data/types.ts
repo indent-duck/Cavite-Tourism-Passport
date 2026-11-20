@@ -16,6 +16,9 @@ export interface User {
   claimedRewardId?: string; // ID of the reward claimed (if hasClaimedThisPeriod is true)
 }
 
+/** Which flow an emailed 6-digit code belongs to */
+export type VerificationPurpose = 'signup' | 'reset';
+
 // Account management (Settings → Account)
 
 /** The only profile fields a user can change themselves */
@@ -147,7 +150,7 @@ export interface Reward {
   title: string;
   description: string;
   pointsCost: number;
-  imageUrl: string;
+  imageUrl?: string; // Photo; cards fall back to a placeholder when absent
   imageSource?: any; // Local placeholder image for expo-image
   available: boolean; // Overall availability
   limited: boolean; // Has participant limit

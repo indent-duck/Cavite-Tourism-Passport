@@ -28,7 +28,8 @@ import {
  *
  * Opened from:
  * - Account screen "Privacy Policy & Terms" navigation row
- * - Sign up email screen terms link (if present)
+ *
+ * Sign up uses its own shorter version instead (components/auth/TermsSheet).
  */
 
 type IconName = keyof typeof Ionicons.glyphMap;

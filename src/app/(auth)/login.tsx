@@ -28,8 +28,7 @@ const PAGE_OVERLAP = 24;
  * Login Screen
  *
  * Leather "passport cover" hero with the sign-in form on a cream page below.
- * Mock rule: password "wrong" shows error, others succeed.
- * Navigates to Explore on success.
+ * Signs in with Supabase Auth and navigates to Explore on success.
  * Opened after deleting an account (`?notice=account-deleted`), it first
  * shows a feedback dialog confirming the deletion.
  *

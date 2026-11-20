@@ -47,3 +47,6 @@ example
 
 # Environment Variables
 *.env
+
+/supabase
+/schema/supabase-schema.sql

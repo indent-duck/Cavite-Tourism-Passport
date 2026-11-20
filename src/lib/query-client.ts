@@ -70,8 +70,9 @@ const asyncStoragePersister = createAsyncStoragePersister({
 });
 
 // Bump when the shape of cached data changes, so caches saved by an older
-// build are discarded instead of rendered (v2: User.name -> firstName/lastName)
-const CACHE_VERSION = '2';
+// build are discarded instead of rendered (v2: User.name -> firstName/lastName,
+// v3: catalog moved from mock IDs to Supabase IDs)
+const CACHE_VERSION = '3';
 
 // Configure persistence
 persistQueryClient({

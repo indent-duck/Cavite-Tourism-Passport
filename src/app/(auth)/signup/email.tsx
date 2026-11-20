@@ -1,4 +1,11 @@
-import { AuthHeader, AuthSwitchPrompt, authScreenStyles, linkTextStyle } from '@/components/auth';
+import {
+  AuthHeader,
+  AuthSwitchPrompt,
+  TermsSheet,
+  authScreenStyles,
+  linkTextStyle,
+  type TermsSheetRef,
+} from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
@@ -28,6 +35,7 @@ export default function SignupEmailScreen() {
 
   const { sendCode } = useAuth();
   const emailRef = useRef<TextInputRef>(null);
+  const termsSheetRef = useRef<TermsSheetRef>(null);
 
   const handleContinue = async () => {
     setEmailError('');
@@ -52,7 +60,7 @@ export default function SignupEmailScreen() {
     }
 
     try {
-      await sendCode.fn(trimmed);
+      await sendCode.fn(trimmed, 'signup');
       router.push({
         pathname: '/signup/verify',
         params: { email: trimmed },
@@ -68,6 +76,11 @@ export default function SignupEmailScreen() {
 
   const toggleTerms = () => {
     setTermsAccepted((accepted) => !accepted);
+    setTermsError('');
+  };
+
+  const acceptTerms = () => {
+    setTermsAccepted(true);
     setTermsError('');
   };
 
@@ -122,7 +135,7 @@ export default function SignupEmailScreen() {
           error={emailError}
         />
 
-        {/* Terms: the whole row toggles the checkbox; the links open the policy */}
+        {/* Terms: the whole row toggles the checkbox; the links open the terms sheet */}
         <View style={styles.termsBlock}>
           <Pressable
             onPress={toggleTerms}
@@ -142,11 +155,19 @@ export default function SignupEmailScreen() {
             </View>
             <Text style={styles.termsText}>
               I agree to the{' '}
-              <Text style={styles.termsLink} onPress={() => router.push('/privacy')} accessibilityRole="link">
+              <Text
+                style={styles.termsLink}
+                onPress={() => termsSheetRef.current?.present('terms')}
+                accessibilityRole="link"
+              >
                 Terms of Service
               </Text>{' '}
               and{' '}
-              <Text style={styles.termsLink} onPress={() => router.push('/privacy')} accessibilityRole="link">
+              <Text
+                style={styles.termsLink}
+                onPress={() => termsSheetRef.current?.present('privacy')}
+                accessibilityRole="link"
+              >
                 Privacy Policy
               </Text>
               .
@@ -160,6 +181,8 @@ export default function SignupEmailScreen() {
           ) : null}
         </View>
       </View>
+
+      <TermsSheet ref={termsSheetRef} accepted={termsAccepted} onAccept={acceptTerms} />
     </ScreenContainer>
   );
 }

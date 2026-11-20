@@ -67,9 +67,11 @@ export default function ForgotNewPasswordScreen() {
       // Navigate to success screen on successful password reset
       // Use replace to prevent adding to navigation stack
       router.replace('/forgot/success');
-    } catch {
-      // Error is already captured in the hook's state
-      setNewPasswordError(resetPassword.error || 'Failed to reset password. Please try again.');
+    } catch (error) {
+      // Use the thrown error: the hook's error state is not updated yet in this closure
+      setNewPasswordError(
+        error instanceof Error ? error.message : 'Failed to reset password. Please try again.'
+      );
     }
   };
 

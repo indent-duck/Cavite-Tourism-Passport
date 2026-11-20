@@ -21,7 +21,7 @@ export default function ForgotVerifyScreen() {
   const [code, setCode] = useState('');
   const [verificationError, setVerificationError] = useState('');
 
-  const { verifyCode, resendCode, loading, error, countdown, canResend } = useVerification();
+  const { verifyCode, resendCode, loading, error, countdown, canResend } = useVerification('reset');
 
   const handleVerify = async () => {
     setVerificationError('');
@@ -40,7 +40,8 @@ export default function ForgotVerifyScreen() {
         params: { email },
       });
     } else {
-      setVerificationError(error || 'Invalid verification code. Please try again.');
+      // The hook's `error` (shown first, see CodeInput below) carries the API's message
+      setVerificationError('Invalid verification code. Please try again.');
     }
   };
 
@@ -127,7 +128,7 @@ export default function ForgotVerifyScreen() {
               setVerificationError('');
             }}
             length={6}
-            error={verificationError}
+            error={error || verificationError}
             testID="verification-code-input"
           />
         </View>

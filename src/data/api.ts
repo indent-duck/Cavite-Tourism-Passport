@@ -4,23 +4,22 @@ import {
     GEOFENCE_DISTANCE_METERS,
     parseSiteQr
 } from "@/lib/constants";
-import { FieldError } from "@/lib/errors";
+import { FieldError, NETWORK_ERROR_MESSAGE } from "@/lib/errors";
 import { getDistanceMeters } from "@/lib/geo";
-import { fromDateKey, isValidVisitDate } from "@/lib/stamp-requests";
+import { fromDateKey, isValidVisitDate, toDateKey } from "@/lib/stamp-requests";
+import { supabase } from "@/lib/supabase";
+import {
+    isAuthRetryableFetchError,
+    type AuthError,
+    type PostgrestError
+} from "@supabase/supabase-js";
 import {
     currentMockStampRequests,
     currentMockStamps,
     currentMockUser,
     mockAboutCavite,
     mockActiveClaims,
-    mockEvents,
-    mockExpressways,
-    mockItineraries,
-    mockPromoPeriod,
-    mockRewards,
-    mockSettings,
-    mockSites,
-    updateMockSettings
+    mockSites
 } from "./mock-data";
 import {
     AboutCaviteContent,
@@ -43,7 +42,8 @@ import {
     StampRequest,
     SubmitStampRequestInput,
     SubmitStampRequestResult,
-    User
+    User,
+    VerificationPurpose
 } from "./types";
 
 // Utility to simulate network delay (300-800ms)
@@ -51,37 +51,176 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const randomDelay = () => delay(300 + Math.random() * 500);
 
 // ============================================================================
-// Authentication
+// Supabase helpers
+// ============================================================================
+// Functions below that use `supabase` read the real database
+// (schema/supabase-schema.sql). The rest still use mock data until their
+// group is wired up.
+
+/**
+ * Return a query's data, or throw its error so React Query shows the error state.
+ * Row types are declared with overrideTypes<Row[] | Row, { merge: false }>(),
+ * since there are no generated database types yet.
+ */
+function unwrap<T>(result: { data: T; error: null } | { data: null; error: PostgrestError }): T {
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+  return result.data;
+}
+
+/** Database IDs are numbers; anything else (e.g. an old mock ID) can't match */
+function isDbId(id: string): boolean {
+  return /^\d+$/.test(id);
+}
+
+const CATEGORY_BY_CODE: Record<string, Category> = {
+  dining: "Dining",
+  staycation: "Staycation",
+  adventure: "Adventure",
+  heritage: "Heritage",
+  festival: "Festival",
+};
+
+const CODE_BY_CATEGORY: Record<Category, string> = {
+  Dining: "dining",
+  Staycation: "staycation",
+  Adventure: "adventure",
+  Heritage: "heritage",
+  Festival: "festival",
+};
+
+/** Public URL of a photo in the "content" Storage bucket */
+function contentImageUrl(path: string | null | undefined): string | undefined {
+  return path ? supabase.storage.from("content").getPublicUrl(path).data.publicUrl : undefined;
+}
+
+/** The cover photo: the image with the lowest sort_order */
+function coverImageUrl(images: ImageRow[] | null): string | undefined {
+  if (!images || images.length === 0) return undefined;
+  const cover = images.reduce((first, image) => (image.sort_order < first.sort_order ? image : first));
+  return contentImageUrl(cover.storage_path);
+}
+
+interface ImageRow {
+  storage_path: string;
+  sort_order: number;
+}
+
+// Supabase Auth error codes -> what the user should read
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  invalid_credentials: "Invalid email or password",
+  otp_expired: "Invalid or expired code. Please try again or request a new one.",
+  over_email_send_rate_limit: "Too many emails sent. Please wait a few minutes and try again.",
+  over_request_rate_limit: "Too many attempts. Please wait a moment and try again.",
+  email_address_invalid: "Please enter a valid email address",
+  email_not_confirmed: "Please verify your email address first.",
+  same_password: "Your new password must be different from your current one.",
+  user_banned: "This account has been suspended.",
+};
+
+/** Turn a Supabase Auth error into an Error with a message for the user */
+function authError(error: AuthError): Error {
+  if (isAuthRetryableFetchError(error)) {
+    return new Error(NETWORK_ERROR_MESSAGE);
+  }
+  // "For security purposes, you can only request this after 42 seconds." is clearer as-is
+  if (/after \d+ seconds?/.test(error.message)) {
+    return new Error(error.message);
+  }
+  return new Error(AUTH_ERROR_MESSAGES[error.code ?? ""] ?? error.message);
+}
+
+const SIGNED_OUT_MESSAGE = "You're signed out. Please log in again.";
+
+/** The signed-in user's ID, from the session saved on the device */
+async function requireUserId(message = SIGNED_OUT_MESSAGE): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    throw new Error(message);
+  }
+  return data.session.user.id;
+}
+
+// ============================================================================
+// Authentication (Supabase Auth)
 // ============================================================================
 
 /**
- * Sign in a user with email and password
- * Mock: Always succeeds and returns the mock user
+ * Whether a login session is saved on this device (checked at app start)
  */
-export async function signIn(email: string, password: string): Promise<User> {
-  await randomDelay();
-  // Mock: always succeeds
-  return currentMockUser;
+export async function hasSession(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  return data.session !== null;
 }
 
 /**
- * Verify a code sent to email
- * Used by sign up and forgot password flows
- * Mock: Code "123456" succeeds, all others fail
+ * Sign in a user with email and password
  */
-export async function verifyCode(email: string, code: string): Promise<boolean> {
-  await randomDelay();
-  
-  if (code !== "123456") {
-    throw new Error("Invalid verification code");
+export async function signIn(email: string, password: string): Promise<User> {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw authError(error);
+  return getCurrentUser();
+}
+
+/**
+ * Email a 6-digit code
+ * - signup: verifies the address and creates the login if it's new. New
+ *   addresses get the "Confirm signup" email, existing ones "Magic Link".
+ * - reset: starts a password reset ("Reset Password" email). Supabase
+ *   doesn't reveal whether the address has an account.
+ */
+export async function sendVerificationCode(email: string, purpose: VerificationPurpose): Promise<void> {
+  const { error } =
+    purpose === "signup"
+      ? await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+      : await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw authError(error);
+}
+
+/**
+ * Check an emailed code. Success signs the user in, which sign-up step 3 and
+ * the new-password screen rely on.
+ *
+ * Sign-up: an address that already has a finished account also gets a code,
+ * so that user is signed out again here instead of letting step 3 overwrite
+ * their name and password.
+ */
+export async function verifyCode(
+  email: string,
+  code: string,
+  purpose: VerificationPurpose,
+): Promise<boolean> {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: purpose === "signup" ? "email" : "recovery",
+  });
+  if (error) throw authError(error);
+
+  if (purpose === "signup" && data.user) {
+    const account = unwrap(
+      await supabase
+        .from("accounts")
+        .select("first_name")
+        .eq("id", data.user.id)
+        .maybeSingle()
+        .overrideTypes<{ first_name: string | null }, { merge: false }>(),
+    );
+    if (account?.first_name) {
+      await supabase.auth.signOut({ scope: "local" });
+      throw new Error("This email already has an account. Log in with your password instead.");
+    }
   }
-  
   return true;
 }
 
 /**
- * Sign up a new user
- * Mock: Always succeeds after code verification
+ * Finish sign-up (step 3): set the name, address and password. The user was
+ * signed in by verifyCode() in step 2.
+ *
+ * Safe to retry after a failure: the profile is saved first, and a password
+ * that an earlier attempt already set ("same_password") is not an error.
  */
 export async function signUp(
   email: string,
@@ -90,29 +229,39 @@ export async function signUp(
   address: string,
   password: string,
 ): Promise<User> {
-  await randomDelay();
-  return { ...currentMockUser, email, firstName, lastName, address };
+  const userId = await requireUserId("Your verification has expired. Please start again.");
+
+  const updated = unwrap(
+    await supabase
+      .from("accounts")
+      .update({ first_name: firstName, last_name: lastName, address })
+      .eq("id", userId)
+      .select("id"),
+  );
+  if (updated.length === 0) {
+    // The accounts row is created by a database trigger when the login is
+    // created; logins made before the schema was installed don't have one
+    throw new Error("Your account record is missing. Please contact the Tourism Office helpdesk.");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error && error.code !== "same_password") throw authError(error);
+
+  return getCurrentUser();
 }
 
 /**
- * Send verification code to email
- * Mock: Always succeeds
+ * Set a new password after the reset code was verified, then sign out
+ * everywhere: the user logs in again with the new password, and anyone who
+ * knew the old one loses their session
  */
-export async function sendVerificationCode(email: string): Promise<void> {
-  await randomDelay();
-  // Mock: always succeeds
-}
+export async function resetPassword(email: string, newPassword: string): Promise<void> {
+  await requireUserId("Your reset code has expired. Please request a new one.");
 
-/**
- * Reset password with verification code
- * Mock: Always succeeds after code verification
- */
-export async function resetPassword(
-  email: string,
-  newPassword: string,
-): Promise<void> {
-  await randomDelay();
-  // Mock: always succeeds after verifyCode was called
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw authError(error);
+
+  await supabase.auth.signOut({ scope: "global" });
 }
 
 /**
@@ -148,91 +297,145 @@ export async function verifyContactCode(
 }
 
 /**
- * Sign out the current user
- * Mock: Resets user to initial state (clears contact number and verification status)
+ * Sign out on this device. The saved session is removed even when offline.
  */
 export async function signOut(): Promise<void> {
-  await randomDelay();
-  
-  // Reset mock user to initial state (clear any session-specific modifications)
-  currentMockUser.contactNumber = undefined;
-  currentMockUser.contactVerified = false;
+  await supabase.auth.signOut({ scope: "local" });
 }
 
 // ============================================================================
 // User Data
 // ============================================================================
 
+const MY_ACCOUNT_COLUMNS =
+  "id, email, passport_id, first_name, last_name, address, contact_number, " +
+  "contact_verified_at, created_at, points, claimed_reward_id";
+
+// The my_account view: the signed-in user's account plus their points and
+// claimed reward in the active promo period
+interface MyAccountRow {
+  id: string;
+  email: string | null;
+  passport_id: string;
+  first_name: string | null; // null until sign-up step 3
+  last_name: string | null;
+  address: string | null;
+  contact_number: string | null;
+  contact_verified_at: string | null;
+  created_at: string;
+  points: number;
+  claimed_reward_id: number | null;
+}
+
 /**
  * Get the current authenticated user
  */
 export async function getCurrentUser(): Promise<User> {
-  await randomDelay();
-  // A copy, so React Query sees a new object after the mock user changes in place
-  return { ...currentMockUser };
+  // Signed-out requests can't read my_account at all ("permission denied")
+  await requireUserId();
+
+  const row = unwrap(
+    await supabase
+      .from("my_account")
+      .select(MY_ACCOUNT_COLUMNS)
+      .maybeSingle()
+      .overrideTypes<MyAccountRow, { merge: false }>(),
+  );
+  if (!row) {
+    throw new Error(SIGNED_OUT_MESSAGE);
+  }
+
+  return {
+    id: row.id,
+    email: row.email ?? "",
+    firstName: row.first_name ?? "",
+    lastName: row.last_name ?? "",
+    address: row.address ?? "",
+    contactNumber: row.contact_number ?? undefined,
+    contactVerified: row.contact_verified_at !== null,
+    passportId: row.passport_id,
+    points: row.points,
+    createdAt: new Date(row.created_at),
+    hasClaimedThisPeriod: row.claimed_reward_id !== null,
+    claimedRewardId: row.claimed_reward_id !== null ? String(row.claimed_reward_id) : undefined,
+  };
 }
 
 // ============================================================================
 // Account Management (Settings → Account)
 // ============================================================================
 
-// Profile as it was at launch, so a mock account deletion can restore it
-const initialMockProfile: ProfileUpdate = {
-  firstName: currentMockUser.firstName,
-  lastName: currentMockUser.lastName,
-  address: currentMockUser.address,
-};
-
 /**
- * Update the user's first name, last name and address
- *
- * Supabase: update `accounts.first_name`, `accounts.last_name` and
- * `accounts.address` for the signed-in user. Only these columns may be
- * writable by the user (column-level
- * `GRANT UPDATE (first_name, last_name, address)` or an `update_profile`
- * RPC). A plain "update own row" policy would also let users change `role`,
- * `passport_id` or `contact_verified_at`.
+ * Update the user's first name, last name and address. These (and
+ * notifications_enabled) are the only account columns users may write: see
+ * the column grants in schema/supabase-schema.sql.
  */
 export async function updateProfile(updates: ProfileUpdate): Promise<User> {
-  await randomDelay();
-  currentMockUser.firstName = updates.firstName;
-  currentMockUser.lastName = updates.lastName;
-  currentMockUser.address = updates.address;
-  return { ...currentMockUser };
+  const userId = await requireUserId();
+
+  unwrap(
+    await supabase
+      .from("accounts")
+      .update({
+        first_name: updates.firstName,
+        last_name: updates.lastName,
+        address: updates.address,
+      })
+      .eq("id", userId)
+      .select("id")
+      .single(),
+  );
+  return getCurrentUser();
 }
 
 /**
- * Email a one-time code to the signed-in user, so they can change their
- * password without knowing the current one
- *
- * Supabase: `auth.reauthenticate()` (emails a nonce)
- * Mock: always succeeds; the code is "123456"
+ * Email a one-time code ("Reauthentication" email) so the user can change
+ * their password without knowing the current one
  */
 export async function sendReauthenticationCode(): Promise<void> {
-  await randomDelay();
+  const { error } = await supabase.auth.reauthenticate();
+  if (error) throw authError(error);
 }
 
 /**
- * Change the signed-in user's password
- *
- * The user proves it's them with their current password or with the code
- * from sendReauthenticationCode().
- *
- * Supabase: check the current password with `auth.signInWithPassword`, or
- * pass the code as the nonce, then `auth.updateUser({ password, nonce })`.
- * Mock: current password "wrong" fails, and any code other than "123456".
+ * Change the signed-in user's password, proven by the current password or by
+ * the code from sendReauthenticationCode()
  */
 export async function changePassword(
   newPassword: string,
   proof: PasswordChangeProof,
 ): Promise<void> {
-  await randomDelay();
+  if ("currentPassword" in proof) {
+    const { data } = await supabase.auth.getSession();
+    const email = data.session?.user.email;
+    if (!email) throw new Error(SIGNED_OUT_MESSAGE);
 
-  if ('currentPassword' in proof && proof.currentPassword === 'wrong') {
-    throw new FieldError('currentPassword', 'Your current password is incorrect.');
+    // Signing in again checks the password and gives a fresh session, which
+    // Supabase wants before a password change
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: proof.currentPassword,
+    });
+    if (error) {
+      if (error.code === "invalid_credentials") {
+        throw new FieldError("currentPassword", "Your current password is incorrect.");
+      }
+      throw authError(error);
+    }
   }
-  if ('code' in proof && proof.code !== '123456') {
-    throw new FieldError('code', 'Invalid verification code. Please try again.');
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+    nonce: "code" in proof ? proof.code : undefined,
+  });
+  if (error) {
+    if (error.code === "reauthentication_not_valid") {
+      throw new FieldError("code", "Invalid verification code. Please try again.");
+    }
+    if (error.code === "same_password" || error.code === "weak_password") {
+      throw new FieldError("newPassword", authError(error).message);
+    }
+    throw authError(error);
   }
 }
 
@@ -240,13 +443,14 @@ export async function changePassword(
  * Summarize what deleting the account would remove
  */
 export async function getAccountDeletionSummary(): Promise<AccountDeletionSummary> {
-  await randomDelay();
+  const user = await getCurrentUser();
 
+  // Stamps, stamp requests and vouchers are still mock until their groups are wired
   const now = Date.now();
   return {
-    passportId: currentMockUser.passportId,
+    passportId: user.passportId,
     stampCount: currentMockStamps.length,
-    points: currentMockUser.points,
+    points: user.points,
     pendingStampRequests: currentMockStampRequests.filter(
       (request) => request.status === 'pending',
     ).length,
@@ -265,9 +469,9 @@ export async function getAccountDeletionSummary(): Promise<AccountDeletionSummar
  * with no cascade), deletes `stamp-requests/{account_id}/*` from Storage, then
  * calls `auth.admin.deleteUser()`. The database cascades to accounts, stamps,
  * reward_claims and stamp_requests.
- * Mock: password "wrong" fails. Otherwise it undoes this session's changes
- * (profile edits, contact number, vouchers, stamp requests) so the demo
- * account can log in again; the sample stamps and points stay.
+ * Not wired yet. Mock: password "wrong" fails. Otherwise it clears this
+ * session's mock vouchers and stamp requests and signs out, but the real
+ * account is NOT deleted.
  */
 export async function deleteAccount(password: string): Promise<void> {
   await randomDelay();
@@ -276,48 +480,89 @@ export async function deleteAccount(password: string): Promise<void> {
     throw new FieldError('password', 'Incorrect password.');
   }
 
-  currentMockUser.firstName = initialMockProfile.firstName;
-  currentMockUser.lastName = initialMockProfile.lastName;
-  currentMockUser.address = initialMockProfile.address;
-  currentMockUser.contactNumber = undefined;
-  currentMockUser.contactVerified = false;
   mockActiveClaims.clear();
   currentMockStampRequests.length = 0;
+  await supabase.auth.signOut({ scope: "local" });
 }
 
 // ============================================================================
 // Sites
 // ============================================================================
 
-/**
- * Get all sites, optionally filtered by category
- */
-export async function getSites(category?: Category): Promise<Site[]> {
-  await randomDelay();
+const SITE_COLUMNS =
+  "id, name, category, address, description, latitude, longitude, operating_hours, " +
+  "municipalities(name), site_images(storage_path, sort_order)";
 
-  if (category) {
-    return mockSites.filter((site) => site.category === category);
-  }
+interface SiteRow {
+  id: number;
+  name: string;
+  category: string;
+  address: string;
+  description: string | null;
+  latitude: number;
+  longitude: number;
+  operating_hours: string | null;
+  municipalities: { name: string } | null;
+  site_images: ImageRow[] | null;
+}
 
-  return mockSites;
+function toSite(row: SiteRow): Site {
+  return {
+    id: String(row.id),
+    name: row.name,
+    category: CATEGORY_BY_CODE[row.category],
+    municipality: row.municipalities?.name ?? "",
+    address: row.address,
+    description: row.description ?? "",
+    latitude: row.latitude,
+    longitude: row.longitude,
+    operatingHours: row.operating_hours ?? undefined,
+    imageUrl: coverImageUrl(row.site_images),
+  };
 }
 
 /**
- * Get a single site by ID
+ * Get all visible sites, optionally filtered by category
+ */
+export async function getSites(category?: Category): Promise<Site[]> {
+  let query = supabase
+    .from("sites")
+    .select(SITE_COLUMNS)
+    .eq("is_visible", true)
+    .order("name");
+  if (category) {
+    query = query.eq("category", CODE_BY_CATEGORY[category]);
+  }
+
+  const rows = unwrap(await query.overrideTypes<SiteRow[], { merge: false }>());
+  return rows.map(toSite);
+}
+
+/**
+ * Get a single site by ID (hidden sites too, so older stamps still open)
  */
 export async function getSiteById(id: string): Promise<Site | null> {
-  await randomDelay();
-  return mockSites.find((site) => site.id === id) || null;
+  if (!isDbId(id)) return null;
+
+  const row = unwrap(
+    await supabase
+      .from("sites")
+      .select(SITE_COLUMNS)
+      .eq("id", id)
+      .maybeSingle()
+      .overrideTypes<SiteRow, { merge: false }>(),
+  );
+  return row ? toSite(row) : null;
 }
 
 /**
  * Search sites by name, municipality, or address
  */
 export async function searchSites(query: string): Promise<Site[]> {
-  await randomDelay();
+  const sites = await getSites();
 
   const lowerQuery = query.toLowerCase();
-  return mockSites.filter(
+  return sites.filter(
     (site) =>
       site.name.toLowerCase().includes(lowerQuery) ||
       site.municipality.toLowerCase().includes(lowerQuery) ||
@@ -434,7 +679,8 @@ export async function submitStampRequest(
 ): Promise<SubmitStampRequestResult> {
   await randomDelay();
 
-  const site = mockSites.find((s) => s.id === input.siteId);
+  // Sites and the promo period come from the database; the request itself is still mock
+  const site = await getSiteById(input.siteId);
   if (!site) {
     return { success: false, reason: "siteNotFound" };
   }
@@ -447,7 +693,7 @@ export async function submitStampRequest(
     return { success: false, reason: "alreadyPending" };
   }
 
-  if (!isValidVisitDate(input.visitedOn, mockPromoPeriod)) {
+  if (!isValidVisitDate(input.visitedOn, await getPromoPeriod())) {
     return { success: false, reason: "invalidDate" };
   }
 
@@ -538,32 +784,125 @@ export async function reviewStampRequest(
 // Itineraries
 // ============================================================================
 
+const ITINERARY_COLUMNS =
+  "id, name, type, description, duration_label, image_path, itinerary_stops(site_id, stop_order)";
+
+interface ItineraryRow {
+  id: number;
+  name: string;
+  type: "day" | "overnight";
+  description: string | null;
+  duration_label: string | null;
+  image_path: string | null;
+  itinerary_stops: { site_id: number; stop_order: number }[] | null;
+}
+
+function toItinerary(row: ItineraryRow): Itinerary {
+  const stops = [...(row.itinerary_stops ?? [])].sort((a, b) => a.stop_order - b.stop_order);
+  return {
+    id: String(row.id),
+    title: row.name,
+    type: row.type === "day" ? "Day Tour" : "Overnight Tour",
+    description: row.description ?? undefined,
+    duration: row.duration_label ?? undefined,
+    siteIds: stops.map((stop) => String(stop.site_id)),
+    imageUrl: contentImageUrl(row.image_path),
+  };
+}
+
 /**
- * Get all itineraries
+ * Get all visible itineraries
  */
 export async function getItineraries(): Promise<Itinerary[]> {
-  await randomDelay();
-  return mockItineraries;
+  const rows = unwrap(
+    await supabase
+      .from("itineraries")
+      .select(ITINERARY_COLUMNS)
+      .eq("is_visible", true)
+      .order("sort_order")
+      .overrideTypes<ItineraryRow[], { merge: false }>(),
+  );
+  return rows.map(toItinerary);
 }
 
 /**
  * Get a single itinerary by ID
  */
 export async function getItineraryById(id: string): Promise<Itinerary | null> {
-  await randomDelay();
-  return mockItineraries.find((itin) => itin.id === id) || null;
+  if (!isDbId(id)) return null;
+
+  const row = unwrap(
+    await supabase
+      .from("itineraries")
+      .select(ITINERARY_COLUMNS)
+      .eq("id", id)
+      .maybeSingle()
+      .overrideTypes<ItineraryRow, { merge: false }>(),
+  );
+  return row ? toItinerary(row) : null;
 }
 
 // ============================================================================
 // Events
 // ============================================================================
 
+const EVENT_COLUMNS =
+  "id, title, category, description, venue, address, latitude, longitude, starts_on, ends_on, " +
+  "time_label, offers_stamp, municipalities(name), event_images(storage_path, sort_order)";
+
+interface EventRow {
+  id: number;
+  title: string;
+  category: "festival" | "cultural";
+  description: string | null;
+  venue: string | null;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  starts_on: string; // 'YYYY-MM-DD'
+  ends_on: string | null;
+  time_label: string | null;
+  offers_stamp: boolean;
+  municipalities: { name: string } | null;
+  event_images: ImageRow[] | null;
+}
+
+function toEvent(row: EventRow): Event {
+  return {
+    id: String(row.id),
+    title: row.title,
+    // Date-only strings: new Date('YYYY-MM-DD') is UTC midnight, which is
+    // still the same calendar day in the Philippines (UTC+8)
+    startDate: row.starts_on,
+    endDate: row.ends_on ?? undefined,
+    time: row.time_label ?? "",
+    venue: row.venue ?? "",
+    municipality: row.municipalities?.name ?? "",
+    address: row.address ?? "",
+    latitude: row.latitude,
+    longitude: row.longitude,
+    description: row.description ?? "",
+    category: row.category === "festival" ? "Festival" : "Cultural",
+    imageUrl: coverImageUrl(row.event_images),
+    festivalStamp: row.offers_stamp
+      ? { pointsBonus: POINTS_PER_CATEGORY.Festival, available: true }
+      : undefined,
+  };
+}
+
 /**
- * Get all events
+ * Get all visible events, earliest first
  */
 export async function getEvents(): Promise<Event[]> {
-  await randomDelay();
-  return mockEvents;
+  const rows = unwrap(
+    await supabase
+      .from("events")
+      .select(EVENT_COLUMNS)
+      .eq("is_visible", true)
+      .order("starts_on")
+      .overrideTypes<EventRow[], { merge: false }>(),
+  );
+  return rows.map(toEvent);
 }
 
 /**
@@ -571,20 +910,48 @@ export async function getEvents(): Promise<Event[]> {
  * Throws if event is not found
  */
 export async function getEventById(id: string): Promise<Event> {
-  await randomDelay();
-  const event = mockEvents.find((e) => e.id === id);
-  if (!event) {
+  const row = isDbId(id)
+    ? unwrap(
+        await supabase
+          .from("events")
+          .select(EVENT_COLUMNS)
+          .eq("id", id)
+          .maybeSingle()
+          .overrideTypes<EventRow, { merge: false }>(),
+      )
+    : null;
+  if (!row) {
     throw new Error(`Event not found: ${id}`);
   }
-  return event;
+  return toEvent(row);
+}
+
+interface ExpresswayRow {
+  id: number;
+  name: string;
+  location_span: string | null;
+  length_km: number | null;
+  description: string | null;
 }
 
 /**
  * Get all expressways
  */
 export async function getExpressways(): Promise<Expressway[]> {
-  await randomDelay();
-  return mockExpressways;
+  const rows = unwrap(
+    await supabase
+      .from("expressways")
+      .select("id, name, location_span, length_km, description")
+      .order("sort_order")
+      .overrideTypes<ExpresswayRow[], { merge: false }>(),
+  );
+  return rows.map((row) => ({
+    id: String(row.id),
+    name: row.name,
+    locationSpan: row.location_span ?? "",
+    length: row.length_km !== null ? `${Number(row.length_km)} km` : undefined,
+    description: row.description ?? "",
+  }));
 }
 
 /**
@@ -599,20 +966,63 @@ export async function getAboutCavite(): Promise<AboutCaviteContent> {
 // Rewards
 // ============================================================================
 
+const REWARD_COLUMNS = "id, name, description, points_cost, image_path, quantity_remaining, is_available";
+
+interface RewardRow {
+  id: number;
+  name: string;
+  description: string | null;
+  points_cost: number;
+  image_path: string | null;
+  quantity_remaining: number | null; // null = unlimited
+  is_available: boolean;
+}
+
+// claimedByUser / claimedAt come from the user's own reward claims, which are
+// wired up with the rest of the rewards flow
+function toReward(row: RewardRow): Reward {
+  return {
+    id: String(row.id),
+    title: row.name,
+    description: row.description ?? "",
+    pointsCost: row.points_cost,
+    imageUrl: contentImageUrl(row.image_path),
+    available: row.is_available,
+    limited: row.quantity_remaining !== null,
+    remainingClaims: row.quantity_remaining ?? undefined,
+  };
+}
+
 /**
- * Get all rewards
+ * Get all visible rewards
  */
 export async function getRewards(): Promise<Reward[]> {
-  await randomDelay();
-  return mockRewards;
+  const rows = unwrap(
+    await supabase
+      .from("rewards")
+      .select(REWARD_COLUMNS)
+      .eq("is_visible", true)
+      .order("sort_order")
+      .overrideTypes<RewardRow[], { merge: false }>(),
+  );
+  return rows.map(toReward);
 }
 
 /**
  * Get a single reward by ID
  */
 export async function getRewardById(id: string): Promise<Reward | null> {
-  await randomDelay();
-  return mockRewards.find((reward) => reward.id === id) || null;
+  if (!isDbId(id)) return null;
+
+  const row = unwrap(
+    await supabase
+      .from("rewards")
+      .select(REWARD_COLUMNS)
+      .eq("id", id)
+      .maybeSingle()
+      .overrideTypes<RewardRow, { merge: false }>(),
+  );
+  return row ? toReward(row) : null;
 }
 
 /**
@@ -628,9 +1038,8 @@ export async function getRewardById(id: string): Promise<Reward | null> {
 export async function checkRewardEligibility(
   rewardId: string,
 ): Promise<RewardEligibility> {
-  await randomDelay();
-
-  const reward = mockRewards.find((r) => r.id === rewardId);
+  // The reward comes from the database; points and stamps are still mock
+  const reward = await getRewardById(rewardId);
   if (!reward) {
     throw new Error("Reward not found");
   }
@@ -740,13 +1149,11 @@ export async function generateClaimQR(rewardId: string): Promise<ActiveClaim> {
 
 /**
  * Simulate officer scanning and claiming a reward (dev-only)
- * Deducts points, sets hasClaimedThisPeriod flag, decrements remainingClaims if limited
+ * Deducts points and sets hasClaimedThisPeriod on the mock user. Stock in the
+ * database is untouched (only redeem_reward_claim changes it).
  */
 export async function simulateClaim(claimId: string, rewardId: string): Promise<void> {
-  await randomDelay();
-
-  // Find reward by rewardId
-  const reward = mockRewards.find((r) => r.id === rewardId);
+  const reward = await getRewardById(rewardId);
   if (!reward) {
     throw new Error("Reward not found");
   }
@@ -757,16 +1164,6 @@ export async function simulateClaim(claimId: string, rewardId: string): Promise<
   // Set hasClaimedThisPeriod = true and claimedRewardId
   currentMockUser.hasClaimedThisPeriod = true;
   currentMockUser.claimedRewardId = rewardId;
-
-  // If reward.limited, decrement reward.remainingClaims
-  if (reward.limited && reward.remainingClaims !== undefined) {
-    reward.remainingClaims = Math.max(0, reward.remainingClaims - 1);
-    
-    // If remainingClaims reaches 0, mark as unavailable
-    if (reward.remainingClaims === 0) {
-      reward.available = false;
-    }
-  }
 
   // Remove claim from mockActiveClaims Map
   mockActiveClaims.delete(rewardId);
@@ -897,33 +1294,84 @@ export function setMockScenario(scenario: 'default' | 'eligible' | 'claimed'): v
 // Promo Period
 // ============================================================================
 
+interface PromoPeriodRow {
+  starts_on: string; // 'YYYY-MM-DD'
+  ends_on: string;
+  is_active: boolean;
+}
+
 /**
- * Get the current promo period
+ * Get the current promo period: the active one, or the most recent one if
+ * none is active (then `active` is false)
+ *
+ * `active` also requires today to be within its dates, since stamps can't be
+ * collected before it starts or after it ends.
  */
 export async function getPromoPeriod(): Promise<PromoPeriod> {
-  await randomDelay();
-  return mockPromoPeriod;
+  const row = unwrap(
+    await supabase
+      .from("promo_periods")
+      .select("starts_on, ends_on, is_active")
+      .order("is_active", { ascending: false })
+      .order("starts_on", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .overrideTypes<PromoPeriodRow, { merge: false }>(),
+  );
+  if (!row) {
+    throw new Error("No promo period has been set up yet");
+  }
+
+  const today = toDateKey(new Date());
+  return {
+    startDate: fromDateKey(row.starts_on),
+    endDate: fromDateKey(row.ends_on),
+    active: row.is_active && today >= row.starts_on && today <= row.ends_on,
+  };
 }
 
 // ============================================================================
 // Settings
 // ============================================================================
 
+interface SettingsRow {
+  notifications_enabled: boolean;
+}
+
 /**
- * Get user settings
+ * Get user settings (stored on the user's account)
  */
 export async function getSettings(): Promise<Settings> {
-  await randomDelay();
-  return mockSettings;
+  const userId = await requireUserId();
+
+  const row = unwrap(
+    await supabase
+      .from("accounts")
+      .select("notifications_enabled")
+      .eq("id", userId)
+      .single()
+      .overrideTypes<SettingsRow, { merge: false }>(),
+  );
+  return { pushNotificationsEnabled: row.notifications_enabled };
 }
 
 /**
  * Update user settings
- * Updates settings in-memory for the UI-first phase
  */
 export async function updateSettings(settings: Partial<Settings>): Promise<Settings> {
-  await randomDelay();
-  
-  // Update mock settings using spread syntax (via helper function)
-  return updateMockSettings(settings);
+  if (settings.pushNotificationsEnabled === undefined) {
+    return getSettings();
+  }
+  const userId = await requireUserId();
+
+  const row = unwrap(
+    await supabase
+      .from("accounts")
+      .update({ notifications_enabled: settings.pushNotificationsEnabled })
+      .eq("id", userId)
+      .select("notifications_enabled")
+      .single()
+      .overrideTypes<SettingsRow, { merge: false }>(),
+  );
+  return { pushNotificationsEnabled: row.notifications_enabled };
 }

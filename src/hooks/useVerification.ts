@@ -1,4 +1,5 @@
 import { sendVerificationCode, verifyCode as verifyCodeApi } from '@/data/api';
+import type { VerificationPurpose } from '@/data/types';
 import { RESEND_CODE_TIMEOUT } from '@/lib/constants';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -11,7 +12,13 @@ interface UseVerificationReturn {
   canResend: boolean;
 }
 
-export function useVerification(): UseVerificationReturn {
+/**
+ * Code entry state for an emailed 6-digit code: verifying, resending, and the
+ * resend countdown
+ *
+ * @param purpose Which flow the code belongs to (sign-up or password reset)
+ */
+export function useVerification(purpose: VerificationPurpose): UseVerificationReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(RESEND_CODE_TIMEOUT);
@@ -42,7 +49,7 @@ export function useVerification(): UseVerificationReturn {
     setError(null);
 
     try {
-      const result = await verifyCodeApi(email, code);
+      const result = await verifyCodeApi(email, code, purpose);
       setLoading(false);
       return result;
     } catch (err) {
@@ -53,14 +60,14 @@ export function useVerification(): UseVerificationReturn {
       setLoading(false);
       return false;
     }
-  }, []);
+  }, [purpose]);
 
   const resendCode = useCallback(async (email: string): Promise<void> => {
     setLoading(true);
     setError(null);
 
     try {
-      await sendVerificationCode(email);
+      await sendVerificationCode(email, purpose);
       setCountdown(RESEND_CODE_TIMEOUT); // Reset countdown
       setLoading(false);
     } catch (err) {
@@ -70,7 +77,7 @@ export function useVerification(): UseVerificationReturn {
       setError(errorMessage);
       setLoading(false);
     }
-  }, []);
+  }, [purpose]);
 
   const canResend = countdown === 0;
 

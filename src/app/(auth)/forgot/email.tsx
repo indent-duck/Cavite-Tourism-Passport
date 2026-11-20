@@ -38,17 +38,17 @@ export default function ForgotEmailScreen() {
     }
 
     try {
-      await sendCode.fn(email);
+      await sendCode.fn(email.trim(), 'reset');
       // On success, navigate to verification screen with email
       router.push({
         pathname: '/forgot/verify',
-        params: { email },
+        params: { email: email.trim() },
       });
-    } catch {
-      // Error is already set by useAuth hook
-      if (sendCode.error) {
-        setEmailError(sendCode.error);
-      }
+    } catch (error) {
+      // Use the thrown error: the hook's error state is not updated yet in this closure
+      setEmailError(
+        error instanceof Error ? error.message : 'Failed to send verification code. Please try again.'
+      );
     }
   };
 

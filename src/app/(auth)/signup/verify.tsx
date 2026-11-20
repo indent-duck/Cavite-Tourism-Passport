@@ -25,7 +25,7 @@ export default function SignupVerifyScreen() {
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
 
-  const { verifyCode, resendCode, loading, error, countdown, canResend } = useVerification();
+  const { verifyCode, resendCode, loading, error, countdown, canResend } = useVerification('signup');
 
   const handleVerify = async (codeToVerify: string = code) => {
     setCodeError('');
