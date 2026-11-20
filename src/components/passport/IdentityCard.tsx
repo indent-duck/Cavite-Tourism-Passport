@@ -6,6 +6,7 @@ import {
     PASSPORT_ISSUER_LINE,
     PASSPORT_SUBTITLE,
 } from '@/lib/constants';
+import { getFullName } from '@/lib/names';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
@@ -49,13 +50,15 @@ function mrzPad(value: string): string {
 
 /**
  * Builds a decorative, machine-readable-zone style pair of lines
- * from the holder's name, passport ID, and expiry date.
+ * from the holder's surname and given names, passport ID, and expiry date
+ * (surname first, as on a real passport: P<PHLDELA<CRUZ<<JUAN).
  */
-function buildMrz(name: string, passportId: string, validThrough: Date | string): [string, string] {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const surname = parts.length > 1 ? parts[parts.length - 1] : parts[0] ?? '';
-  const given = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
-
+function buildMrz(
+  surname: string,
+  given: string,
+  passportId: string,
+  validThrough: Date | string,
+): [string, string] {
   const expiry = toDate(validThrough);
   const yymmdd = expiry
     ? `${String(expiry.getFullYear()).slice(-2)}${String(expiry.getMonth() + 1).padStart(2, '0')}${String(
@@ -105,7 +108,12 @@ export function IdentityCard() {
 
   const issuedDate = formatPassportDate(promoPeriod.startDate);
   const validThroughDate = formatPassportDate(promoPeriod.endDate);
-  const [mrzLine1, mrzLine2] = buildMrz(currentUser.name, currentUser.passportId, promoPeriod.endDate);
+  const [mrzLine1, mrzLine2] = buildMrz(
+    currentUser.lastName,
+    currentUser.firstName,
+    currentUser.passportId,
+    promoPeriod.endDate,
+  );
 
   return (
     <PassportPage
@@ -137,7 +145,7 @@ export function IdentityCard() {
               valueStyle={styles.passportId}
               numberOfLines={1}
             />
-            <Field label="Full Name" value={currentUser.name} />
+            <Field label="Full Name" value={getFullName(currentUser)} />
           </View>
         </View>
 

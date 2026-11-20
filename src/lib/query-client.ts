@@ -69,9 +69,14 @@ const asyncStoragePersister = createAsyncStoragePersister({
   deserialize,
 });
 
+// Bump when the shape of cached data changes, so caches saved by an older
+// build are discarded instead of rendered (v2: User.name -> firstName/lastName)
+const CACHE_VERSION = '2';
+
 // Configure persistence
 persistQueryClient({
   queryClient,
   persister: asyncStoragePersister,
   maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  buster: CACHE_VERSION,
 });

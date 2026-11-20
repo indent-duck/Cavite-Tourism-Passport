@@ -1,10 +1,13 @@
+import { AddContactSheet } from '@/components/account/AddContactSheet';
 import { AccordionRow } from '@/components/ui/AccordionRow';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { mockFaqs } from '@/data/mock-data';
-import { useSettings } from '@/hooks';
+import { useCurrentUser, useSettings } from '@/hooks';
+import { parseAddress } from '@/lib/address';
 import { APP_VERSION, HELPDESK_EMAIL, SOCIAL_LINKS } from '@/lib/constants';
+import { getFullName } from '@/lib/names';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -29,25 +32,28 @@ import {
  *
  * Opened from the Account tab's "Settings & Preferences" row.
  *
- * 1. Device & alerts – push notification toggle (optimistic) and the real
+ * 1. Account – personal details, change password, add/verify contact number
+ *    (only until it is verified), and delete account (destructive, last)
+ * 2. Device & alerts – push notification toggle (optimistic) and the real
  *    foreground location permission status, with a shortcut to enable it
- * 2. Help & FAQs – single-open accordion
- * 3. Official tourism links – open in the in-app browser
- * 4. Helpdesk card – compose an email to the tourism helpdesk
- * 5. Footer – app name, version, platform
+ * 3. Help & FAQs – single-open accordion
+ * 4. Official tourism links – open in the in-app browser
+ * 5. Helpdesk card – compose an email to the tourism helpdesk
+ * 6. Footer – app name, version, platform
  *
  * The layout renders immediately (no full-screen loading state) so the push
  * transition never swaps content mid-slide; only the switch waits for data.
  */
 
 type IconName = keyof typeof Ionicons.glyphMap;
-type Tone = 'primary' | 'accent' | 'success' | 'neutral';
+type Tone = 'primary' | 'accent' | 'success' | 'neutral' | 'danger';
 
 const TONES: Record<Tone, { background: string; icon: string }> = {
   primary: { background: colors.primaryTint, icon: colors.primary },
   accent: { background: colors.accentTint, icon: colors.accent },
   success: { background: colors.successLight, icon: colors.success },
   neutral: { background: colors.surface, icon: colors.textSecondary },
+  danger: { background: colors.errorTint, icon: colors.error },
 };
 
 const FAQ_TONES: Tone[] = ['primary', 'accent', 'neutral', 'success'];
@@ -101,7 +107,12 @@ const OFFICIAL_LINKS: {
 
 export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
+  const { data: user } = useCurrentUser();
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+  const [contactSheetVisible, setContactSheetVisible] = useState(false);
+
+  const hasContact = Boolean(user?.contactNumber);
+  const municipality = user ? (parseAddress(user.address).municipality ?? user.address) : null;
 
   const handleLinkPress = async (url: string) => {
     try {
@@ -131,6 +142,58 @@ export default function SettingsScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.container}>
+        {/* Account */}
+        <Section title="Account">
+          <View style={styles.card}>
+            <NavRow
+              icon="person-outline"
+              tone="primary"
+              title="Personal details"
+              subtitle={user ? `${getFullName(user)} · ${municipality}` : 'Name and city or municipality'}
+              onPress={() => router.push('/edit-profile')}
+              testID="settings-personal-details"
+            />
+            <View style={styles.rowDivider} />
+            <NavRow
+              icon="lock-closed-outline"
+              tone="primary"
+              title="Change password"
+              subtitle="Update the password you log in with"
+              onPress={() => router.push('/change-password')}
+              testID="settings-change-password"
+            />
+            {/* Shown until the number is verified; the Account tab shows it afterwards */}
+            {user && !user.contactVerified && (
+              <>
+                <View style={styles.rowDivider} />
+                <NavRow
+                  icon="phone-portrait-outline"
+                  tone="accent"
+                  title={hasContact ? 'Verify contact number' : 'Add contact number'}
+                  subtitle="For SMS codes on perks and stamp claims"
+                  onPress={() => setContactSheetVisible(true)}
+                  trailing={
+                    <View style={styles.smallButton}>
+                      <Text style={styles.smallButtonText}>{hasContact ? 'Verify' : 'Add'}</Text>
+                    </View>
+                  }
+                  testID="settings-contact-number"
+                />
+              </>
+            )}
+            <View style={styles.rowDivider} />
+            <NavRow
+              icon="trash-outline"
+              tone="danger"
+              title="Delete account"
+              subtitle="Permanently remove your passport and data"
+              onPress={() => router.push('/delete-account')}
+              destructive
+              testID="settings-delete-account"
+            />
+          </View>
+        </Section>
+
         {/* Device & Alerts */}
         <Section title="Device & alerts">
           <View style={styles.card}>
@@ -232,6 +295,14 @@ export default function SettingsScreen() {
           </View>
         </View>
       </View>
+
+      {/* Add / verify contact number (refreshes currentUser on success) */}
+      <AddContactSheet
+        visible={contactSheetVisible}
+        onDismiss={() => setContactSheetVisible(false)}
+        onSuccess={() => {}}
+        initialNumber={user?.contactNumber}
+      />
     </ScreenContainer>
   );
 }
@@ -384,6 +455,50 @@ function LocationRow() {
   );
 }
 
+/** Row that opens another screen or sheet; `destructive` paints the title red */
+function NavRow({
+  icon,
+  tone,
+  title,
+  subtitle,
+  onPress,
+  trailing,
+  destructive = false,
+  testID,
+}: {
+  icon: IconName;
+  tone: Tone;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  trailing?: ReactNode;
+  destructive?: boolean;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.row,
+        pressed && (destructive ? styles.rowPressedDestructive : styles.rowPressed),
+      ]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={subtitle}
+      testID={testID}
+    >
+      <IconChip icon={icon} tone={tone} />
+      <View style={styles.rowText}>
+        <Text style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>{title}</Text>
+        <Text style={styles.rowSubtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
+      {trailing ?? <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />}
+    </Pressable>
+  );
+}
+
 function LinkRow({
   icon,
   tone,
@@ -484,6 +599,9 @@ const styles = StyleSheet.create({
   rowPressed: {
     backgroundColor: colors.surface,
   },
+  rowPressedDestructive: {
+    backgroundColor: colors.errorTint,
+  },
   rowText: {
     flex: 1,
     gap: 2,
@@ -493,6 +611,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: colors.text,
     flexShrink: 1,
+  },
+  rowTitleDestructive: {
+    color: colors.error,
   },
   rowSubtitle: {
     ...typography.bodySmall,
@@ -519,7 +640,7 @@ const styles = StyleSheet.create({
     marginHorizontal: (ICON_CHIP_SIZE - ICON_CHIP_SIZE_SMALL) / 2,
   },
 
-  // Location "Turn on" button
+  // Small pill button ("Turn on" location, "Add"/"Verify" contact number)
   smallButton: {
     paddingHorizontal: spacing.md,
     paddingVertical: 6,

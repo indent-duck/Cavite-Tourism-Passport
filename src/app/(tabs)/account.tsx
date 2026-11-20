@@ -9,6 +9,7 @@ import { usePromoPeriod } from "@/hooks/usePromoPeriod";
 import { useSignOut } from "@/hooks/useSignOut";
 import { useSites } from "@/hooks/useSites";
 import { APP_VERSION } from "@/lib/constants";
+import { getFullName } from "@/lib/names";
 import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export default function AccountScreen() {
 
         {/* Digital ID Card */}
         <PassportIdCard
-          userName={user.name}
+          userName={getFullName(user)}
           municipality={user.address}
           passportId={user.passportId}
         />
@@ -206,7 +207,7 @@ export default function AccountScreen() {
             icon="settings-outline"
             tone="primary"
             title="Settings & Preferences"
-            subtitle="Push notifications & help FAQs"
+            subtitle="Account, notifications & help FAQs"
             onPress={() => router.push("/settings")}
           />
           <View style={styles.linkDivider} />
@@ -261,6 +262,7 @@ export default function AccountScreen() {
         visible={contactSheetVisible}
         onDismiss={() => setContactSheetVisible(false)}
         onSuccess={() => {}}
+        initialNumber={user.contactNumber}
       />
 
       <LogoutConfirmModal

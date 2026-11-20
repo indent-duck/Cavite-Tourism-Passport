@@ -4,32 +4,21 @@ import { PasswordCriteria } from '@/components/ui/PasswordCriteria';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
-import {
-    MIN_PASSWORD_LENGTH,
-    PASSWORD_REQUIRES_NUMBER,
-    PASSWORD_REQUIRES_SPECIAL,
-    PASSWORD_REQUIRES_UPPERCASE,
-} from '@/lib/constants';
+import { formatAddress } from '@/lib/address';
 import { hapticError } from '@/lib/haptics';
+import { getNameError, MAX_NAME_LENGTH, normalizeName } from '@/lib/names';
+import { isValidPassword } from '@/lib/password';
 import { colors, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type ComponentRef } from 'react';
 import { StyleSheet, Text, View, type ScrollView } from 'react-native';
 
-// Password validation helper
-const validatePassword = (pwd: string): boolean => {
-  if (pwd.length < MIN_PASSWORD_LENGTH) return false;
-  if (PASSWORD_REQUIRES_NUMBER && !/\d/.test(pwd)) return false;
-  if (PASSWORD_REQUIRES_UPPERCASE && !/[A-Z]/.test(pwd)) return false;
-  if (PASSWORD_REQUIRES_SPECIAL && !/[!@#$%^&*]/.test(pwd)) return false;
-  return true;
-};
-
 /**
  * Sign Up - Step 3: Personal Details
  *
- * Final step of signup where user enters name, address, and creates a password.
+ * Final step of signup where user enters first and last name, address, and
+ * creates a password.
  * The address is built from a city/municipality picked from all of Cavite's
  * LGUs plus an optional barangay/street line. Includes live password criteria.
  *
@@ -38,13 +27,15 @@ const validatePassword = (pwd: string): boolean => {
 export default function SignupDetailsScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
 
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [municipality, setMunicipality] = useState<string | null>(null);
   const [street, setStreet] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [nameError, setNameError] = useState('');
+  const [firstNameError, setFirstNameError] = useState('');
+  const [lastNameError, setLastNameError] = useState('');
   const [municipalityError, setMunicipalityError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
@@ -60,7 +51,8 @@ export default function SignupDetailsScreen() {
   const { signUp } = useAuth();
 
   const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
-  const nameRef = useRef<TextInputRef>(null);
+  const firstNameRef = useRef<TextInputRef>(null);
+  const lastNameRef = useRef<TextInputRef>(null);
   const streetRef = useRef<TextInputRef>(null);
   const passwordRef = useRef<TextInputRef>(null);
   const confirmPasswordRef = useRef<TextInputRef>(null);
@@ -69,18 +61,20 @@ export default function SignupDetailsScreen() {
   const municipalityY = useRef(0);
 
   const handleCreateAccount = async () => {
-    setNameError('');
+    setFirstNameError('');
+    setLastNameError('');
     setMunicipalityError('');
     setPasswordError('');
     setConfirmPasswordError('');
     setFormError('');
 
     const errors = {
-      name: !name.trim() ? 'Full name is required' : '',
+      firstName: getNameError(firstName, 'First name'),
+      lastName: getNameError(lastName, 'Last name'),
       municipality: !municipality ? 'Select your city or municipality' : '',
       password: !password
         ? 'Password is required'
-        : !validatePassword(password)
+        : !isValidPassword(password)
           ? 'Password must meet all criteria'
           : '',
       confirmPassword: !confirmPassword
@@ -90,16 +84,25 @@ export default function SignupDetailsScreen() {
           : '',
     };
 
-    setNameError(errors.name);
+    setFirstNameError(errors.firstName);
+    setLastNameError(errors.lastName);
     setMunicipalityError(errors.municipality);
     setPasswordError(errors.password);
     setConfirmPasswordError(errors.confirmPassword);
 
     // Take the user to the first problem, top to bottom
-    if (errors.name || errors.municipality || errors.password || errors.confirmPassword) {
+    if (
+      errors.firstName ||
+      errors.lastName ||
+      errors.municipality ||
+      errors.password ||
+      errors.confirmPassword
+    ) {
       hapticError();
-      if (errors.name) {
-        nameRef.current?.focus();
+      if (errors.firstName) {
+        firstNameRef.current?.focus();
+      } else if (errors.lastName) {
+        lastNameRef.current?.focus();
       } else if (errors.municipality) {
         scrollViewRef.current?.scrollTo({
           y: Math.max(0, formY.current + municipalityY.current - spacing.xl),
@@ -113,10 +116,10 @@ export default function SignupDetailsScreen() {
       return;
     }
 
-    const address = [street.trim(), municipality, 'Cavite', 'Philippines'].filter(Boolean).join(', ');
+    const address = formatAddress(street, municipality ?? '');
 
     try {
-      await signUp.fn(email, name.trim(), address, password);
+      await signUp.fn(email, normalizeName(firstName), normalizeName(lastName), address, password);
       // On success, navigate to main app and clear auth stack
       router.replace('/(tabs)/explore');
     } catch (error) {
@@ -150,22 +153,43 @@ export default function SignupDetailsScreen() {
         }}
       >
         <TextInput
-          ref={nameRef}
-          label="Full name"
+          ref={firstNameRef}
+          label="First name"
           leftIcon="person-outline"
-          value={name}
+          value={firstName}
           onChangeText={(text) => {
-            setName(text);
-            setNameError('');
+            setFirstName(text);
+            setFirstNameError('');
           }}
-          placeholder="e.g. Juan Dela Cruz"
+          placeholder="e.g. Juan"
           autoCapitalize="words"
-          autoComplete="name"
-          textContentType="name"
+          autoComplete="given-name"
+          textContentType="givenName"
+          maxLength={MAX_NAME_LENGTH}
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => lastNameRef.current?.focus()}
+          error={firstNameError}
+        />
+
+        <TextInput
+          ref={lastNameRef}
+          label="Last name"
+          leftIcon="person-outline"
+          value={lastName}
+          onChangeText={(text) => {
+            setLastName(text);
+            setLastNameError('');
+          }}
+          placeholder="e.g. Dela Cruz"
+          autoCapitalize="words"
+          autoComplete="family-name"
+          textContentType="familyName"
+          maxLength={MAX_NAME_LENGTH}
           returnKeyType="next"
           submitBehavior="submit"
           onSubmitEditing={() => streetRef.current?.focus()}
-          error={nameError}
+          error={lastNameError}
         />
 
         <View

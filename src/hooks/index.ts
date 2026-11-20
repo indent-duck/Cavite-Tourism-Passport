@@ -1,9 +1,11 @@
 export { useAboutCavite } from './useAboutCavite';
 export { useActiveClaim } from './useActiveClaim';
 export { useAuth } from './useAuth';
+export { useChangePassword } from './useChangePassword';
 export { useCollectStamp } from './useCollectStamp';
 export { useContactVerification } from './useContactVerification';
 export { useCurrentUser } from './useCurrentUser';
+export { useAccountDeletionSummary, useDeleteAccount } from './useDeleteAccount';
 export { useEventById } from './useEventById';
 export { useEvents } from './useEvents';
 export { useExpressways } from './useExpressways';
@@ -28,5 +30,6 @@ export { useSites } from './useSites';
 export { useStampRequests } from './useStampRequests';
 export { useStamps } from './useStamps';
 export { useSubmitStampRequest } from './useSubmitStampRequest';
+export { useUpdateProfile } from './useUpdateProfile';
 export { useVerification } from './useVerification';
 

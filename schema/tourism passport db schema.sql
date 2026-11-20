@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS `app_settings` (
 CREATE TABLE IF NOT EXISTS `accounts` (
 	`id` INTEGER,
 	`passport_id` VARCHAR(32) NOT NULL UNIQUE,
-	`full_name` VARCHAR(255),
+	`first_name` VARCHAR(255),
+	`last_name` VARCHAR(255),
 	`address` TEXT,
 	`contact_number` VARCHAR(32),
 	`contact_verified_at` DATETIME,

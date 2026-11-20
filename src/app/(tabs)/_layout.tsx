@@ -9,6 +9,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { getFullName } from '@/lib/names';
 import { colors } from '@/theme';
 
 const TAB_PATHS = new Set(['/explore', '/passport', '/scan', '/discover', '/account']);
@@ -58,7 +59,7 @@ export default function TabsLayout() {
       {/* Header at the top of all tab screens except Account */}
       {showHeader && (
         <Header
-          userName={user.name}
+          userName={getFullName(user)}
           points={user.points}
           onPointsPress={handlePointsPress}
           rightSlot={showPromoChip ? <PromoChip /> : undefined}

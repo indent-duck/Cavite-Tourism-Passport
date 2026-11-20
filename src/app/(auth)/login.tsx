@@ -1,5 +1,6 @@
 import { AuthLink, AuthSwitchPrompt, FormBanner, PassportCover } from '@/components/auth';
 import { Button } from '@/components/ui/Button';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { KeyboardFooter } from '@/components/ui/KeyboardFooter';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,7 +8,7 @@ import { EMAIL_REGEX } from '@/lib/constants';
 import { hapticError } from '@/lib/haptics';
 import { colors, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useIsFocused } from 'expo-router';
+import { router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -29,6 +30,8 @@ const PAGE_OVERLAP = 24;
  * Leather "passport cover" hero with the sign-in form on a cream page below.
  * Mock rule: password "wrong" shows error, others succeed.
  * Navigates to Explore on success.
+ * Opened after deleting an account (`?notice=account-deleted`), it first
+ * shows a feedback dialog confirming the deletion.
  *
  * Keyboard: the Log in button rides on top of the keyboard, and the page is
  * lifted by one amount so the whole form ends just above the button. The lift
@@ -43,6 +46,8 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [formError, setFormError] = useState('');
+  const { notice } = useLocalSearchParams<{ notice?: string }>();
+  const [showDeletedFeedback, setShowDeletedFeedback] = useState(notice === 'account-deleted');
 
   const { signIn } = useAuth();
   const insets = useSafeAreaInsets();
@@ -231,6 +236,17 @@ export default function LoginScreen() {
           onPress={() => router.replace('/signup/email')}
         />
       </KeyboardFooter>
+
+      <FeedbackModal
+        visible={showDeletedFeedback}
+        onDone={() => setShowDeletedFeedback(false)}
+        icon="trash-outline"
+        tone="neutral"
+        title="Account deleted"
+        message="Your passport, stamps, points and personal details have been permanently removed. Thanks for exploring Cavite with us."
+        buttonTitle="OK"
+        testID="account-deleted"
+      />
     </View>
   );
 }

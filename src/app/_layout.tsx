@@ -52,6 +52,9 @@ export default function RootLayout() {
               <Stack.Screen name="events/[id]" />
               <Stack.Screen name="rewards" />
               <Stack.Screen name="settings" />
+              <Stack.Screen name="edit-profile" />
+              <Stack.Screen name="change-password" />
+              <Stack.Screen name="delete-account" />
               <Stack.Screen name="stamp-requests/index" />
               <Stack.Screen name="stamp-requests/new" />
             </Stack>

@@ -15,7 +15,7 @@ import {
  * Button Component
  * 
  * A versatile button with multiple variants, loading states, and haptic feedback.
- * Supports four visual styles (accent, primary, outline, text) and two sizes.
+ * Supports five visual styles (accent, primary, danger, outline, text) and two sizes.
  * 
  * Validates: Requirements 1.2.1 (Button Component)
  */
@@ -35,11 +35,12 @@ export interface ButtonProps {
    * Visual style variant of the button
    * - accent: Orange solid background (primary CTA)
    * - primary: Navy blue solid background
+   * - danger: Red solid background (destructive, e.g. delete account)
    * - outline: Transparent with border
    * - text: Text only, no background or border
    * @default 'accent'
    */
-  variant?: 'accent' | 'primary' | 'outline' | 'text';
+  variant?: 'accent' | 'primary' | 'danger' | 'outline' | 'text';
 
   /**
    * Whether the button is disabled
@@ -121,6 +122,11 @@ export const Button: React.FC<ButtonProps> = ({
           ...baseStyle,
           backgroundColor: colors.primary,
         };
+      case 'danger':
+        return {
+          ...baseStyle,
+          backgroundColor: colors.error,
+        };
       case 'outline':
         return {
           ...baseStyle,
@@ -147,6 +153,7 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'accent':
       case 'primary':
+      case 'danger':
         return {
           ...baseTextStyle,
           color: colors.background, // White text on solid backgrounds
@@ -167,6 +174,7 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'accent':
       case 'primary':
+      case 'danger':
         return colors.background; // White spinner on solid backgrounds
       case 'outline':
       case 'text':

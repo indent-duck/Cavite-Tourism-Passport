@@ -2,12 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { PasswordCriteria } from '@/components/ui/PasswordCriteria';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { useAuth } from '@/hooks/useAuth';
-import {
-    MIN_PASSWORD_LENGTH,
-    PASSWORD_REQUIRES_NUMBER,
-    PASSWORD_REQUIRES_SPECIAL,
-    PASSWORD_REQUIRES_UPPERCASE,
-} from '@/lib/constants';
+import { isValidPassword } from '@/lib/password';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -41,15 +36,6 @@ export default function ForgotNewPasswordScreen() {
 
   const { resetPassword } = useAuth();
 
-  // Password validation helper
-  const validatePassword = (pwd: string): boolean => {
-    if (pwd.length < MIN_PASSWORD_LENGTH) return false;
-    if (PASSWORD_REQUIRES_NUMBER && !/\d/.test(pwd)) return false;
-    if (PASSWORD_REQUIRES_UPPERCASE && !/[A-Z]/.test(pwd)) return false;
-    if (PASSWORD_REQUIRES_SPECIAL && !/[!@#$%^&*]/.test(pwd)) return false;
-    return true;
-  };
-
   const handleResetPassword = async () => {
     // Reset errors
     setNewPasswordError('');
@@ -61,7 +47,7 @@ export default function ForgotNewPasswordScreen() {
     if (!newPassword) {
       setNewPasswordError('Password is required');
       hasError = true;
-    } else if (!validatePassword(newPassword)) {
+    } else if (!isValidPassword(newPassword)) {
       setNewPasswordError('Password must meet all criteria');
       hasError = true;
     }
@@ -220,7 +206,7 @@ export default function ForgotNewPasswordScreen() {
             variant="primary"
             fullWidth
             loading={resetPassword.loading}
-            disabled={!validatePassword(newPassword) || newPassword !== confirmPassword}
+            disabled={!isValidPassword(newPassword) || newPassword !== confirmPassword}
             icon={<Ionicons name="checkmark-circle" size={20} color={colors.background} />}
           />
         </View>

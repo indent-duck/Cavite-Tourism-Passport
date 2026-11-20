@@ -3,6 +3,12 @@ export { Button, type ButtonProps } from './Button';
 export { Card, type CardProps } from './Card';
 export { Chip, type ChipProps } from './Chip';
 export { CodeInput, type CodeInputProps } from './CodeInput';
+export {
+  FeedbackContent,
+  FeedbackModal,
+  type FeedbackContentProps,
+  type FeedbackModalProps,
+} from './FeedbackModal';
 export { Header, type HeaderProps } from './Header';
 export { KeyboardFooter } from './KeyboardFooter';
 export { PasswordCriteria, type PasswordCriteriaProps } from './PasswordCriteria';

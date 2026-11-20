@@ -1,4 +1,5 @@
 import { CodeInput } from '@/components/ui/CodeInput';
+import { FeedbackContent } from '@/components/ui/FeedbackModal';
 import { useContactVerification } from '@/hooks/useContactVerification';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,8 @@ export interface AddContactSheetProps {
   visible: boolean;
   onDismiss: () => void;
   onSuccess: () => void;
+  /** Unverified number already on the account (+63XXXXXXXXXX), prefilled so it can be verified */
+  initialNumber?: string;
 }
 
 type Stage = 'phone-input' | 'otp-verification' | 'success';
@@ -35,11 +38,18 @@ type Stage = 'phone-input' | 'otp-verification' | 'success';
  * 
  * Requirements: Modal component for contact number verification flow
  */
-export function AddContactSheet({ visible, onDismiss, onSuccess }: AddContactSheetProps) {
+export function AddContactSheet({ visible, onDismiss, onSuccess, initialNumber }: AddContactSheetProps) {
   const insets = useSafeAreaInsets();
+  const isVerifying = Boolean(initialNumber);
   
   const [stage, setStage] = useState<Stage>('phone-input');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(() => toLocalDigits(initialNumber));
+  // Prefill again each time the sheet opens (the account's number may have loaded since mount)
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) setPhoneNumber(toLocalDigits(initialNumber));
+  }
   const [code, setCode] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -193,12 +203,16 @@ export function AddContactSheet({ visible, onDismiss, onSuccess }: AddContactShe
                 <View style={styles.iconCircle}>
                   <Ionicons name="chatbox-outline" size={18} color={colors.accent} />
                 </View>
-                <Text style={styles.stageTitle}>Add Contact Number</Text>
+                <Text style={styles.stageTitle}>
+                  {isVerifying ? 'Verify Contact Number' : 'Add Contact Number'}
+                </Text>
               </View>
 
               {/* Description */}
               <Text style={styles.description}>
-                Enter your 10-digit mobile number to receive instant SMS codes for verified tourist perks and stamp claims.
+                {isVerifying
+                  ? 'Confirm your 10-digit mobile number and we’ll text you a code to verify it.'
+                  : 'Enter your 10-digit mobile number to receive instant SMS codes for verified tourist perks and stamp claims.'}
               </Text>
 
               {/* Phone Input */}
@@ -316,28 +330,30 @@ export function AddContactSheet({ visible, onDismiss, onSuccess }: AddContactShe
           )}
 
           {stage === 'success' && (
-            <View style={styles.stageContainer}>
-              {/* Success Content */}
-              <View style={styles.successContent}>
-                <View style={styles.successIconContainer}>
-                  <Ionicons name="checkmark-circle" size={32} color="#059669" />
-                </View>
-                <Text style={styles.successTitle}>Number Successfully Linked!</Text>
-                <Text style={styles.successDescription}>
-                  Your Cavite Tourism Passport is now updated with verified SMS notices.
-                </Text>
-              </View>
-
-              {/* Done Button */}
-              <Pressable style={styles.accentButton} onPress={handleDone}>
-                <Text style={styles.accentButtonText}>Done</Text>
-              </Pressable>
+            <View style={[styles.stageContainer, styles.successStage]}>
+              {/* Same feedback layout as the other account actions */}
+              <FeedbackContent
+                icon="phone-portrait"
+                title="Contact number verified"
+                message="Your passport will now get SMS codes for verified tourist perks and stamp claims."
+                note={{ icon: 'chatbox-outline', text: `+63 ${formatPhoneForDisplay(phoneNumber)}` }}
+                buttonTitle="Done"
+                onPress={handleDone}
+                testID="contact-verified"
+              />
             </View>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
+}
+
+/** "+63 917 123 4567" / "09171234567" -> "9171234567" (empty if it isn't a PH mobile number) */
+function toLocalDigits(number?: string): string {
+  const digits = (number ?? '').replace(/\D/g, '');
+  const local = digits.replace(/^(63|0)(?=9\d{9}$)/, '');
+  return /^9\d{9}$/.test(local) ? local : '';
 }
 
 const styles = StyleSheet.create({
@@ -566,31 +582,10 @@ const styles = StyleSheet.create({
   },
   
   // Success stage
-  successContent: {
-    flex: 1,
-    alignItems: 'center',
+  successStage: {
     justifyContent: 'center',
-  },
-  successIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#D1FAE5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  successTitle: {
-    ...typography.titleMedium,
-    color: colors.primary,
-    marginTop: spacing.sm,
-    textAlign: 'center',
-  },
-  successDescription: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    alignSelf: 'center',
+    width: '100%',
     maxWidth: 320,
-    marginTop: spacing.sm,
   },
 });

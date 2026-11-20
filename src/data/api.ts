@@ -4,6 +4,7 @@ import {
     GEOFENCE_DISTANCE_METERS,
     parseSiteQr
 } from "@/lib/constants";
+import { FieldError } from "@/lib/errors";
 import { getDistanceMeters } from "@/lib/geo";
 import { fromDateKey, isValidVisitDate } from "@/lib/stamp-requests";
 import {
@@ -23,13 +24,16 @@ import {
 } from "./mock-data";
 import {
     AboutCaviteContent,
+    AccountDeletionSummary,
     ActiveClaim,
     Category,
     CollectStampResult,
     Event,
     Expressway,
     Itinerary,
+    PasswordChangeProof,
     POINTS_PER_CATEGORY,
+    ProfileUpdate,
     PromoPeriod,
     Reward,
     RewardEligibility,
@@ -81,12 +85,13 @@ export async function verifyCode(email: string, code: string): Promise<boolean> 
  */
 export async function signUp(
   email: string,
-  name: string,
+  firstName: string,
+  lastName: string,
   address: string,
   password: string,
 ): Promise<User> {
   await randomDelay();
-  return { ...currentMockUser, email, name, address };
+  return { ...currentMockUser, email, firstName, lastName, address };
 }
 
 /**
@@ -163,15 +168,121 @@ export async function signOut(): Promise<void> {
  */
 export async function getCurrentUser(): Promise<User> {
   await randomDelay();
-  return currentMockUser;
+  // A copy, so React Query sees a new object after the mock user changes in place
+  return { ...currentMockUser };
+}
+
+// ============================================================================
+// Account Management (Settings → Account)
+// ============================================================================
+
+// Profile as it was at launch, so a mock account deletion can restore it
+const initialMockProfile: ProfileUpdate = {
+  firstName: currentMockUser.firstName,
+  lastName: currentMockUser.lastName,
+  address: currentMockUser.address,
+};
+
+/**
+ * Update the user's first name, last name and address
+ *
+ * Supabase: update `accounts.first_name`, `accounts.last_name` and
+ * `accounts.address` for the signed-in user. Only these columns may be
+ * writable by the user (column-level
+ * `GRANT UPDATE (first_name, last_name, address)` or an `update_profile`
+ * RPC). A plain "update own row" policy would also let users change `role`,
+ * `passport_id` or `contact_verified_at`.
+ */
+export async function updateProfile(updates: ProfileUpdate): Promise<User> {
+  await randomDelay();
+  currentMockUser.firstName = updates.firstName;
+  currentMockUser.lastName = updates.lastName;
+  currentMockUser.address = updates.address;
+  return { ...currentMockUser };
 }
 
 /**
- * Update user profile information
+ * Email a one-time code to the signed-in user, so they can change their
+ * password without knowing the current one
+ *
+ * Supabase: `auth.reauthenticate()` (emails a nonce)
+ * Mock: always succeeds; the code is "123456"
  */
-export async function updateUser(updates: Partial<User>): Promise<User> {
+export async function sendReauthenticationCode(): Promise<void> {
   await randomDelay();
-  return { ...currentMockUser, ...updates };
+}
+
+/**
+ * Change the signed-in user's password
+ *
+ * The user proves it's them with their current password or with the code
+ * from sendReauthenticationCode().
+ *
+ * Supabase: check the current password with `auth.signInWithPassword`, or
+ * pass the code as the nonce, then `auth.updateUser({ password, nonce })`.
+ * Mock: current password "wrong" fails, and any code other than "123456".
+ */
+export async function changePassword(
+  newPassword: string,
+  proof: PasswordChangeProof,
+): Promise<void> {
+  await randomDelay();
+
+  if ('currentPassword' in proof && proof.currentPassword === 'wrong') {
+    throw new FieldError('currentPassword', 'Your current password is incorrect.');
+  }
+  if ('code' in proof && proof.code !== '123456') {
+    throw new FieldError('code', 'Invalid verification code. Please try again.');
+  }
+}
+
+/**
+ * Summarize what deleting the account would remove
+ */
+export async function getAccountDeletionSummary(): Promise<AccountDeletionSummary> {
+  await randomDelay();
+
+  const now = Date.now();
+  return {
+    passportId: currentMockUser.passportId,
+    stampCount: currentMockStamps.length,
+    points: currentMockUser.points,
+    pendingStampRequests: currentMockStampRequests.filter(
+      (request) => request.status === 'pending',
+    ).length,
+    hasActiveVoucher: Array.from(mockActiveClaims.values()).some(
+      (claim) => claim.expiresAt.getTime() > now,
+    ),
+  };
+}
+
+/**
+ * Permanently delete the signed-in user's account
+ *
+ * Supabase: a `delete-account` Edge Function, since deleting an auth user
+ * needs the service role key. It checks the caller's JWT and password,
+ * refuses officer/admin accounts (`reward_claims.claimed_by` points at them
+ * with no cascade), deletes `stamp-requests/{account_id}/*` from Storage, then
+ * calls `auth.admin.deleteUser()`. The database cascades to accounts, stamps,
+ * reward_claims and stamp_requests.
+ * Mock: password "wrong" fails. Otherwise it undoes this session's changes
+ * (profile edits, contact number, vouchers, stamp requests) so the demo
+ * account can log in again; the sample stamps and points stay.
+ */
+export async function deleteAccount(password: string): Promise<void> {
+  await randomDelay();
+
+  if (password === 'wrong') {
+    throw new FieldError('password', 'Incorrect password.');
+  }
+
+  currentMockUser.firstName = initialMockProfile.firstName;
+  currentMockUser.lastName = initialMockProfile.lastName;
+  currentMockUser.address = initialMockProfile.address;
+  currentMockUser.contactNumber = undefined;
+  currentMockUser.contactVerified = false;
+  mockActiveClaims.clear();
+  currentMockStampRequests.length = 0;
 }
 
 // ============================================================================

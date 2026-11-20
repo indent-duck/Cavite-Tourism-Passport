@@ -4,7 +4,8 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string; // Given name(s), e.g. "Juan" or "Maria Clara"
+  lastName: string; // Surname, e.g. "Dela Cruz" (use getFullName() to display both)
   address: string;
   contactNumber?: string; // Added later in Account settings
   contactVerified?: boolean;
@@ -13,6 +14,25 @@ export interface User {
   createdAt: Date;
   hasClaimedThisPeriod?: boolean; // User has claimed a reward this promo period
   claimedRewardId?: string; // ID of the reward claimed (if hasClaimedThisPeriod is true)
+}
+
+// Account management (Settings → Account)
+
+/** The only profile fields a user can change themselves */
+export type ProfileUpdate = Pick<User, 'firstName' | 'lastName' | 'address'>;
+
+/** How the user proves it's them before changing their password */
+export type PasswordChangeProof =
+  | { currentPassword: string }
+  | { code: string }; // One-time code emailed by sendReauthenticationCode()
+
+/** What deleting the account would remove, shown before the user confirms */
+export interface AccountDeletionSummary {
+  passportId: string;
+  stampCount: number;
+  points: number;
+  pendingStampRequests: number;
+  hasActiveVoucher: boolean; // An unexpired reward claim QR
 }
 
 // Category taxonomy

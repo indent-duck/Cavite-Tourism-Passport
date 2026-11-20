@@ -23,7 +23,8 @@ const USE_ELIGIBLE_USER = false;
 export const mockUser: User = {
   id: "user-001",
   email: "juan.delacruz@example.com",
-  name: "Juan Dela Cruz",
+  firstName: "Juan",
+  lastName: "Dela Cruz",
   address: "Dasmariñas, Cavite",
   passportId: "CVT-2027-000123",
   points: 450,
@@ -36,7 +37,8 @@ export const mockUser: User = {
 const mockEligibleUser: User = {
   id: "user-001",
   email: "juan.delacruz@example.com",
-  name: "Juan Dela Cruz",
+  firstName: "Juan",
+  lastName: "Dela Cruz",
   address: "Dasmariñas, Cavite",
   passportId: "CVT-2027-000123",
   points: 750,

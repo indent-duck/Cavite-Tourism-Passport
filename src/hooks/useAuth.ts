@@ -47,12 +47,18 @@ export function useAuth() {
   const [signUpError, setSignUpError] = useState<string | null>(null);
 
   const signUp = useCallback(
-    async (email: string, name: string, address: string, password: string): Promise<User> => {
+    async (
+      email: string,
+      firstName: string,
+      lastName: string,
+      address: string,
+      password: string
+    ): Promise<User> => {
       setSignUpLoading(true);
       setSignUpError(null);
 
       try {
-        const user = await apiSignUp(email, name, address, password);
+        const user = await apiSignUp(email, firstName, lastName, address, password);
         return user;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to create account. Please try again.';
