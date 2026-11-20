@@ -30,7 +30,9 @@ import {
   Alert,
   FlatList,
   Linking,
+  Platform,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -290,6 +292,37 @@ export default function ExploreScreen() {
     if (stampsError) refetchStamps();
   };
 
+  // Pull-to-refresh. Own flag per list rather than the queries' isRefetching,
+  // so background refetches don't flash the spinner, and a refresh started on
+  // one list doesn't show a spinner on the other.
+  const [refreshingList, setRefreshingList] = useState<ExploreView | null>(
+    null,
+  );
+
+  const refreshList = async (view: ExploreView) => {
+    setRefreshingList(view);
+    try {
+      // Stamps drive "Visited" badges and itinerary progress, so they refresh
+      // with either list
+      await Promise.all([
+        refetchSites(),
+        refetchStamps(),
+        view === "Itineraries" ? refetchItineraries() : undefined,
+      ]);
+    } finally {
+      setRefreshingList(null);
+    }
+  };
+
+  const renderRefreshControl = (view: ExploreView) => (
+    <RefreshControl
+      refreshing={refreshingList === view}
+      onRefresh={() => refreshList(view)}
+      tintColor={colors.primary}
+      colors={[colors.primary]}
+    />
+  );
+
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedCategory("All");
@@ -321,6 +354,19 @@ export default function ExploreScreen() {
       }
       const result = await location.requestPermission();
       if (!result.granted) return;
+    }
+
+    // Permission alone isn't enough when device location is switched off.
+    // Android shows its own dialog for that (declining it needs no message);
+    // iOS can't, so explain.
+    if (!(await location.ensureLocationOn())) {
+      if (Platform.OS === "ios") {
+        Alert.alert(
+          "Location Services are off",
+          "Turn on Location Services in Settings to sort sites by distance.",
+        );
+      }
+      return;
     }
 
     setSortByDistance(true);
@@ -616,8 +662,17 @@ export default function ExploreScreen() {
             tearing down one list and building the other — and each keeps
             its scroll position. */}
         <View style={[styles.listLayer, isMapMode && styles.hidden]}>
-          {/* Sites — List View (Requirement 2.2.1–2.2.4) */}
-          <View style={[styles.fill, !isSitesView && styles.hidden]}>
+          {/* Sites — List View (Requirement 2.2.1–2.2.4). The list's frame
+              starts below the pinned search + chips rows (padding here, not
+              on the list content), so the pull-to-refresh spinner appears
+              below them instead of behind them. */}
+          <View
+            style={[
+              styles.fill,
+              { paddingTop: filtersHeight },
+              !isSitesView && styles.hidden,
+            ]}
+          >
             <FlatList
               data={sitesReady ? listedSites : []}
               keyExtractor={(site) => site.id}
@@ -625,11 +680,8 @@ export default function ExploreScreen() {
               ListHeaderComponent={sitesListHeader}
               ListEmptyComponent={renderSitesState() ?? undefined}
               ItemSeparatorComponent={CardSeparator}
-              // Starts below the pinned search + chips rows
-              contentContainerStyle={[
-                listContentStyle,
-                { paddingTop: filtersHeight },
-              ]}
+              contentContainerStyle={listContentStyle}
+              refreshControl={renderRefreshControl("Sites")}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
@@ -650,6 +702,7 @@ export default function ExploreScreen() {
               ListEmptyComponent={renderItinerariesState()}
               ItemSeparatorComponent={CardSeparator}
               contentContainerStyle={listContentStyle}
+              refreshControl={renderRefreshControl("Itineraries")}
               showsVerticalScrollIndicator={false}
               testID="explore-itineraries-list"
             />
@@ -767,8 +820,7 @@ const styles = StyleSheet.create({
     color: colors.background,
   },
 
-  // Pinned filters: float over the map, or sit on an opaque bar the list
-  // scrolls under
+  // Pinned filters: float over the map, or sit on an opaque bar above the list
   pinnedFilters: {
     position: "absolute",
     top: 0,
