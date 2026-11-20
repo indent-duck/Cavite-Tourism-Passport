@@ -73,8 +73,9 @@ export interface Site {
 export interface Stamp {
   id: string;
   userId: string;
+  /** Site ID, or `event:<id>` for a festival stamp (so it never matches a site) */
   siteId: string;
-  siteName: string;
+  siteName: string; // Site name, or the festival's title
   siteCategory: Category;
   municipality: string;
   pointsEarned: number;
@@ -207,12 +208,22 @@ export interface FAQ {
   icon?: string; // Optional Ionicons icon name
 }
 
+/** The site or festival a scanned QR code belongs to */
+export interface StampTarget {
+  name: string;
+  municipality: string;
+}
+
 // Stamp collection result (discriminated union)
 export type CollectStampResult =
   | { success: true; stamp: Stamp }
   | { success: false; reason: "invalid" }
   | { success: false; reason: "alreadyScanned"; existingStamp: Stamp }
-  | { success: false; reason: "locationFailed" }
+  | { success: false; reason: "locationFailed"; target?: StampTarget }
+  // No promo period is running, so no stamps can be collected
+  | { success: false; reason: "noActivePeriod" }
+  // A festival code scanned outside the festival's dates ('YYYY-MM-DD')
+  | { success: false; reason: "eventNotActive"; target?: StampTarget; startDate: string; endDate?: string }
   | { success: false; reason: "offline" };
 
 // Stamp request: a physical passport stamp sent for admin review so it can be

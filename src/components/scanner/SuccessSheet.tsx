@@ -1,17 +1,29 @@
-import { Button } from '@/components/ui/Button';
 import type { Stamp } from '@/data/types';
-import { colors, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
+import { CATEGORY_COLORS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from 'react-native-reanimated';
 import { ResultSheet } from './ResultSheet';
 
 /**
  * Success Result Sheet
  *
  * Displays stamp collected success modal with:
- * - Circular stamp badge (site name, municipality, verification code, date/time)
- * - Points earned label
- * - Total balance
+ * - The stamp, inked in its category color like it appears in the Passport
+ *   (category, site name, municipality, verification code), pressing onto
+ *   the card with a verified check
+ * - Date and time collected
+ * - Points earned and total balance
  * - "Dismiss" button, which opens the stamp in the Passport
  *
  * Matches design: design/screens/06-scanner/qr_modal_stamp_collected_success/screen.png
@@ -33,224 +45,283 @@ export function SuccessSheet({
   totalBalance,
   onViewPassport,
 }: SuccessSheetProps) {
-  // Format date and time
-  const formatDateTime = (date: Date): string => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    }).format(date);
-  };
-
   return (
-    <ResultSheet visible={visible} onDismiss={onDismiss} heightPercentage={80}>
-      <View style={styles.container}>
-        {/* Stamp Badge */}
-        <View style={styles.stampContainer}>
-          <View style={styles.stampBadge}>
-            <View style={styles.stampInner}>
-              <Text style={styles.stampLabel}>CAVITE TOURISM</Text>
-              <Text style={styles.stampSiteName}>{stamp.siteName}</Text>
-              <Text style={styles.stampMunicipality}>
-                {stamp.municipality} • Cavite
-              </Text>
-              <Text style={styles.stampCode}>#{stamp.id.slice(0, 8).toUpperCase()}</Text>
-            </View>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-            </View>
+    <ResultSheet
+      visible={visible}
+      onDismiss={onDismiss}
+      tone="success"
+      hero={<CollectedStamp stamp={stamp} />}
+      title="Stamp Collected!"
+      message="You have earned exploration points for this visit."
+      primaryAction={{ title: 'Dismiss', onPress: onViewPassport }}
+    >
+      <View style={styles.points}>
+        <View style={styles.reward}>
+          <View style={styles.starChip}>
+            <Ionicons name="star" size={18} color={colors.accent} />
           </View>
-          <Text style={styles.dateTime}>{formatDateTime(stamp.collectedAt)}</Text>
+          <View style={styles.pointsText}>
+            <Text style={styles.pointsLabel}>VISIT REWARD</Text>
+            <Text style={styles.rewardValue} numberOfLines={1} adjustsFontSizeToFit>
+              +{stamp.pointsEarned.toLocaleString('en-US')}
+              <Text style={styles.rewardUnit}> pts</Text>
+            </Text>
+          </View>
         </View>
 
-        {/* Success Message */}
-        <View style={styles.messageContainer}>
-          <Text style={styles.title}>Stamp Collected!</Text>
-          <Text style={styles.subtitle}>
-            You have earned exploration points for this visit.
+        <View style={styles.balance}>
+          <Text style={styles.pointsLabel}>TOTAL BALANCE</Text>
+          <Text style={styles.balanceValue} numberOfLines={1} adjustsFontSizeToFit>
+            {totalBalance.toLocaleString('en-US')}
+            <Text style={styles.balanceUnit}> pts</Text>
           </Text>
-        </View>
-
-        {/* Points Display */}
-        <View style={styles.pointsContainer}>
-          <View style={styles.pointsEarned}>
-            <View style={styles.starIconContainer}>
-              <Ionicons name="star" size={24} color={colors.accent} />
-            </View>
-            <View>
-              <Text style={styles.pointsLabel}>VISIT REWARD</Text>
-              <Text style={styles.pointsValue}>+{stamp.pointsEarned} pts</Text>
-            </View>
-          </View>
-          <View style={styles.pointsBalance}>
-            <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
-            <Text style={styles.balanceValue}>{totalBalance} pts</Text>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Dismiss"
-            onPress={onViewPassport}
-            variant="primary"
-            fullWidth
-          />
         </View>
       </View>
     </ResultSheet>
   );
 }
 
+// ============================================================================
+// Stamp hero
+// ============================================================================
+
+const STAMP_SIZE = 176;
+const HALO_SIZE = STAMP_SIZE + 36;
+/** Resting tilt, for a hand-stamped look */
+const STAMP_TILT_DEG = -4;
+/** Waits for the card to settle before the stamp lands */
+const STAMP_DELAY_MS = 120;
+const STAMP_SPRING = { damping: 12, stiffness: 200 };
+const BADGE_DELAY_MS = STAMP_DELAY_MS + 260;
+const BADGE_SPRING = { damping: 10, stiffness: 260 };
+
+const MONO_FONT = Platform.select({ ios: 'Menlo', default: 'monospace' });
+
+/** "March 15, 2027 · 10:24 AM" */
+function formatCollectedAt(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  const day = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+  const time = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+  return `${day} · ${time}`;
+}
+
+/**
+ * The collected stamp: double ink ring in the category color on a soft halo.
+ * It presses down onto the card (scales in from above and settles at a
+ * slight tilt), then the verified check pops in. Static with reduce motion.
+ */
+function CollectedStamp({ stamp }: { stamp: Stamp }) {
+  const ink = CATEGORY_COLORS[stamp.siteCategory] ?? colors.primary;
+  const reduceMotion = useReducedMotion();
+  const press = useSharedValue(reduceMotion ? 1 : 0);
+  const check = useSharedValue(reduceMotion ? 1 : 0);
+
+  useEffect(() => {
+    press.value = withDelay(STAMP_DELAY_MS, withSpring(1, STAMP_SPRING));
+    check.value = withDelay(BADGE_DELAY_MS, withSpring(1, BADGE_SPRING));
+  }, [press, check]);
+
+  const stampStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(press.value, [0, 0.4], [0, 1], Extrapolation.CLAMP),
+    transform: [
+      { scale: 1.35 - press.value * 0.35 },
+      { rotate: `${STAMP_TILT_DEG - (1 - press.value) * 10}deg` },
+    ],
+  }));
+
+  const checkStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(check.value, [0, 0.3], [0, 1], Extrapolation.CLAMP),
+    transform: [{ scale: check.value }],
+  }));
+
+  return (
+    <View style={styles.hero}>
+      <View style={[styles.halo, { backgroundColor: `${ink}12` }]}>
+        <Animated.View style={[styles.stampOuter, { borderColor: ink }, stampStyle]}>
+          <View style={[styles.stampInner, { borderColor: ink }]}>
+            <Text style={[styles.stampCategory, { color: ink }]} numberOfLines={1}>
+              {stamp.siteCategory.toUpperCase()}
+            </Text>
+            <Text
+              style={[styles.stampName, { color: ink }]}
+              numberOfLines={3}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {stamp.siteName}
+            </Text>
+            <Text style={[styles.stampPlace, { color: ink }]} numberOfLines={1}>
+              {stamp.municipality ? `${stamp.municipality} • Cavite` : 'Cavite'}
+            </Text>
+            <View style={[styles.stampCode, { backgroundColor: `${ink}1A` }]}>
+              <Text style={[styles.stampCodeText, { color: ink }]}>
+                #{stamp.id.slice(0, 8).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        <Animated.View style={[styles.verifiedBadge, checkStyle]}>
+          <Ionicons name="checkmark" size={18} color={colors.background} />
+        </Animated.View>
+      </View>
+
+      <View style={styles.collectedAt}>
+        <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+        <Text style={styles.collectedAtText}>{formatCollectedAt(stamp.collectedAt)}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
+  // Stamp hero
+  hero: {
     alignItems: 'center',
+    marginBottom: spacing.base,
   },
-  stampContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  stampBadge: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-    padding: spacing.sm,
+  halo: {
+    width: HALO_SIZE,
+    height: HALO_SIZE,
+    borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    marginBottom: spacing.sm,
+  },
+  stampOuter: {
+    width: STAMP_SIZE,
+    height: STAMP_SIZE,
+    borderRadius: radii.full,
+    borderWidth: 2.5,
+    padding: 4,
+    backgroundColor: colors.background,
   },
   stampInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 80,
+    flex: 1,
+    borderRadius: radii.full,
     borderWidth: 1,
-    borderColor: colors.primary,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
-    padding: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    gap: 3,
   },
-  stampLabel: {
-    fontFamily: typography.fontFamily,
+  stampCategory: {
     ...typography.labelSmall,
-    color: colors.primary,
-    marginBottom: spacing.xs,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 1.5,
   },
-  stampSiteName: {
-    fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
-    fontWeight: '600',
-    color: colors.primary,
+  stampName: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+    lineHeight: 19,
     textAlign: 'center',
-    marginBottom: spacing.xs,
   },
-  stampMunicipality: {
-    fontFamily: typography.fontFamily,
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  stampPlace: {
+    ...typography.labelSmall,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.6,
+    opacity: 0.8,
   },
   stampCode: {
-    fontFamily: typography.fontFamily,
-    ...typography.labelSmall,
-    color: colors.primary,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    marginTop: 2,
+  },
+  stampCodeText: {
+    fontFamily: MONO_FONT,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    width: 28,
-    height: 28,
+    right: (HALO_SIZE - STAMP_SIZE) / 2 + 6,
+    bottom: (HALO_SIZE - STAMP_SIZE) / 2 + 6,
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    backgroundColor: colors.success,
+    borderWidth: 3,
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateTime: {
-    fontFamily: typography.fontFamily,
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  messageContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontFamily: typography.fontFamily,
-    ...typography.headlineMedium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  pointsContainer: {
+  collectedAt: {
     flexDirection: 'row',
-    width: '100%',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
-  pointsEarned: {
-    flex: 1,
+  collectedAtText: {
+    ...typography.bodySmall,
+    fontFamily: 'Inter_500Medium',
+    color: colors.textSecondary,
+  },
+
+  // Points
+  points: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: spacing.md,
-    padding: spacing.sm,
+    borderRadius: radii.card,
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  reward: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
-  starIconContainer: {
+  starChip: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: `${colors.accent}20`,
+    borderRadius: radii.md,
+    backgroundColor: colors.accentTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pointsText: {
+    flexShrink: 1,
+  },
   pointsLabel: {
-    fontFamily: typography.fontFamily,
     ...typography.labelSmall,
+    fontFamily: 'Inter_700Bold',
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
+    letterSpacing: 0.8,
   },
-  pointsValue: {
-    fontFamily: typography.fontFamily,
-    fontSize: 20,
+  rewardValue: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
     lineHeight: 28,
-    fontWeight: '700',
-    color: colors.accent,
+    // Dark orange: accent orange is too light for text on the gray panel
+    color: colors.textTertiary,
   },
-  pointsBalance: {
-    flex: 1,
+  rewardUnit: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
+  balance: {
     alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  balanceLabel: {
-    fontFamily: typography.fontFamily,
-    ...typography.labelSmall,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
   },
   balanceValue: {
-    fontFamily: typography.fontFamily,
+    fontFamily: 'Inter_700Bold',
     fontSize: 20,
     lineHeight: 28,
-    fontWeight: '700',
     color: colors.primary,
   },
-  buttonContainer: {
-    width: '100%',
-    marginTop: spacing.base,
+  balanceUnit: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
   },
 });

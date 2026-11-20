@@ -1,8 +1,6 @@
-import { Button } from '@/components/ui/Button';
-import { colors, spacing, typography } from '@/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
-import { ResultSheet } from './ResultSheet';
+import { colors } from '@/theme';
+import { StyleSheet, Text } from 'react-native';
+import { ResultNote, ResultSheet } from './ResultSheet';
 
 /**
  * No Internet Sheet
@@ -11,6 +9,7 @@ import { ResultSheet } from './ResultSheet';
  * - Offline icon
  * - "No Internet Connection" title
  * - Message
+ * - Mobile data / Wi-Fi tip
  * - "Try again" (re-sends the same code) and "Close scanner" buttons
  *
  * Matches design: design/screens/06-scanner/qr_modal_no_internet_connection/screen.png
@@ -28,123 +27,32 @@ export interface NoInternetSheetProps {
 
 export function NoInternetSheet({ visible, onDismiss, onTryAgain, onClose }: NoInternetSheetProps) {
   return (
-    <ResultSheet visible={visible} onDismiss={onDismiss} heightPercentage={60}>
-      <View style={styles.container}>
-        {/* Offline Icon */}
-        <View style={styles.iconContainer}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="cloud-offline" size={48} color={colors.textSecondary} />
-          </View>
-        </View>
-
-        {/* Title and Message */}
-        <View style={styles.messageContainer}>
-          <Text style={styles.title}>No Internet Connection</Text>
-          <Text style={styles.subtitle}>
-            Scanning needs an internet connection.
-          </Text>
-        </View>
-
-        {/* Info Card */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoText}>
-            A live network connection is required to verify the digital stamp with the provincial database and credit points to your account.
-          </Text>
-        </View>
-
-        {/* Network Tip */}
-        <View style={styles.tipCard}>
-          <Ionicons name="cellular" size={20} color={colors.primary} />
-          <Text style={styles.tipText}>
-            Please check your mobile data or Wi-Fi settings and try again.
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Try again"
-            onPress={onTryAgain}
-            variant="primary"
-            fullWidth
-            testID="no-internet-try-again"
-          />
-          <Button
-            title="Close scanner"
-            onPress={onClose}
-            variant="text"
-            fullWidth
-            testID="no-internet-close"
-          />
-        </View>
-      </View>
+    <ResultSheet
+      visible={visible}
+      onDismiss={onDismiss}
+      tone="info"
+      icon="cloud-offline-outline"
+      title="No Internet Connection"
+      message={
+        <>
+          <Text style={styles.lead}>Scanning needs an internet connection.</Text> A live network
+          connection is required to verify the digital stamp with the provincial database and
+          credit points to your account.
+        </>
+      }
+      primaryAction={{ title: 'Try again', onPress: onTryAgain, testID: 'no-internet-try-again' }}
+      secondaryAction={{ title: 'Close scanner', onPress: onClose, testID: 'no-internet-close' }}
+    >
+      <ResultNote icon="cellular-outline" tone="info">
+        Please check your mobile data or Wi-Fi settings and try again.
+      </ResultNote>
     </ResultSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-  },
-  iconContainer: {
-    marginBottom: spacing.lg,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  messageContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontFamily: typography.fontFamily,
-    ...typography.headlineMedium,
+  lead: {
+    fontFamily: 'Inter_600SemiBold',
     color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  infoCard: {
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: spacing.md,
-    padding: spacing.base,
-    marginBottom: spacing.base,
-  },
-  infoText: {
-    fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  tipCard: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: `${colors.primary}10`,
-    borderRadius: spacing.md,
-    padding: spacing.base,
-    marginBottom: spacing.lg,
-  },
-  tipText: {
-    flex: 1,
-    fontFamily: typography.fontFamily,
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  buttonContainer: {
-    width: '100%',
-    marginTop: spacing.base,
-    gap: spacing.sm,
   },
 });

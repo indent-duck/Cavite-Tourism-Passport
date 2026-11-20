@@ -22,4 +22,7 @@ export type { LocationFailedSheetProps } from './LocationFailedSheet';
 export { NoInternetSheet } from './NoInternetSheet';
 export type { NoInternetSheetProps } from './NoInternetSheet';
 
+export { StampUnavailableSheet } from './StampUnavailableSheet';
+export type { StampUnavailableSheetProps } from './StampUnavailableSheet';
+
 export { DevTestPanel } from './DevTestPanel';

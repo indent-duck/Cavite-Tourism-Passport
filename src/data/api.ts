@@ -1,11 +1,5 @@
-import {
-    CLAIM_QR_EXPIRY_MINUTES,
-    DEV_SKIP_LOCATION_CHECK,
-    GEOFENCE_DISTANCE_METERS,
-    parseSiteQr
-} from "@/lib/constants";
+import { CLAIM_QR_EXPIRY_MINUTES, parseSiteQr } from "@/lib/constants";
 import { FieldError, NETWORK_ERROR_MESSAGE } from "@/lib/errors";
-import { getDistanceMeters } from "@/lib/geo";
 import { fromDateKey, isValidVisitDate, toDateKey } from "@/lib/stamp-requests";
 import { supabase } from "@/lib/supabase";
 import {
@@ -18,8 +12,7 @@ import {
     currentMockStamps,
     currentMockUser,
     mockAboutCavite,
-    mockActiveClaims,
-    mockSites
+    mockActiveClaims
 } from "./mock-data";
 import {
     AboutCaviteContent,
@@ -40,6 +33,7 @@ import {
     Site,
     Stamp,
     StampRequest,
+    StampTarget,
     SubmitStampRequestInput,
     SubmitStampRequestResult,
     User,
@@ -443,13 +437,13 @@ export async function changePassword(
  * Summarize what deleting the account would remove
  */
 export async function getAccountDeletionSummary(): Promise<AccountDeletionSummary> {
-  const user = await getCurrentUser();
+  const [user, stamps] = await Promise.all([getCurrentUser(), getStamps()]);
 
-  // Stamps, stamp requests and vouchers are still mock until their groups are wired
+  // Stamp requests and vouchers are still mock until their groups are wired
   const now = Date.now();
   return {
     passportId: user.passportId,
-    stampCount: currentMockStamps.length,
+    stampCount: stamps.length,
     points: user.points,
     pendingStampRequests: currentMockStampRequests.filter(
       (request) => request.status === 'pending',
@@ -574,86 +568,111 @@ export async function searchSites(query: string): Promise<Site[]> {
 // Stamps
 // ============================================================================
 
-/**
- * Get all stamps for the current user
- */
-export async function getStamps(): Promise<Stamp[]> {
-  await randomDelay();
-  // A new array each time, so memoized consumers see stamps added in place
-  return [...currentMockStamps];
+// A row of the my_stamps view; collect_stamp returns stamps in the same shape
+interface StampRow {
+  id: number;
+  site_id: number | null;
+  event_id: number | null; // set for festival stamps
+  name: string; // site name or festival title
+  municipality: string | null;
+  category: string;
+  points: number;
+  earned_at: string;
+}
+
+function toStamp(row: StampRow, userId: string): Stamp {
+  return {
+    id: String(row.id),
+    userId,
+    siteId: row.site_id !== null ? String(row.site_id) : `event:${row.event_id}`,
+    siteName: row.name,
+    siteCategory: CATEGORY_BY_CODE[row.category],
+    municipality: row.municipality ?? "",
+    pointsEarned: row.points,
+    collectedAt: new Date(row.earned_at),
+  };
 }
 
 /**
- * Collect a stamp at a site by scanning QR code
- * Mock: Validates QR payload format, checks if already scanned, verifies location (unless dev flag is on)
- * @param payload - QR code payload (format: "cvt:site:<siteId>")
- * @param coords - User's current location or null if location unavailable
- * @returns CollectStampResult with success/failure and reason
+ * Get the current user's stamps in the active promo period, newest first
+ */
+export async function getStamps(): Promise<Stamp[]> {
+  const userId = await requireUserId();
+
+  const rows = unwrap(
+    await supabase
+      .from("my_stamps")
+      .select("id, site_id, event_id, name, municipality, category, points, earned_at")
+      .order("earned_at", { ascending: false })
+      .overrideTypes<StampRow[], { merge: false }>(),
+  );
+  return rows.map((row) => toStamp(row, userId));
+}
+
+// What the collect_stamp database function returns
+interface CollectStampRow {
+  success: boolean;
+  reason?: "invalid" | "alreadyScanned" | "locationFailed" | "noActivePeriod" | "eventNotActive";
+  stamp?: StampRow;
+  target?: StampTarget | null;
+  starts_on?: string;
+  ends_on?: string | null;
+}
+
+/**
+ * Collect a stamp by scanning a site's (or festival's) QR code
+ *
+ * The database checks everything: the code, the promo period, the festival's
+ * dates, one stamp per site per period, and the GPS distance.
+ * @param payload - QR code payload: "cvt:site:<code>", where <code> is the
+ *   random code in qr_codes (not the site ID)
+ * @param coords - User's current location, or null if unavailable
  */
 export async function collectStamp(
   payload: string,
   coords: { latitude: number; longitude: number } | null
 ): Promise<CollectStampResult> {
-  await randomDelay();
-
-  // Parse QR payload
-  const siteId = parseSiteQr(payload);
-  if (!siteId) {
+  const code = parseSiteQr(payload);
+  if (!code) {
     return { success: false, reason: "invalid" };
   }
+  const userId = await requireUserId();
 
-  // Find site in catalog
-  const site = mockSites.find((s) => s.id === siteId);
-  if (!site) {
-    return { success: false, reason: "invalid" };
+  const { data, error } = await supabase.rpc("collect_stamp", {
+    p_code: code,
+    p_latitude: coords?.latitude ?? null,
+    p_longitude: coords?.longitude ?? null,
+  });
+  if (error) {
+    throw new Error(error.message);
   }
+  // collect_stamp returns one jsonb value, which arrives as a plain object.
+  // Without generated types, supabase-js assumes functions return a list.
+  const row = data as unknown as CollectStampRow;
 
-  // Check if user already collected stamp from this site
-  const existingStamp = currentMockStamps.find((s) => s.siteId === siteId);
-  if (existingStamp) {
-    return { success: false, reason: "alreadyScanned", existingStamp };
+  if (row.success && row.stamp) {
+    return { success: true, stamp: toStamp(row.stamp, userId) };
   }
-
-  // Location verification (unless dev flag skips it)
-  if (!DEV_SKIP_LOCATION_CHECK) {
-    // If coords are null, location check failed (timeout or services disabled)
-    if (!coords) {
-      return { success: false, reason: "locationFailed" };
-    }
-
-    // Calculate distance between user and site
-    const distance = getDistanceMeters(
-      coords.latitude,
-      coords.longitude,
-      site.latitude,
-      site.longitude
-    );
-
-    // Check if user is within geofence
-    if (distance > GEOFENCE_DISTANCE_METERS) {
-      return { success: false, reason: "locationFailed" };
-    }
+  switch (row.reason) {
+    case "alreadyScanned":
+      return row.stamp
+        ? { success: false, reason: "alreadyScanned", existingStamp: toStamp(row.stamp, userId) }
+        : { success: false, reason: "invalid" };
+    case "locationFailed":
+      return { success: false, reason: "locationFailed", target: row.target ?? undefined };
+    case "noActivePeriod":
+      return { success: false, reason: "noActivePeriod" };
+    case "eventNotActive":
+      return {
+        success: false,
+        reason: "eventNotActive",
+        target: row.target ?? undefined,
+        startDate: row.starts_on ?? "",
+        endDate: row.ends_on ?? undefined,
+      };
+    default:
+      return { success: false, reason: "invalid" };
   }
-
-  // Success: create new stamp
-  const newStamp: Stamp = {
-    id: `stamp-${Date.now()}`,
-    userId: currentMockUser.id,
-    siteId: site.id,
-    siteName: site.name,
-    siteCategory: site.category,
-    municipality: site.municipality,
-    pointsEarned: POINTS_PER_CATEGORY[site.category],
-    collectedAt: new Date(),
-  };
-
-  // Add stamp to user's collection (in-memory update)
-  currentMockStamps.push(newStamp);
-
-  // Add points to user's balance (in-memory update)
-  currentMockUser.points += newStamp.pointsEarned;
-
-  return { success: true, stamp: newStamp };
 }
 
 // ============================================================================
@@ -679,13 +698,14 @@ export async function submitStampRequest(
 ): Promise<SubmitStampRequestResult> {
   await randomDelay();
 
-  // Sites and the promo period come from the database; the request itself is still mock
+  // Sites, stamps and the promo period come from the database; the request
+  // itself is still mock
   const site = await getSiteById(input.siteId);
   if (!site) {
     return { success: false, reason: "siteNotFound" };
   }
 
-  if (currentMockStamps.some((s) => s.siteId === site.id)) {
+  if ((await getStamps()).some((s) => s.siteId === site.id)) {
     return { success: false, reason: "alreadyStamped" };
   }
 
@@ -699,7 +719,7 @@ export async function submitStampRequest(
 
   const request: StampRequest = {
     id: `stamp-request-${Date.now()}`,
-    userId: currentMockUser.id,
+    userId: await requireUserId(),
     siteId: site.id,
     siteName: site.name,
     siteCategory: site.category,
@@ -731,9 +751,11 @@ export async function markStampRequestResultsSeen(ids: string[]): Promise<void> 
 
 /**
  * Simulate an admin reviewing a stamp request (dev-only)
- * Approving creates the stamp (dated on the visit day) and awards its points.
  * If the site was stamped in the meantime (e.g. via QR), the request is
  * rejected instead, as the database's unique stamp constraint would.
+ * Approving does NOT create a stamp: stamps are real now and only the
+ * review_stamp_request database function (admin) can add one. That comes
+ * with the stamp requests group.
  */
 export async function reviewStampRequest(
   requestId: string,
@@ -752,7 +774,7 @@ export async function reviewStampRequest(
 
   request.reviewedAt = new Date();
 
-  const alreadyStamped = currentMockStamps.some((s) => s.siteId === request.siteId);
+  const alreadyStamped = (await getStamps()).some((s) => s.siteId === request.siteId);
   if (decision === "reject" || alreadyStamped) {
     request.status = "rejected";
     request.rejectionReason = alreadyStamped
@@ -761,22 +783,7 @@ export async function reviewStampRequest(
     return { ...request };
   }
 
-  const stamp: Stamp = {
-    id: `stamp-${Date.now()}`,
-    userId: currentMockUser.id,
-    siteId: request.siteId,
-    siteName: request.siteName,
-    siteCategory: request.siteCategory,
-    municipality: request.municipality,
-    pointsEarned: POINTS_PER_CATEGORY[request.siteCategory],
-    collectedAt: fromDateKey(request.visitedOn),
-  };
-
-  currentMockStamps.push(stamp);
-  currentMockUser.points += stamp.pointsEarned;
-
   request.status = "approved";
-  request.stampId = stamp.id;
   return { ...request };
 }
 
@@ -1025,31 +1032,26 @@ export async function getRewardById(id: string): Promise<Reward | null> {
   return row ? toReward(row) : null;
 }
 
+// Minimum balance before any reward (app_settings.reward_min_points). The
+// database checks it again when a claim QR is generated or redeemed.
+const MIN_REWARD_POINTS = 700;
+
 /**
- * Check if user is eligible for a specific reward
- * Eligibility requires ALL 6 conditions:
+ * Whether a user can claim a reward. Requires ALL of:
  * 1. At least 700 points
- * 2. At least reward's point cost
+ * 2. At least the reward's point cost
  * 3. At least one stamp from each of: Dining, Staycation, Adventure, Heritage
  * 4. User has not claimed a reward this promo period (hasClaimedThisPeriod)
  * 5. Reward is available (not sold out)
  * Note: Festival stamps are bonus only and not required
  */
-export async function checkRewardEligibility(
-  rewardId: string,
-): Promise<RewardEligibility> {
-  // The reward comes from the database; points and stamps are still mock
-  const reward = await getRewardById(rewardId);
-  if (!reward) {
-    throw new Error("Reward not found");
-  }
-
+function getEligibility(reward: Reward, user: User, stamps: Stamp[]): RewardEligibility {
   // Condition 1 & 2: Check points (at least 700 AND at least reward cost)
-  const hasEnoughPoints = currentMockUser.points >= 700 && currentMockUser.points >= reward.pointsCost;
+  const hasEnoughPoints = user.points >= MIN_REWARD_POINTS && user.points >= reward.pointsCost;
 
   // Condition 3: Check if user has stamps from all 4 main categories
   const stampCategories = new Set(
-    currentMockStamps
+    stamps
       .filter((s) => s.siteCategory !== "Festival")
       .map((s) => s.siteCategory),
   );
@@ -1067,22 +1069,49 @@ export async function checkRewardEligibility(
   const hasAllCategories = missingCategories.length === 0;
 
   // Condition 4: User has not claimed a reward this promo period
-  const hasNotClaimedThisPeriod = !currentMockUser.hasClaimedThisPeriod;
+  const hasNotClaimedThisPeriod = !user.hasClaimedThisPeriod;
 
   // Condition 5: Reward is available (not sold out)
   const isAvailable = reward.available && (!reward.limited || ((reward.remainingClaims ?? 0) > 0));
 
-  // All 6 conditions must be met
   const eligible = hasEnoughPoints && hasAllCategories && hasNotClaimedThisPeriod && isAvailable;
 
   return {
     eligible: eligible,
     hasEnoughPoints,
-    currentPoints: currentMockUser.points,
-    pointsNeeded: Math.max(0, Math.max(700, reward.pointsCost) - currentMockUser.points),
+    currentPoints: user.points,
+    pointsNeeded: Math.max(0, Math.max(MIN_REWARD_POINTS, reward.pointsCost) - user.points),
     hasAllCategories,
     missingCategories,
   };
+}
+
+/**
+ * Check if the current user is eligible for a specific reward
+ */
+export async function checkRewardEligibility(
+  rewardId: string,
+): Promise<RewardEligibility> {
+  const [reward, user, stamps] = await Promise.all([
+    getRewardById(rewardId),
+    getCurrentUser(),
+    getStamps(),
+  ]);
+  if (!reward) {
+    throw new Error("Reward not found");
+  }
+  return getEligibility(reward, user, stamps);
+}
+
+/**
+ * All visible rewards with the current user's eligibility for each, from one
+ * read of the user and their stamps (for the rewards list)
+ */
+export async function getRewardsWithEligibility(): Promise<
+  { reward: Reward; eligibility: RewardEligibility }[]
+> {
+  const [rewards, user, stamps] = await Promise.all([getRewards(), getCurrentUser(), getStamps()]);
+  return rewards.map((reward) => ({ reward, eligibility: getEligibility(reward, user, stamps) }));
 }
 
 // ============================================================================

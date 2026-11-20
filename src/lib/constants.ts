@@ -1,31 +1,26 @@
 // Open decisions - values TBD by Tourism Office
-export const GEOFENCE_DISTANCE_METERS = 150; // TBD
+// (The scan distance lives in Supabase: app_settings.geofence_radius_m, or a
+// site's verify_radius_m. The database checks it.)
 
 export const CLAIM_QR_EXPIRY_MINUTES = 15; // TBD
 
-export const SITE_QR_FORMAT = 'CAVITE-SITE-{siteId}'; // TBD, placeholder format
+export const SITE_QR_FORMAT = 'cvt:site:<code>'; // <code> = the random code in Supabase qr_codes
 
 export const CLAIM_QR_FORMAT = 'cvt:claim:<claimId>:<token>'; // TBD
 
 export const REDEMPTION_LOCATION = 'Provincial Tourism Center, Trece Martires'; // TBD
 
-// Scanner constants
-// Skips the geofence check in development builds only; preview and production
-// builds always verify the scan location
-export const DEV_SKIP_LOCATION_CHECK = __DEV__;
-
 /**
- * Parse site QR code payload and extract siteId
- * @param payload - QR code payload in format "cvt:site:<siteId>"
- * @returns siteId if valid, null if malformed
- * @note SITE_QR_FORMAT is an open decision - this implementation matches "cvt:site:<siteId>" format
+ * Parse a stamp QR code payload (sites and festivals alike)
+ * @param payload - QR code payload in format "cvt:site:<code>"
+ * @returns the code (checked by the database), or null if malformed
  */
 export function parseSiteQr(payload: string): string | null {
   if (!payload || typeof payload !== 'string') {
     return null;
   }
 
-  const match = payload.match(/^cvt:site:(.+)$/);
+  const match = payload.trim().match(/^cvt:site:(.+)$/);
   if (!match || !match[1]) {
     return null;
   }

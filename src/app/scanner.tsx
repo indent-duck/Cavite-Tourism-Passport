@@ -4,18 +4,19 @@ import { InvalidQrSheet } from '@/components/scanner/InvalidQrSheet';
 import { LocationFailedSheet } from '@/components/scanner/LocationFailedSheet';
 import { NoInternetSheet } from '@/components/scanner/NoInternetSheet';
 import { ScannerViewfinder } from '@/components/scanner/ScannerViewfinder';
+import { StampUnavailableSheet } from '@/components/scanner/StampUnavailableSheet';
 import { SuccessSheet } from '@/components/scanner/SuccessSheet';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { mockSites } from '@/data/mock-data';
-import type { CollectStampResult, Site, Stamp } from '@/data/types';
+import type { CollectStampResult, Stamp, StampTarget } from '@/data/types';
 import { useCollectStamp } from '@/hooks/useCollectStamp';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLocationServices } from '@/hooks/useLocationServices';
 import { useOnAppFocus } from '@/hooks/useOnAppFocus';
 import { useCameraPermission, useLocationPermission } from '@/hooks/usePermissions';
 import { useScanLocation, type ScanCoords } from '@/hooks/useScanLocation';
-import { parseSiteQr } from '@/lib/constants';
+import { formatEventDate } from '@/lib/event-utils';
+import { toDateKey } from '@/lib/stamp-requests';
 import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -51,20 +52,16 @@ type ScannerStage =
   | 'locationOff'
   | 'ready';
 
-/** What the last scan (or dev panel test) came back with, shown in a result popup */
+/** What the last scan (or dev panel preview) came back with, shown in a result popup */
 type ScanResult =
   | { kind: 'success'; stamp: Stamp }
   | { kind: 'invalid' }
   | { kind: 'alreadyScanned'; stamp: Stamp }
-  | { kind: 'locationFailed'; payload: string; site: Site | null }
-  // `payload` is missing only for the dev panel's simulated outage
+  // `payload` is missing only for the dev panel's previews
+  | { kind: 'locationFailed'; payload?: string; target?: StampTarget }
+  | { kind: 'noActivePeriod' }
+  | { kind: 'eventNotActive'; target?: StampTarget; startDate: string; endDate?: string }
   | { kind: 'offline'; payload?: string };
-
-/** The catalog site a QR payload points to, for the location-failed popup */
-function findSite(payload: string): Site | null {
-  const siteId = parseSiteQr(payload);
-  return mockSites.find((site) => site.id === siteId) ?? null;
-}
 
 function toScanResult(outcome: CollectStampResult, payload: string): ScanResult {
   if (outcome.success) {
@@ -76,10 +73,30 @@ function toScanResult(outcome: CollectStampResult, payload: string): ScanResult 
     case 'alreadyScanned':
       return { kind: 'alreadyScanned', stamp: outcome.existingStamp };
     case 'locationFailed':
-      return { kind: 'locationFailed', payload, site: findSite(payload) };
+      return { kind: 'locationFailed', payload, target: outcome.target };
+    case 'noActivePeriod':
+      return { kind: 'noActivePeriod' };
+    case 'eventNotActive':
+      return {
+        kind: 'eventNotActive',
+        target: outcome.target,
+        startDate: outcome.startDate,
+        endDate: outcome.endDate,
+      };
     case 'offline':
       return { kind: 'offline', payload };
   }
+}
+
+/** Message and dates for a festival code scanned outside the festival */
+function festivalClosedCopy(startDate: string, endDate?: string) {
+  const upcoming = !!startDate && toDateKey(new Date()) < startDate;
+  return {
+    message: upcoming
+      ? "This festival's stamp can be collected once the festival starts."
+      : 'This festival has ended, so its stamp can no longer be collected.',
+    detail: startDate ? formatEventDate(startDate, endDate) : undefined,
+  };
 }
 
 export default function ScannerScreen() {
@@ -277,28 +294,21 @@ export default function ScannerScreen() {
   };
 
   // ============================================================================
-  // Dev Test Panel Handlers
+  // Dev Test Panel: popup previews with sample content
   // ============================================================================
 
-  // Dev tests don't wait for a GPS fix: dev builds skip the location check
-  // (DEV_SKIP_LOCATION_CHECK)
-  const readMockCoords = async () => ({ latitude: 0, longitude: 0 });
-
-  /** Dev test: "Success" and "Already Scanned" run a real verification */
-  const handleDevTestScan = (payload: string) => {
-    void verifyCode(payload, readMockCoords);
+  const previewLocationFailed = () => {
+    showResult({ kind: 'locationFailed', target: { name: 'Aguinaldo Shrine', municipality: 'Kawit' } });
   };
 
-  const handleDevTestInvalid = () => {
-    showResult({ kind: 'invalid' });
-  };
-
-  const handleDevTestLocationFailed = (payload: string) => {
-    showResult({ kind: 'locationFailed', payload, site: findSite(payload) });
-  };
-
-  const handleDevTestOffline = () => {
-    showResult({ kind: 'offline' });
+  const previewEventNotActive = () => {
+    const inThirtyDays = new Date();
+    inThirtyDays.setDate(inThirtyDays.getDate() + 30);
+    showResult({
+      kind: 'eventNotActive',
+      target: { name: 'Sample Town Festival - Maragondon', municipality: 'Maragondon' },
+      startDate: toDateKey(inThirtyDays),
+    });
   };
 
   // ============================================================================
@@ -358,11 +368,11 @@ export default function ScannerScreen() {
 
         {/* Dev Test Panel (only visible in __DEV__) */}
         <DevTestPanel
-          onTriggerSuccess={handleDevTestScan}
-          onTriggerInvalid={handleDevTestInvalid}
-          onTriggerAlreadyScanned={handleDevTestScan}
-          onTriggerLocationFailed={handleDevTestLocationFailed}
-          onTriggerOffline={handleDevTestOffline}
+          onPreviewInvalid={() => showResult({ kind: 'invalid' })}
+          onPreviewLocationFailed={previewLocationFailed}
+          onPreviewNoActivePeriod={() => showResult({ kind: 'noActivePeriod' })}
+          onPreviewEventNotActive={previewEventNotActive}
+          onPreviewOffline={() => showResult({ kind: 'offline' })}
         />
 
         {/* Verifying State Overlay */}
@@ -410,9 +420,32 @@ export default function ScannerScreen() {
           <LocationFailedSheet
             visible={isResultOpen}
             onDismiss={resumeScanning}
-            targetSiteName={result.site?.name || ''}
-            targetMunicipality={result.site?.municipality || ''}
+            targetSiteName={result.target?.name || ''}
+            targetMunicipality={result.target?.municipality || ''}
             onTryAgain={() => retryCode(result.payload)}
+            onClose={closeScanner}
+          />
+        )}
+
+        {result?.kind === 'noActivePeriod' && (
+          <StampUnavailableSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            title="No Active Season"
+            message="Stamps can only be collected while a promo season is running. Check back when the next season opens."
+            onScanAgain={resumeScanning}
+            onClose={closeScanner}
+          />
+        )}
+
+        {result?.kind === 'eventNotActive' && (
+          <StampUnavailableSheet
+            visible={isResultOpen}
+            onDismiss={resumeScanning}
+            title="Festival Stamp Unavailable"
+            {...festivalClosedCopy(result.startDate, result.endDate)}
+            target={result.target}
+            onScanAgain={resumeScanning}
             onClose={closeScanner}
           />
         )}

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getRewards, checkRewardEligibility } from '@/data/api';
+import { getRewardsWithEligibility } from '@/data/api';
 import type { Reward, RewardEligibility } from '@/data/types';
 
 export interface RewardWithEligibility {
@@ -18,23 +18,8 @@ export interface RewardWithEligibility {
 export function useRewardsWithEligibility() {
   return useQuery<RewardWithEligibility[], Error>({
     queryKey: ['rewards', 'withEligibility'],
-    queryFn: async () => {
-      // Fetch all rewards first
-      const rewards = await getRewards();
-      
-      // Check eligibility for all rewards in parallel
-      const eligibilityPromises = rewards.map((reward) =>
-        checkRewardEligibility(reward.id)
-      );
-      
-      const eligibilities = await Promise.all(eligibilityPromises);
-      
-      // Combine rewards with their eligibility status
-      return rewards.map((reward, index) => ({
-        reward,
-        eligibility: eligibilities[index],
-      }));
-    },
+    // Reads the user and their stamps once for all rewards
+    queryFn: getRewardsWithEligibility,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
