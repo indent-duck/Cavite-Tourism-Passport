@@ -24,6 +24,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  *   so all five labels sit on the same baseline
  * - Emits `tabPress` so screens can react (e.g. scroll-to-top) and
  *   navigates through the navigator instead of pushing routes
+ * - Optional `badges`: a small dot on a tab's icon for something new there
+ *   (e.g. a reviewed stamp request on Passport)
  */
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -49,11 +51,17 @@ const INDICATOR_WIDTH = 56;
 const INDICATOR_HEIGHT = 30;
 const SCAN_BUTTON_SIZE = 60;
 const SCAN_RING_WIDTH = 4;
+const BADGE_SIZE = 10;
 /** How far the Scan button rises above the top edge of the bar. */
 export const SCAN_OVERHANG =
   SCAN_BUTTON_SIZE - INDICATOR_HEIGHT - (TAB_BAR_HEIGHT - INDICATOR_HEIGHT - 18) / 2;
 
-export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
+export type TabBarProps = BottomTabBarProps & {
+  /** Route names whose icon shows a "new" dot */
+  badges?: Partial<Record<string, boolean>>;
+};
+
+export function TabBar({ state, emitter, navigateToTab, badges }: TabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -96,6 +104,7 @@ export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
                 key={route.key}
                 config={config}
                 focused={focused}
+                badge={!!badges?.[route.name]}
                 onPress={onPress}
                 onLongPress={onLongPress}
                 testID={`${route.name}-tab-button`}
@@ -111,12 +120,13 @@ export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
 type TabItemProps = {
   config: TabConfig;
   focused: boolean;
+  badge: boolean;
   onPress: () => void;
   onLongPress: () => void;
   testID: string;
 };
 
-function TabItem({ config, focused, onPress, onLongPress, testID }: TabItemProps) {
+function TabItem({ config, focused, badge, onPress, onLongPress, testID }: TabItemProps) {
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
@@ -138,7 +148,7 @@ function TabItem({ config, focused, onPress, onLongPress, testID }: TabItemProps
       onPress={onPress}
       onLongPress={onLongPress}
       accessibilityRole="tab"
-      accessibilityLabel={config.label}
+      accessibilityLabel={badge ? `${config.label}, new update` : config.label}
       accessibilityState={{ selected: focused }}
       testID={testID}
     >
@@ -149,6 +159,7 @@ function TabItem({ config, focused, onPress, onLongPress, testID }: TabItemProps
           size={ICON_SIZE}
           color={focused ? colors.primary : colors.textSecondary}
         />
+        {badge && <View style={styles.badge} testID={`${testID}-badge`} />}
       </View>
       <Animated.Text
         style={[styles.label, focused ? styles.labelFocused : null, labelStyle]}
@@ -228,6 +239,18 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     borderRadius: radii.full,
     backgroundColor: colors.primaryTint,
+  },
+  badge: {
+    position: 'absolute',
+    top: 3,
+    // Top-right of the icon, which is centered in the slot
+    left: INDICATOR_WIDTH / 2 + ICON_SIZE / 2 - 6,
+    width: BADGE_SIZE,
+    height: BADGE_SIZE,
+    borderRadius: BADGE_SIZE / 2,
+    backgroundColor: colors.accent,
+    borderWidth: 2,
+    borderColor: colors.background,
   },
   label: {
     fontFamily: 'Inter_500Medium',

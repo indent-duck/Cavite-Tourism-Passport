@@ -5,7 +5,9 @@ import {
     parseSiteQr
 } from "@/lib/constants";
 import { getDistanceMeters } from "@/lib/geo";
+import { fromDateKey, isValidVisitDate } from "@/lib/stamp-requests";
 import {
+    currentMockStampRequests,
     currentMockStamps,
     currentMockUser,
     mockAboutCavite,
@@ -34,6 +36,9 @@ import {
     Settings,
     Site,
     Stamp,
+    StampRequest,
+    SubmitStampRequestInput,
+    SubmitStampRequestResult,
     User
 } from "./types";
 
@@ -218,7 +223,8 @@ export async function searchSites(query: string): Promise<Site[]> {
  */
 export async function getStamps(): Promise<Stamp[]> {
   await randomDelay();
-  return currentMockStamps;
+  // A new array each time, so memoized consumers see stamps added in place
+  return [...currentMockStamps];
 }
 
 /**
@@ -292,6 +298,129 @@ export async function collectStamp(
   currentMockUser.points += newStamp.pointsEarned;
 
   return { success: true, stamp: newStamp };
+}
+
+// ============================================================================
+// Stamp Requests (physical passport stamps sent for admin review)
+// ============================================================================
+
+/**
+ * Get all stamp requests for the current user (any status)
+ */
+export async function getStampRequests(): Promise<StampRequest[]> {
+  await randomDelay();
+  // Copies, so React Query sees new objects when a request changes in place
+  return currentMockStampRequests.map((request) => ({ ...request }));
+}
+
+/**
+ * Submit a request to add a physical passport stamp to the digital passport
+ * Rejected up front when the site is unknown, already stamped, already has a
+ * pending request, or the visit date is outside the promo period / in the future
+ */
+export async function submitStampRequest(
+  input: SubmitStampRequestInput,
+): Promise<SubmitStampRequestResult> {
+  await randomDelay();
+
+  const site = mockSites.find((s) => s.id === input.siteId);
+  if (!site) {
+    return { success: false, reason: "siteNotFound" };
+  }
+
+  if (currentMockStamps.some((s) => s.siteId === site.id)) {
+    return { success: false, reason: "alreadyStamped" };
+  }
+
+  if (currentMockStampRequests.some((r) => r.siteId === site.id && r.status === "pending")) {
+    return { success: false, reason: "alreadyPending" };
+  }
+
+  if (!isValidVisitDate(input.visitedOn, mockPromoPeriod)) {
+    return { success: false, reason: "invalidDate" };
+  }
+
+  const request: StampRequest = {
+    id: `stamp-request-${Date.now()}`,
+    userId: currentMockUser.id,
+    siteId: site.id,
+    siteName: site.name,
+    siteCategory: site.category,
+    municipality: site.municipality,
+    visitedOn: input.visitedOn,
+    photoUri: input.photoUri,
+    note: input.note?.trim() || undefined,
+    status: "pending",
+    createdAt: new Date(),
+  };
+
+  currentMockStampRequests.push(request);
+  return { success: true, request: { ...request } };
+}
+
+/**
+ * Record that the user has seen the result (approval/rejection) of these requests
+ */
+export async function markStampRequestResultsSeen(ids: string[]): Promise<void> {
+  await randomDelay();
+
+  const seenAt = new Date();
+  for (const request of currentMockStampRequests) {
+    if (ids.includes(request.id) && !request.resultSeenAt) {
+      request.resultSeenAt = seenAt;
+    }
+  }
+}
+
+/**
+ * Simulate an admin reviewing a stamp request (dev-only)
+ * Approving creates the stamp (dated on the visit day) and awards its points.
+ * If the site was stamped in the meantime (e.g. via QR), the request is
+ * rejected instead, as the database's unique stamp constraint would.
+ */
+export async function reviewStampRequest(
+  requestId: string,
+  decision: "approve" | "reject",
+  reason?: string,
+): Promise<StampRequest> {
+  await randomDelay();
+
+  const request = currentMockStampRequests.find((r) => r.id === requestId);
+  if (!request) {
+    throw new Error("Stamp request not found");
+  }
+  if (request.status !== "pending") {
+    throw new Error("Stamp request was already reviewed");
+  }
+
+  request.reviewedAt = new Date();
+
+  const alreadyStamped = currentMockStamps.some((s) => s.siteId === request.siteId);
+  if (decision === "reject" || alreadyStamped) {
+    request.status = "rejected";
+    request.rejectionReason = alreadyStamped
+      ? "This stamp is already in your digital passport."
+      : reason;
+    return { ...request };
+  }
+
+  const stamp: Stamp = {
+    id: `stamp-${Date.now()}`,
+    userId: currentMockUser.id,
+    siteId: request.siteId,
+    siteName: request.siteName,
+    siteCategory: request.siteCategory,
+    municipality: request.municipality,
+    pointsEarned: POINTS_PER_CATEGORY[request.siteCategory],
+    collectedAt: fromDateKey(request.visitedOn),
+  };
+
+  currentMockStamps.push(stamp);
+  currentMockUser.points += stamp.pointsEarned;
+
+  request.status = "approved";
+  request.stampId = stamp.id;
+  return { ...request };
 }
 
 // ============================================================================

@@ -31,6 +31,8 @@ import { ActivityIndicator, BackHandler, Linking, Platform, Pressable, StyleShee
  * 
  * After permissions are granted, shows full-screen camera viewfinder with QR detection.
  * On QR scan, reads location and calls collectStamp mutation.
+ * The viewfinder and blocked screen link to the stamp request form, for a
+ * stamp received in the physical passport instead (no QR code on-site).
  * 
  * Validates: Requirements 3.2 (Permission primer and blocked screens), 3.4 (Location read and mutation trigger)
  */
@@ -137,6 +139,12 @@ export default function ScannerScreen() {
   // Close button handler
   const handleClose = () => {
     router.back();
+  };
+
+  // Physical-stamp request: replace the scanner so the camera is released and
+  // going back from the form returns to where the scanner was opened
+  const handleRequestStamp = () => {
+    router.replace('/stamp-requests/new');
   };
 
   // ============================================================================
@@ -482,6 +490,7 @@ export default function ScannerScreen() {
         <ScannerViewfinder
           onScanCode={handleScanCode}
           isPaused={isVerifying || modalState !== null}
+          onRequestStamp={handleRequestStamp}
         />
 
         {/* Dev Test Panel (only visible in __DEV__) */}
@@ -602,6 +611,14 @@ export default function ScannerScreen() {
                 fullWidth
               />
             )}
+            {/* The request form works without camera access (gallery photo) */}
+            <Button
+              title="Stamped your physical passport instead?"
+              onPress={handleRequestStamp}
+              variant="text"
+              fullWidth
+              testID="scanner-blocked-request-stamp"
+            />
           </View>
         </View>
       </ScreenContainer>

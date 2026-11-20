@@ -2,6 +2,8 @@ import { Header } from '@/components/ui/Header';
 import { PromoChip } from '@/components/ui/PromoChip';
 import { TabBar } from '@/components/ui/TabBar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useStampRequests } from '@/hooks/useStampRequests';
+import { getUnseenResults } from '@/lib/stamp-requests';
 import { usePathname, useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StatusBar } from 'expo-status-bar';
@@ -13,6 +15,7 @@ import { colors } from '@/theme';
  *
  * Five tabs rendered by the custom `TabBar` (raised center Scan button).
  * Includes Header component at the top with user info and promo chip on select tabs.
+ * The Passport tab shows a dot while a reviewed stamp request is unseen.
  *
  * Validates: Requirements 1.3.3 (Tabs Layout), 3.4 (Custom Tab Bar Implementation)
  */
@@ -20,6 +23,8 @@ export default function TabsLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: user } = useCurrentUser();
+  const { data: stampRequests } = useStampRequests();
+  const hasUnseenStampResults = getUnseenResults(stampRequests ?? []).length > 0;
 
   // Show PromoChip only on Explore, Passport, and Discover tabs
   const showPromoChip = pathname === '/explore' || pathname === '/passport' || pathname === '/discover';
@@ -51,7 +56,7 @@ export default function TabsLayout() {
         screenOptions={{
           headerShown: false,
         }}
-        tabBar={(props) => <TabBar {...props} />}
+        tabBar={(props) => <TabBar {...props} badges={{ passport: hasUnseenStampResults }} />}
       >
         <Tabs.Screen name="explore" />
         <Tabs.Screen name="passport" />

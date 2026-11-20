@@ -32,7 +32,14 @@ interface PassportPagerProps {
  * Booklet-style page tabs ("01 Identity", "02 Stamps") above a horizontally
  * swipeable set of pages. The tab indicator tracks the swipe, and the pager's
  * height follows the visible page so a short page doesn't leave empty space
- * under it.
+ * under it (e.g. the Identity page while the Stamps page holds many stamps).
+ *
+ * Height handling:
+ * - Each page's height is measured from an inner view wrapping its content,
+ *   so a page wrapper stretched to the tallest page can't inflate it
+ * - While swiping, the height interpolates between the two pages' heights
+ * - At rest, a plain style also pins the height to the active page, so the
+ *   pager ends up the right size even if the animated style isn't applied
  *
  * Pages run edge to edge (the pager cancels the screen's side padding) so the
  * booklet shadows aren't clipped while swiping.
@@ -40,14 +47,15 @@ interface PassportPagerProps {
 export function PassportPager({ pages, index, onIndexChange, testID }: PassportPagerProps) {
   const [pageWidth, setPageWidth] = useState(0);
   const [tabWidth, setTabWidth] = useState(0);
+  // Measured content height of each page (0 = not measured yet)
+  const [pageHeights, setPageHeights] = useState<number[]>(() => pages.map(() => 0));
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollX = useSharedValue(0);
-  const pageHeights = useSharedValue<number[]>(pages.map(() => 0));
   const positioned = useRef(false);
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
+      scrollX.set(event.contentOffset.x);
     },
   });
 
@@ -56,7 +64,7 @@ export function PassportPager({ pages, index, onIndexChange, testID }: PassportP
     if (positioned.current || pageWidth === 0 || contentWidth < pageWidth * pages.length) return;
     positioned.current = true;
     scrollRef.current?.scrollTo({ x: index * pageWidth, animated: false });
-    scrollX.value = index * pageWidth;
+    scrollX.set(index * pageWidth);
   };
 
   // Follow later index changes (tab presses, programmatic switches)
@@ -72,30 +80,33 @@ export function PassportPager({ pages, index, onIndexChange, testID }: PassportP
   };
 
   const setPageHeight = (pageIndex: number, height: number) => {
-    const current = pageHeights.value;
-    if (current[pageIndex] === height) return;
-    pageHeights.value = current.map((h, i) => (i === pageIndex ? height : h));
+    setPageHeights((current) =>
+      current[pageIndex] === height ? current : current.map((h, i) => (i === pageIndex ? height : h)),
+    );
   };
 
   // No inline callbacks (.some/.map) in this worklet: the React Compiler hoists
   // them out as plain JS functions, which can't be called on the UI thread.
   const pagerStyle = useAnimatedStyle(() => {
-    const heights = pageHeights.value;
     if (pageWidth === 0) return {};
     const offsets: number[] = [];
-    for (let i = 0; i < heights.length; i++) {
-      if (heights[i] === 0) return {};
+    for (let i = 0; i < pageHeights.length; i++) {
+      if (pageHeights[i] === 0) return {};
       offsets.push(i * pageWidth);
     }
     return {
-      height: interpolate(scrollX.value, offsets, heights, Extrapolation.CLAMP),
+      height: interpolate(scrollX.get(), offsets, pageHeights, Extrapolation.CLAMP),
     };
   });
+
+  // Resting height: the active page's own height (fallback under the animated style)
+  const activeHeight = pageHeights[index] ?? 0;
+  const restingStyle = activeHeight > 0 ? { height: activeHeight } : null;
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateX: pageWidth === 0 ? index * tabWidth : (scrollX.value / pageWidth) * tabWidth,
+        translateX: pageWidth === 0 ? index * tabWidth : (scrollX.get() / pageWidth) * tabWidth,
       },
     ],
   }));
@@ -148,17 +159,22 @@ export function PassportPager({ pages, index, onIndexChange, testID }: PassportP
             onContentSizeChange={handleContentSizeChange}
             onMomentumScrollEnd={(e) => handleMomentumEnd(e.nativeEvent.contentOffset.x)}
             contentContainerStyle={styles.pagesContent}
-            style={pagerStyle}
+            style={[restingStyle, pagerStyle]}
           >
             {pages.map((page, i) => (
               <View
                 key={page.key}
-                style={[styles.page, { width: pageWidth }]}
-                onLayout={(e) => setPageHeight(i, e.nativeEvent.layout.height)}
+                style={{ width: pageWidth }}
                 accessibilityElementsHidden={i !== index}
                 importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
               >
-                {page.content}
+                {/* Measured instead of the wrapper: its height is always its content's */}
+                <View
+                  style={styles.page}
+                  onLayout={(e) => setPageHeight(i, e.nativeEvent.layout.height)}
+                >
+                  {page.content}
+                </View>
               </View>
             ))}
           </Animated.ScrollView>

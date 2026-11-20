@@ -52,6 +52,8 @@ export default function RootLayout() {
               <Stack.Screen name="events/[id]" />
               <Stack.Screen name="rewards" />
               <Stack.Screen name="settings" />
+              <Stack.Screen name="stamp-requests/index" />
+              <Stack.Screen name="stamp-requests/new" />
             </Stack>
           </BottomSheetModalProvider>
         </QueryClientProvider>

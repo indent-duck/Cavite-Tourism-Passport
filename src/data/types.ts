@@ -192,6 +192,43 @@ export type CollectStampResult =
   | { success: false; reason: "locationFailed" }
   | { success: false; reason: "offline" };
 
+// Stamp request: a physical passport stamp sent for admin review so it can be
+// added to the digital passport (for sites without a QR station on-site, or
+// when it was unavailable)
+export type StampRequestStatus = "pending" | "approved" | "rejected";
+
+export interface StampRequest {
+  id: string;
+  userId: string;
+  siteId: string;
+  siteName: string;
+  siteCategory: Category;
+  municipality: string;
+  visitedOn: string; // 'YYYY-MM-DD' (date only, so the cache deserializer keeps it a string)
+  photoUri: string; // Photo of the physical stamp (local URI in mock; storage URL later)
+  note?: string;
+  status: StampRequestStatus;
+  rejectionReason?: string;
+  stampId?: string; // Stamp created on approval
+  createdAt: Date;
+  reviewedAt?: Date;
+  resultSeenAt?: Date; // When the user saw the approval/rejection (drives the reveal, banner and tab dot)
+}
+
+export interface SubmitStampRequestInput {
+  siteId: string;
+  visitedOn: string;
+  photoUri: string;
+  note?: string;
+}
+
+export type SubmitStampRequestResult =
+  | { success: true; request: StampRequest }
+  | {
+      success: false;
+      reason: "alreadyStamped" | "alreadyPending" | "invalidDate" | "siteNotFound";
+    };
+
 // API response wrapper
 export interface ApiResponse<T> {
   data: T;

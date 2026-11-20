@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button';
-import { Stamp } from '@/data/types';
+import { Stamp, StampRequest } from '@/data/types';
 import {
     PASSPORT_ISSUER_LINE,
     PASSPORT_STAMPS_HEADER,
@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { PassportPage } from './PassportPage';
+import { PendingStampSlot } from './PendingStampSlot';
 import { StampHighlight, StampReveal } from './StampReveal';
 import { StampSlot } from './StampSlot';
 
@@ -17,6 +18,8 @@ interface StampsCardProps {
   stamps: Stamp[];
   /** Stamp to animate into view (e.g. right after scanning it) */
   highlight?: StampHighlight | null;
+  /** Physical-stamp requests awaiting review, shown first as pending slots */
+  pendingRequests?: StampRequest[];
 }
 
 /**
@@ -25,10 +28,12 @@ interface StampsCardProps {
  * Displays collected stamps in chronological order (most recent first).
  * Shows only collected stamps with category badges - no uncollected placeholders.
  * A highlighted stamp (just scanned) animates onto the page.
+ * Physical-stamp requests under review come first as faint "Pending review"
+ * slots (not counted in the STAMPED badge).
  *
  * Validates: Requirements 2.6, 2.7
  */
-export function StampsCard({ stamps, highlight }: StampsCardProps) {
+export function StampsCard({ stamps, highlight, pendingRequests = [] }: StampsCardProps) {
   // Sort stamps chronologically (most recent first)
   const sortedStamps = [...stamps].sort(
     (a, b) => b.collectedAt.getTime() - a.collectedAt.getTime()
@@ -44,7 +49,7 @@ export function StampsCard({ stamps, highlight }: StampsCardProps) {
       pageNumber="02"
       testID="passport-stamps-page"
     >
-      {sortedStamps.length === 0 ? (
+      {sortedStamps.length === 0 && pendingRequests.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyStamp}>
             <Ionicons name="map-outline" size={40} color={colors.primary} />
@@ -62,10 +67,20 @@ export function StampsCard({ stamps, highlight }: StampsCardProps) {
               icon={<Ionicons name="qr-code-outline" size={18} color={colors.background} />}
               testID="passport-empty-scan-button"
             />
+            <Button
+              title="Have a physical stamp? Request it"
+              onPress={() => router.push('/stamp-requests/new')}
+              variant="text"
+              size="compact"
+              testID="passport-empty-request-button"
+            />
           </View>
         </View>
       ) : (
         <View style={styles.grid}>
+          {pendingRequests.map((request) => (
+            <PendingStampSlot key={request.id} request={request} style={styles.slot} />
+          ))}
           {sortedStamps.map((stamp, index) => (
             <StampReveal
               key={`${stamp.id}-${index}`}
@@ -115,6 +130,8 @@ const styles = StyleSheet.create({
   },
   emptyAction: {
     marginTop: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   grid: {
     flexDirection: 'row',

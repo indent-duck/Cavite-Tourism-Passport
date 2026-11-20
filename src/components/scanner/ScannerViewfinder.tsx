@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  * - Centered reticle with orange corner brackets
  * - Close button with semi-transparent background
  * - Bottom instructional text
+ * - Optional "Stamped your physical passport instead?" link (stamp requests)
  * - Debounced scanning to prevent duplicate reads
  * - Android back button handling
  * 
@@ -40,11 +41,18 @@ export interface ScannerViewfinderProps {
    * @default false
    */
   isPaused?: boolean;
+
+  /**
+   * When given, shows a "Stamped your physical passport instead?" link under
+   * the instructions (e.g. at a site with no QR code on display)
+   */
+  onRequestStamp?: () => void;
 }
 
 export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
   onScanCode,
   isPaused = false,
+  onRequestStamp,
 }) => {
   // Get safe area insets for proper positioning
   const insets = useSafeAreaInsets();
@@ -164,6 +172,19 @@ export const ScannerViewfinder: React.FC<ScannerViewfinderProps> = ({
               Point your camera at the site&apos;s QR code
             </Text>
           </View>
+
+          {onRequestStamp && (
+            <TouchableOpacity
+              onPress={onRequestStamp}
+              activeOpacity={0.7}
+              style={styles.requestLink}
+              accessibilityRole="link"
+              accessibilityLabel="Stamped your physical passport instead? Request the digital stamp"
+              testID="scanner-request-stamp-link"
+            >
+              <Text style={styles.requestLinkText}>Stamped your physical passport instead?</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -271,5 +292,19 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: colors.background, // White text
     flexShrink: 1,
+  },
+  requestLink: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  requestLinkText: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.background, // White text
+    textDecorationLine: 'underline',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });

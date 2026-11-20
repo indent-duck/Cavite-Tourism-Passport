@@ -2,6 +2,7 @@ import { AddContactSheet } from "@/components/account/AddContactSheet";
 import { LogoutConfirmModal } from "@/components/account/LogoutConfirmModal";
 import { PassportIdCard } from "@/components/account/PassportIdCard";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { getStamps } from "@/data/api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { usePromoPeriod } from "@/hooks/usePromoPeriod";
@@ -218,6 +219,14 @@ export default function AccountScreen() {
           />
           <View style={styles.linkDivider} />
           <LinkRow
+            icon="document-text-outline"
+            tone="primary"
+            title="Stamp requests"
+            subtitle="Physical passport stamps sent for review"
+            onPress={() => router.push("/stamp-requests")}
+          />
+          <View style={styles.linkDivider} />
+          <LinkRow
             icon="shield-checkmark-outline"
             tone="primary"
             title="Privacy Policy & Terms"
@@ -288,42 +297,6 @@ function formatDateRange(startDate: Date | string, endDate: Date | string) {
 }
 
 type IconName = keyof typeof Ionicons.glyphMap;
-
-function StatusPill({
-  label,
-  tone,
-  icon,
-}: {
-  label: string;
-  tone: "success" | "neutral";
-  icon?: IconName;
-}) {
-  const isSuccess = tone === "success";
-  return (
-    <View
-      style={[styles.pill, isSuccess ? styles.pillSuccess : styles.pillNeutral]}
-    >
-      {icon ? (
-        <Ionicons name={icon} size={14} color={colors.success} />
-      ) : (
-        <View
-          style={[
-            styles.pillDot,
-            { backgroundColor: isSuccess ? colors.success : colors.textSecondary },
-          ]}
-        />
-      )}
-      <Text
-        style={[
-          styles.pillText,
-          { color: isSuccess ? colors.successDark : colors.textSecondary },
-        ]}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 function DetailRow({
   icon,
@@ -585,30 +558,6 @@ const styles = StyleSheet.create({
   },
 
   // Status pill
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.full,
-  },
-  pillSuccess: {
-    backgroundColor: colors.successLight,
-  },
-  pillNeutral: {
-    backgroundColor: colors.surface,
-  },
-  pillDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  pillText: {
-    ...typography.labelMedium,
-    fontFamily: "Inter_600SemiBold",
-  },
-
   // Account details
   detailRow: {
     flexDirection: "row",

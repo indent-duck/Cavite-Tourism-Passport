@@ -9,5 +9,6 @@ export { PromoChip, type PromoChipProps } from './PromoChip';
 export { ScreenContainer, type ScreenContainerProps } from './ScreenContainer';
 export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
 export { StateView, type StateViewProps } from './StateView';
+export { StatusPill, type StatusPillProps, type StatusPillTone } from './StatusPill';
 export { TextInput, type TextInputProps } from './TextInput';
 

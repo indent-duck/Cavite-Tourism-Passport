@@ -1,11 +1,14 @@
 import { OperatingHoursCard } from "@/components/explore/OperatingHoursCard";
 import { SiteDescription } from "@/components/explore/SiteDescription";
 import { SiteHeader } from "@/components/explore/SiteHeader";
+import { SiteStampSection } from "@/components/explore/SiteStampSection";
 import { LocationMapSection } from "@/components/map/LocationMapSection";
 import { Button } from "@/components/ui/Button";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { useSiteById } from "@/hooks/useSiteById";
+import { useStampRequests } from "@/hooks/useStampRequests";
 import { useStamps } from "@/hooks/useStamps";
+import { getPendingRequest, getSiteStampState } from "@/lib/stamp-requests";
 import { colors, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -20,6 +23,8 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
  * - Single placeholder photo
  * - Description section
  * - Operating hours
+ * - Collect this stamp (request a digital stamp for a physical one, or the
+ *   pending request's status)
  *
  * Validates: Requirements 3.2
  */
@@ -32,6 +37,8 @@ export default function SiteDetailScreen() {
     refetch: refetchSite,
   } = useSiteById(id);
   const { data: stamps, isLoading: stampsLoading } = useStamps();
+  // Optional: without requests the site still shows, just without the pending state
+  const { data: stampRequests } = useStampRequests();
 
   // Scroll control state for map interaction
   const [scrollEnabled, setScrollEnabled] = React.useState(true);
@@ -42,6 +49,11 @@ export default function SiteDetailScreen() {
     if (!stamps || !site) return false;
     return stamps.some((stamp) => stamp.siteId === site.id);
   }, [stamps, site]);
+
+  const stampState = site
+    ? getSiteStampState(site.id, stamps ?? [], stampRequests ?? [])
+    : "available";
+  const pendingRequest = site ? getPendingRequest(site.id, stampRequests ?? []) : undefined;
 
   const isLoading = siteLoading || stampsLoading;
 
@@ -160,6 +172,14 @@ export default function SiteDetailScreen() {
 
       {/* Operating hours card */}
       <OperatingHoursCard operatingHours={site.operatingHours} />
+
+      {/* Collect this stamp / request under review */}
+      <SiteStampSection
+        siteId={site.id}
+        state={stampState}
+        pendingRequest={pendingRequest}
+        testID="site-stamp-section"
+      />
 
       {/* Location map and button */}
       <LocationMapSection

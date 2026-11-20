@@ -16,6 +16,9 @@ export type { ItineraryCardProps } from './ItineraryCard';
 export { ItineraryProgressCard } from './ItineraryProgressCard';
 export type { ItineraryProgressCardProps } from './ItineraryProgressCard';
 
+export { SiteStampSection } from './SiteStampSection';
+export type { SiteStampSectionProps } from './SiteStampSection';
+
 export { TimelineStopCard } from './TimelineStopCard';
 export type { TimelineStopCardProps } from './TimelineStopCard';
 

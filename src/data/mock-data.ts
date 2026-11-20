@@ -9,6 +9,7 @@ import {
     Settings,
     Site,
     Stamp,
+    StampRequest,
     User
 } from "./types";
 
@@ -558,11 +559,25 @@ export const mockRewards: Reward[] = [
 ];
 
 // Promo period
+// Relative to today (like mockEvents) so date-bound features, e.g. the visit
+// date of a stamp request, always have a valid range to pick from
+const DAY_MS = 86400000;
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
 export const mockPromoPeriod: PromoPeriod = {
-  startDate: new Date("2027-01-01"),
-  endDate: new Date("2027-03-31"),
+  startDate: new Date(today.getTime() - DAY_MS * 45),
+  endDate: new Date(today.getTime() + DAY_MS * 45),
   active: true,
 };
+
+// ============================================================================
+// Stamp Requests
+// ============================================================================
+
+// Physical-stamp requests sent for admin review (in-memory, starts empty;
+// approve/reject them from the dev panel on the Stamp requests screen)
+export const currentMockStampRequests: StampRequest[] = [];
 
 // ============================================================================
 // Settings
