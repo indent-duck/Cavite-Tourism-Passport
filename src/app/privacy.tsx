@@ -1,556 +1,777 @@
+import { AccordionRow } from '@/components/ui/AccordionRow';
+import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { colors, spacing } from '@/theme';
+import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { Fragment, useRef, useState, type ComponentRef, type ReactNode } from 'react';
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 /**
  * Privacy Policy & Terms Screen
- * 
- * Displays the app's privacy policy and terms of service in a structured,
- * official government document format with collapsible FAQ sections.
- * 
+ *
+ * Official policy document laid out as:
+ * - Navy hero banner (registration, effective date, compliance)
+ * - "Jump to" chips that scroll to each section
+ * - Four numbered policy sections in cards
+ * - Single-open FAQ accordion
+ * - Certification footer
+ *
  * Opened from:
  * - Account screen "Privacy Policy & Terms" navigation row
  * - Sign up email screen terms link (if present)
  */
-export default function PrivacyScreen() {
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  const toggleFaq = (index: number) => {
-    setExpandedFaq(expandedFaq === index ? null : index);
+type IconName = keyof typeof Ionicons.glyphMap;
+type Tone = 'primary' | 'accent' | 'success' | 'neutral';
+type SectionId = 'data' | 'location' | 'stamps' | 'rights' | 'faqs';
+
+const TONES: Record<Tone, { background: string; icon: string }> = {
+  primary: { background: colors.primaryTint, icon: colors.primary },
+  accent: { background: colors.accentTint, icon: colors.accent },
+  success: { background: colors.successLight, icon: colors.success },
+  neutral: { background: colors.surface, icon: colors.textSecondary },
+};
+
+const JUMP_LINKS: { id: SectionId; label: string }[] = [
+  { id: 'data', label: 'Data privacy' },
+  { id: 'location', label: 'Location' },
+  { id: 'stamps', label: 'Stamps & rewards' },
+  { id: 'rights', label: 'Your rights' },
+  { id: 'faqs', label: 'FAQs' },
+];
+
+const PRIVACY_EMAIL = 'privacy@tourism.cavite.gov.ph';
+const HOTLINE_PRIMARY = '(046) 419-1997';
+const HOTLINE_SECONDARY = '(046) 419-0244';
+
+const POLICY_FAQS = [
+  {
+    id: 'offline',
+    question: 'Can I use my stamp rewards offline?',
+    answer:
+      'Stamps already verified and minted in your passport ledger remain visible offline. However, collecting new stamps and generating reward redemption tokens require active internet connectivity to ensure instantaneous geofence validation.',
+  },
+  {
+    id: 'third-parties',
+    question: 'Are stamps shared with commercial third parties?',
+    answer:
+      'Never. Tourism visit statistics are strictly aggregated and anonymized for provincial infrastructure planning. No individual visit profile is sold, leased, or transmitted to commercial marketing vendors.',
+  },
+  {
+    id: 'delete-account',
+    question: 'How do I permanently delete my account?',
+    answer:
+      'You may initiate full profile dissolution under Account > Settings > Request Data Purge, or by emailing the Data Protection Officer with your passport credential number.',
+  },
+];
+
+export default function PrivacyScreen() {
+  const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+  const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  // Y offset of each section inside the content column, filled by onLayout
+  const sectionOffsets = useRef<Partial<Record<SectionId, number>>>({});
+
+  const recordOffset = (id: SectionId, event: LayoutChangeEvent) => {
+    sectionOffsets.current[id] = event.nativeEvent.layout.y;
+  };
+
+  const jumpTo = (id: SectionId) => {
+    const y = sectionOffsets.current[id];
+    if (y !== undefined) {
+      scrollViewRef.current?.scrollTo({ y, animated: true });
+    }
+  };
+
+  const openUrl = async (url: string, fallback: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Unable to open', fallback);
+    }
+  };
+
+  const handleDownload = () => {
+    Alert.alert(
+      'PDF copy coming soon',
+      'A downloadable copy of this policy will be available in a future update.',
+    );
   };
 
   return (
     <ScreenContainer
       scrollable={true}
       showHeader={true}
-      headerTitle="Settings & Help"
+      headerTitle="Privacy & Terms"
       onBackPress={() => router.back()}
-      edges={['top', 'left', 'right', 'bottom']}
+      scrollViewRef={scrollViewRef}
       testID="privacy-screen"
     >
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={true}
-      >
-        {/* Official Government Notice Banner */}
-        <View style={styles.banner}>
-          <View style={styles.badgeRow}>
-            <View style={styles.officialBadge}>
-              <Ionicons name="shield-checkmark" size={13} color={colors.background} />
-              <Text style={styles.officialBadgeText}>Official Policy</Text>
+      <StatusBar style="dark" />
+
+      <View style={styles.container}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={styles.heroBadges}>
+            <View style={styles.heroBadge}>
+              <Ionicons name="shield-checkmark" size={12} color={colors.background} />
+              <Text style={styles.heroBadgeText}>Official policy</Text>
             </View>
-            <View style={styles.regBadge}>
-              <Text style={styles.regBadgeText}>NPC Reg. No. PIC-2027-0482</Text>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>NPC Reg. No. PIC-2027-0482</Text>
             </View>
           </View>
-          <Text style={styles.bannerTitle}>
+          <Text style={styles.heroTitle} accessibilityRole="header">
             Cavite Tourism Registry & Digital Passport Terms
           </Text>
-          <Text style={styles.bannerSubtitle}>
-            Governed under Republic Act No. 10173 (Data Privacy Act of 2012) and Provincial Ordinance No. 2026-089.
+          <Text style={styles.heroSubtitle}>
+            Governed under Republic Act No. 10173 (Data Privacy Act of 2012) and
+            Provincial Ordinance No. 2026-089.
           </Text>
-          <View style={styles.metadataRow}>
-            <View style={styles.updateInfo}>
-              <Ionicons name="time-outline" size={16} color={colors.accent} />
-              <Text style={styles.updateText}>Effective: Jan 1, 2027 • v2.4</Text>
+          <View style={styles.heroDivider} />
+          <View style={styles.heroMeta}>
+            <View style={styles.heroMetaItem}>
+              <Ionicons name="time-outline" size={15} color={colors.passportFoil} />
+              <Text style={styles.heroMetaText}>Effective Jan 1, 2027 · v2.4</Text>
             </View>
-            <View style={styles.compliantBadge}>
-              <Ionicons name="hammer" size={14} color={colors.success} />
-              <Text style={styles.compliantText}>DOJ-Compliant</Text>
+            <View style={styles.compliantPill}>
+              <Ionicons name="checkmark-circle" size={13} color={colors.success} />
+              <Text style={styles.compliantText}>DOJ-compliant</Text>
             </View>
           </View>
         </View>
+
+        {/* Jump to section */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.jumpScroll}
+          contentContainerStyle={styles.jumpRow}
+        >
+          {JUMP_LINKS.map((link) => (
+            <Pressable
+              key={link.id}
+              style={({ pressed }) => [styles.jumpChip, pressed && styles.jumpChipPressed]}
+              onPress={() => jumpTo(link.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Jump to ${link.label}`}
+            >
+              <Text style={styles.jumpChipText}>{link.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         {/* Section 1: Data Privacy & Collection */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionLeft}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.primary}20` }]}>
-                <Ionicons name="id-card-outline" size={19} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.sectionLabel}>SECTION 01</Text>
-                <Text style={styles.sectionTitle}>Data Privacy & Collection</Text>
-              </View>
-            </View>
-            <Ionicons name="shield-checkmark-outline" size={20} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.sectionBody}>
-            In accordance with RA 10173, the Provincial Government of Cavite collects minimal identity markers exclusively to issue and link your authenticated provincial digital traveler credentials.
+        <PolicySection
+          number="01"
+          icon="id-card-outline"
+          tone="primary"
+          title="Data Privacy & Collection"
+          onLayout={(event) => recordOffset('data', event)}
+        >
+          <Text style={styles.body}>
+            In accordance with RA 10173, the Provincial Government of Cavite collects
+            minimal identity markers exclusively to issue and link your authenticated
+            provincial digital traveler credentials.
           </Text>
-          <View style={styles.detailBox}>
-            <Text style={styles.detailBoxTitle}>Collected Attributes:</Text>
-            <View style={styles.listItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-              <Text style={styles.listItemText}>
-                Full Legal Name & Permanent Philippine Municipality / City
-              </Text>
-            </View>
-            <View style={styles.listItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-              <Text style={styles.listItemText}>
-                Verified Mobile Number (via one-time SMS OTP verification)
-              </Text>
-            </View>
-            <View style={styles.listItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-              <Text style={styles.listItemText}>
-                Issuance Passport Identifier (e.g., CVT-2027-xxxxxx)
-              </Text>
-            </View>
+          <View style={styles.panel}>
+            <Text style={styles.panelTitle}>What we collect</Text>
+            <CheckItem>Full legal name & permanent Philippine municipality / city</CheckItem>
+            <CheckItem>Verified mobile number (via one-time SMS OTP verification)</CheckItem>
+            <CheckItem>Issued passport identifier (e.g., CVT-2027-xxxxxx)</CheckItem>
           </View>
-          <View style={styles.exclusionBox}>
-            <Ionicons name="close-circle-outline" size={18} color={colors.error} />
-            <Text style={styles.exclusionText}>
-              <Text style={styles.exclusionStrong}>Strictly Excluded:</Text> No biometric identifiers, iris scans, facial recognition templates, or raw financial instruments are ever recorded or retained by this platform.
-            </Text>
-          </View>
-        </View>
+          <Callout icon="close-circle" tone="error" title="Strictly excluded">
+            No biometric identifiers, iris scans, facial recognition templates, or raw
+            financial instruments are ever recorded or retained by this platform.
+          </Callout>
+        </PolicySection>
 
         {/* Section 2: Geofencing & GPS */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionLeft}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.accent}20` }]}>
-                <Ionicons name="navigate-outline" size={19} color={colors.accent} />
-              </View>
-              <View>
-                <Text style={styles.sectionLabel}>SECTION 02</Text>
-                <Text style={styles.sectionTitle}>Geofencing & Spot GPS</Text>
-              </View>
-            </View>
-            <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.sectionBody}>
-            Authenticity stamps require proximity proof. When you open the digital camera to scan an authorized site QR code, one instantaneous GPS query is triggered.
+        <PolicySection
+          number="02"
+          icon="navigate-outline"
+          tone="accent"
+          title="Geofencing & Spot GPS"
+          onLayout={(event) => recordOffset('location', event)}
+        >
+          <Text style={styles.body}>
+            Authenticity stamps require proximity proof. When you open the camera to
+            scan an authorized site QR code, one instantaneous GPS query is triggered.
           </Text>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={styles.statHeader}>
-                <Ionicons name="radio-outline" size={16} color={colors.accent} />
-                <Text style={styles.statLabel}>Boundary Gate</Text>
-              </View>
-              <Text style={styles.statValue}>±150m</Text>
-              <Text style={styles.statDescription}>
-                Tolerance radius around historical site landmark markers.
-              </Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statHeader}>
-                <Ionicons name="close-circle-outline" size={16} color={colors.success} />
-                <Text style={styles.statLabel}>Zero Tracking</Text>
-              </View>
-              <Text style={styles.statValue}>0 sec</Text>
-              <Text style={styles.statDescription}>
-                Background coordinates are never polled or logged.
-              </Text>
-            </View>
+            <StatTile
+              icon="radio-outline"
+              tone="accent"
+              label="Boundary gate"
+              value="±150 m"
+              description="Tolerance radius around site landmark markers."
+            />
+            <StatTile
+              icon="eye-off-outline"
+              tone="success"
+              label="Zero tracking"
+              value="0 sec"
+              description="Background coordinates are never polled or logged."
+            />
           </View>
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
-            <Text style={styles.infoText}>
-              Coordinates are discarded immediately after cryptographic hash generation. No trajectory trails or user routes are retained on municipal database servers.
-            </Text>
-          </View>
-        </View>
+          <Callout icon="information-circle" tone="info">
+            Coordinates are discarded immediately after cryptographic hash generation.
+            No trajectory trails or user routes are retained on municipal database
+            servers.
+          </Callout>
+        </PolicySection>
 
         {/* Section 3: Stamp Collection & Rewards */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionLeft}>
-              <View style={[styles.iconBox, { backgroundColor: `${colors.success}20` }]}>
-                <Ionicons name="medal-outline" size={19} color={colors.success} />
-              </View>
-              <View>
-                <Text style={styles.sectionLabel}>SECTION 03</Text>
-                <Text style={styles.sectionTitle}>Stamp Collection & Rewards</Text>
-              </View>
-            </View>
-            <Ionicons name="star-outline" size={20} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.sectionBody}>
-            Digital stamps acquired inside the booklet are official tokens issued under tourism promotional campaigns. Fair participation guidelines apply:
+        <PolicySection
+          number="03"
+          icon="medal-outline"
+          tone="success"
+          title="Stamp Collection & Rewards"
+          onLayout={(event) => recordOffset('stamps', event)}
+        >
+          <Text style={styles.body}>
+            Digital stamps acquired inside the booklet are official tokens issued under
+            tourism promotional campaigns. Fair participation guidelines apply:
           </Text>
-          <View style={styles.rulesList}>
-            <View style={styles.ruleItem}>
-              <Text style={styles.ruleNumber}>01</Text>
-              <View style={styles.ruleContent}>
-                <Text style={styles.ruleTitle}>Campaign Eligibility Period</Text>
-                <Text style={styles.ruleDescription}>
-                  Current promotional cycle runs through <Text style={styles.ruleBold}>March 31, 2027</Text>. Unredeemed badge points roll over to secondary cultural incentives.
-                </Text>
-              </View>
-            </View>
-            <View style={styles.ruleItem}>
-              <Text style={styles.ruleNumber}>02</Text>
-              <View style={styles.ruleContent}>
-                <Text style={styles.ruleTitle}>Single-Use 15-Minute Token</Text>
-                <Text style={styles.ruleDescription}>
-                  Physical reward counter claims generate a dynamic, self-invalidating 15-minute verification token presented exclusively to Provincial Tourism desks.
-                </Text>
-              </View>
-            </View>
-            <View style={styles.ruleItem}>
-              <Text style={styles.ruleNumber}>03</Text>
-              <View style={styles.ruleContent}>
-                <Text style={[styles.ruleTitle, { color: colors.error }]}>Anti-Tampering Enforcement</Text>
-                <Text style={styles.ruleDescription}>
-                  Virtual machine spoofing, simulated mock GPS coordinates, and duplicate credential transfers invoke permanent passport revocation.
-                </Text>
-              </View>
-            </View>
+          <View style={styles.rules}>
+            <RuleItem number={1} title="Campaign eligibility period">
+              Current promotional cycle runs through{' '}
+              <Text style={styles.bold}>March 31, 2027</Text>. Unredeemed badge points
+              roll over to secondary cultural incentives.
+            </RuleItem>
+            <RuleItem number={2} title="Single-use 15-minute token">
+              Reward counter claims generate a dynamic, self-invalidating 15-minute
+              verification token presented exclusively to Provincial Tourism desks.
+            </RuleItem>
+            <RuleItem number={3} title="Anti-tampering enforcement" danger>
+              Virtual machine spoofing, simulated mock GPS coordinates, and duplicate
+              credential transfers invoke permanent passport revocation.
+            </RuleItem>
           </View>
-        </View>
+        </PolicySection>
 
         {/* Section 4: Retention & Rights */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionLeft}>
-              <View style={[styles.iconBox, { backgroundColor: colors.surface }]}>
-                <Ionicons name="business-outline" size={19} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.sectionLabel}>SECTION 04</Text>
-                <Text style={styles.sectionTitle}>Retention & Tourist Rights</Text>
-              </View>
-            </View>
-            <Ionicons name="help-circle-outline" size={20} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.sectionBody}>
-            Under Section 16 of the Data Privacy Act, travelers retain full rights to inspect, amend, or purge registered tourist entries upon identity confirmation.
+        <PolicySection
+          number="04"
+          icon="business-outline"
+          tone="neutral"
+          title="Retention & Tourist Rights"
+          onLayout={(event) => recordOffset('rights', event)}
+        >
+          <Text style={styles.body}>
+            Under Section 16 of the Data Privacy Act, travelers retain full rights to
+            inspect, amend, or purge registered tourist entries upon identity
+            confirmation.
           </Text>
-          <View style={styles.retentionBox}>
+          <View style={styles.panel}>
             <View style={styles.retentionHeader}>
-              <Text style={styles.retentionTitle}>Retention Duration</Text>
-              <View style={styles.retentionBadge}>
-                <Text style={styles.retentionBadgeText}>36 Months</Text>
+              <Text style={styles.panelTitle}>Retention period</Text>
+              <View style={styles.retentionPill}>
+                <Text style={styles.retentionPillText}>36 months</Text>
               </View>
             </View>
-            <Text style={styles.retentionDescription}>
-              Records are securely purged automatically after 36 months of profile inactivity, or within 7 business days following a formal right-to-be-forgotten request.
+            <Text style={styles.panelBody}>
+              Records are securely purged automatically after 36 months of profile
+              inactivity, or within 7 business days following a formal
+              right-to-be-forgotten request.
             </Text>
           </View>
-          <View style={styles.contactBox}>
+
+          {/* Data Protection Office contact */}
+          <View style={styles.contactCard}>
             <View style={styles.contactHeader}>
-              <Ionicons name="business" size={18} color={colors.accent} />
-              <Text style={styles.contactTitle}>Provincial Tourism & Cultural Affairs Office</Text>
+              <Ionicons name="business" size={16} color={colors.passportFoil} />
+              <Text style={styles.contactTitle}>
+                Provincial Tourism & Cultural Affairs Office
+              </Text>
             </View>
-            <Text style={styles.contactBody}>
-              Provincial Capitol Compound, Trece Martires City, Cavite 4109{'\n'}
-              Email: <Text style={styles.contactLink}>privacy@tourism.cavite.gov.ph</Text>{'\n'}
-              Hotline: (046) 419-1997 / 419-0244
-            </Text>
+            <ContactRow
+              icon="location-outline"
+              title="Provincial Capitol Compound"
+              subtitle="Trece Martires City, Cavite 4109"
+            />
+            <ContactRow
+              icon="mail-outline"
+              title={PRIVACY_EMAIL}
+              subtitle="Data Protection Officer"
+              onPress={() =>
+                openUrl(`mailto:${PRIVACY_EMAIL}`, `Email us at ${PRIVACY_EMAIL}.`)
+              }
+              accessibilityLabel={`Email the Data Protection Officer at ${PRIVACY_EMAIL}`}
+            />
+            <ContactRow
+              icon="call-outline"
+              title={HOTLINE_PRIMARY}
+              subtitle={`Alternate: ${HOTLINE_SECONDARY}`}
+              onPress={() =>
+                openUrl(`tel:${HOTLINE_PRIMARY.replace(/\D/g, '')}`, `Call ${HOTLINE_PRIMARY}.`)
+              }
+              accessibilityLabel={`Call the hotline at ${HOTLINE_PRIMARY}`}
+            />
+          </View>
+        </PolicySection>
+
+        {/* FAQs */}
+        <View style={styles.faqSection} onLayout={(event) => recordOffset('faqs', event)}>
+          <Text style={styles.groupTitle} accessibilityRole="header">
+            Frequently asked
+          </Text>
+          <View style={styles.card}>
+            {POLICY_FAQS.map((faq, index) => (
+              <Fragment key={faq.id}>
+                {index > 0 && <View style={styles.faqDivider} />}
+                <AccordionRow
+                  title={faq.question}
+                  body={faq.answer}
+                  isOpen={expandedFaqId === faq.id}
+                  onToggle={() =>
+                    setExpandedFaqId((current) => (current === faq.id ? null : faq.id))
+                  }
+                />
+              </Fragment>
+            ))}
           </View>
         </View>
 
-        {/* FAQ Section */}
-        <View style={styles.section}>
-          <View style={styles.faqHeader}>
-            <Ionicons name="help-circle" size={20} color={colors.accent} />
-            <Text style={styles.faqHeaderTitle}>Frequently Addressed Inquiries</Text>
-          </View>
-          
-          {/* FAQ 1 */}
-          <TouchableOpacity
-            style={styles.faqItem}
-            onPress={() => toggleFaq(0)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.faqQuestion}>
-              <Text style={styles.faqQuestionText}>
-                Can I use my stamp rewards offline?
-              </Text>
-              <Ionicons
-                name={expandedFaq === 0 ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </View>
-            {expandedFaq === 0 && (
-              <Text style={styles.faqAnswer}>
-                Stamps already verified and minted in your passport ledger remain visible offline. However, collecting new stamps and generating reward redemption tokens require active internet connectivity to ensure instantaneous geofence validation.
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {/* FAQ 2 */}
-          <TouchableOpacity
-            style={styles.faqItem}
-            onPress={() => toggleFaq(1)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.faqQuestion}>
-              <Text style={styles.faqQuestionText}>
-                Are stamps shared with commercial third parties?
-              </Text>
-              <Ionicons
-                name={expandedFaq === 1 ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </View>
-            {expandedFaq === 1 && (
-              <Text style={styles.faqAnswer}>
-                Never. Tourism visit statistics are strictly aggregated and anonymized for provincial infrastructure planning. No individual visit profile is sold, leased, or transmitted to commercial marketing vendors.
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {/* FAQ 3 */}
-          <TouchableOpacity
-            style={styles.faqItem}
-            onPress={() => toggleFaq(2)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.faqQuestion}>
-              <Text style={styles.faqQuestionText}>
-                How do I permanently delete my account?
-              </Text>
-              <Ionicons
-                name={expandedFaq === 2 ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </View>
-            {expandedFaq === 2 && (
-              <Text style={styles.faqAnswer}>
-                You may initiate full profile dissolution under Account &gt; Settings &gt; Request Data Purge, or by emailing the Data Protection Officer with your passport credential number.
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom Certification Card */}
-        <View style={styles.certificationCard}>
+        {/* Certification */}
+        <View style={styles.certification}>
           <View style={styles.certificationIcon}>
             <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
           </View>
           <Text style={styles.certificationTitle}>Certified Provincial Registry</Text>
-          <Text style={styles.certificationDescription}>
-            This digital portal adheres to the ISO/IEC 27001 baseline privacy framework and the National Privacy Commission of the Philippines.
+          <Text style={styles.certificationText}>
+            This digital portal adheres to the ISO/IEC 27001 baseline privacy framework
+            and the National Privacy Commission of the Philippines.
           </Text>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.downloadButton}
-              onPress={() => {
-                // Mock download functionality
-                console.log('Download PDF triggered');
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="download-outline" size={18} color={colors.background} />
-              <Text style={styles.downloadButtonText}>Download PDF Copy (382 KB)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={18} color={colors.primary} />
-              <Text style={styles.backButtonText}>Back to Account</Text>
-            </TouchableOpacity>
-          </View>
+          <Button
+            title="Download PDF copy"
+            variant="outline"
+            size="compact"
+            fullWidth
+            icon={<Ionicons name="download-outline" size={18} color={colors.primary} />}
+            onPress={handleDownload}
+            testID="privacy-download-pdf"
+          />
         </View>
-      </ScrollView>
+      </View>
     </ScreenContainer>
   );
 }
 
+// ============================================================================
+// Building blocks
+// ============================================================================
+
+function IconChip({ icon, tone }: { icon: IconName; tone: Tone }) {
+  const palette = TONES[tone];
+  return (
+    <View style={[styles.iconChip, { backgroundColor: palette.background }]}>
+      <Ionicons name={icon} size={20} color={palette.icon} />
+    </View>
+  );
+}
+
+function PolicySection({
+  number,
+  icon,
+  tone,
+  title,
+  onLayout,
+  children,
+}: {
+  number: string;
+  icon: IconName;
+  tone: Tone;
+  title: string;
+  onLayout: (event: LayoutChangeEvent) => void;
+  children: ReactNode;
+}) {
+  return (
+    <View style={[styles.card, styles.sectionCard]} onLayout={onLayout}>
+      <View style={styles.sectionHeader}>
+        <IconChip icon={icon} tone={tone} />
+        <View style={styles.flex}>
+          <Text style={styles.sectionNumber}>Section {number}</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            {title}
+          </Text>
+        </View>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function CheckItem({ children }: { children: ReactNode }) {
+  return (
+    <View style={styles.checkItem}>
+      <Ionicons name="checkmark-circle" size={16} color={colors.success} style={styles.lineIcon} />
+      <Text style={[styles.panelBody, styles.flex]}>{children}</Text>
+    </View>
+  );
+}
+
+function Callout({
+  icon,
+  tone,
+  title,
+  children,
+}: {
+  icon: IconName;
+  tone: 'info' | 'error';
+  title?: string;
+  children: ReactNode;
+}) {
+  const isError = tone === 'error';
+  return (
+    <View style={[styles.callout, isError ? styles.calloutError : styles.calloutInfo]}>
+      <Ionicons
+        name={icon}
+        size={18}
+        color={isError ? colors.error : colors.primary}
+        style={styles.lineIcon}
+      />
+      <Text style={styles.calloutText}>
+        {title && <Text style={styles.bold}>{title}: </Text>}
+        {children}
+      </Text>
+    </View>
+  );
+}
+
+function StatTile({
+  icon,
+  tone,
+  label,
+  value,
+  description,
+}: {
+  icon: IconName;
+  tone: Tone;
+  label: string;
+  value: string;
+  description: string;
+}) {
+  return (
+    <View style={styles.statTile}>
+      <View style={styles.statHeader}>
+        <Ionicons name={icon} size={15} color={TONES[tone].icon} />
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statDescription}>{description}</Text>
+    </View>
+  );
+}
+
+function RuleItem({
+  number,
+  title,
+  danger,
+  children,
+}: {
+  number: number;
+  title: string;
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <View style={styles.rule}>
+      <View style={[styles.ruleNumber, danger && styles.ruleNumberDanger]}>
+        <Text style={[styles.ruleNumberText, danger && styles.ruleNumberTextDanger]}>
+          {number}
+        </Text>
+      </View>
+      <View style={styles.flex}>
+        <Text style={[styles.ruleTitle, danger && styles.ruleTitleDanger]}>{title}</Text>
+        <Text style={styles.panelBody}>{children}</Text>
+      </View>
+    </View>
+  );
+}
+
+function ContactRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  accessibilityLabel,
+}: {
+  icon: IconName;
+  title: string;
+  subtitle: string;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+}) {
+  const content = (
+    <>
+      <View style={styles.contactIcon}>
+        <Ionicons name={icon} size={16} color={colors.background} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={styles.contactRowTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={styles.contactRowSubtitle}>{subtitle}</Text>
+      </View>
+      {onPress && <Ionicons name="chevron-forward" size={16} color={colors.onPrimaryBorder} />}
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={styles.contactRow}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.contactRow, pressed && styles.contactRowPressed]}
+      onPress={onPress}
+      accessibilityRole="link"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+// ============================================================================
+// Styles
+// ============================================================================
+
+const ICON_CHIP_SIZE = 36;
+
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
+    gap: spacing.base,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.xl,
+  },
+  flex: {
     flex: 1,
   },
-  contentContainer: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-    gap: spacing.lg,
+  bold: {
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600',
+    color: colors.text,
+  },
+  body: {
+    ...typography.bodyMedium,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+  },
+  lineIcon: {
+    marginTop: 1,
   },
 
-  // Banner Styles
-  banner: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.base,
+  // Hero
+  hero: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.card,
+    padding: spacing.lg,
     gap: spacing.sm,
+    ...shadows.card,
   },
-  badgeRow: {
+  heroBadges: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginBottom: spacing.xs,
   },
-  officialBadge: {
+  heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.primary,
+    gap: spacing.xs,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 9999,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    backgroundColor: colors.onPrimaryOverlay,
+    borderWidth: 1,
+    borderColor: colors.onPrimaryBorder,
   },
-  officialBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+  heroBadgeText: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
     color: colors.background,
-    letterSpacing: 0.5,
   },
-  regBadge: {
-    backgroundColor: `${colors.primary}10`,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 9999,
+  heroTitle: {
+    ...typography.headlineMedium,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700',
+    color: colors.background,
   },
-  regBadgeText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.primary,
+  heroSubtitle: {
+    ...typography.bodyMedium,
+    fontFamily: 'Inter_400Regular',
+    color: colors.primaryTint,
   },
-  bannerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.primary,
-    lineHeight: 24,
+  heroDivider: {
+    height: 1,
+    backgroundColor: colors.onPrimaryBorder,
+    marginVertical: spacing.xs,
   },
-  bannerSubtitle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  metadataRow: {
+  heroMeta: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
-  updateInfo: {
+  heroMetaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  updateText: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  heroMetaText: {
+    ...typography.bodySmall,
+    fontFamily: 'Inter_500Medium',
+    color: colors.background,
   },
-  compliantBadge: {
+  compliantPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: `${colors.success}20`,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 9999,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    backgroundColor: colors.successLight,
   },
   compliantText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.success,
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.successDark,
   },
 
-  // Section Styles
-  section: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.base,
+  // Jump chips (bleed to the screen edges so they scroll edge-to-edge)
+  jumpScroll: {
+    marginHorizontal: -spacing.base,
+  },
+  jumpRow: {
     gap: spacing.sm,
+    paddingHorizontal: spacing.base,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
+  jumpChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.full,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  sectionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
+  jumpChipPressed: {
+    backgroundColor: colors.primaryTint,
+    borderColor: colors.primaryTint,
   },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
+  jumpChipText: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.primary,
+  },
+
+  iconChip: {
+    width: ICON_CHIP_SIZE,
+    height: ICON_CHIP_SIZE,
+    borderRadius: radii.input,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionLabel: {
-    fontSize: 10,
-    fontWeight: '600',
+
+  // Cards / sections
+  card: {
+    backgroundColor: colors.background,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  sectionCard: {
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  sectionNumber: {
+    ...typography.labelSmall,
+    fontFamily: 'Inter_700Bold',
     color: colors.accent,
-    letterSpacing: 1,
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    lineHeight: 22,
-  },
-  sectionBody: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-
-  // Detail Box Styles
-  detailBox: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  detailBoxTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-  },
-  listItemText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text,
-    lineHeight: 20,
-  },
-
-  // Exclusion Box Styles
-  exclusionBox: {
-    backgroundColor: `${colors.error}10`,
-    borderRadius: 12,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-  },
-  exclusionText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  exclusionStrong: {
+    ...typography.titleMedium,
+    fontFamily: 'Inter_700Bold',
     fontWeight: '700',
     color: colors.text,
   },
 
-  // Stats Grid Styles
+  // Inset panel
+  panel: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.input,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  panelTitle: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.primary,
+  },
+  panelBody: {
+    ...typography.bodyMedium,
+    fontFamily: 'Inter_400Regular',
+    color: colors.text,
+  },
+  checkItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+
+  // Callouts
+  callout: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.input,
+  },
+  calloutInfo: {
+    backgroundColor: colors.primaryTint,
+  },
+  calloutError: {
+    backgroundColor: colors.errorTint,
+  },
+  calloutText: {
+    ...typography.bodyMedium,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    flex: 1,
+  },
+
+  // Stats
   statsGrid: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-  statCard: {
+  statTile: {
     flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: spacing.sm,
-    gap: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radii.input,
+    padding: spacing.md,
+    gap: 2,
   },
   statHeader: {
     flexDirection: 'row',
@@ -558,237 +779,176 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
     color: colors.textSecondary,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    ...typography.headlineLarge,
+    fontFamily: 'Inter_700Bold',
     color: colors.primary,
-    lineHeight: 28,
   },
   statDescription: {
-    fontSize: 11,
+    ...typography.bodySmall,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
-    lineHeight: 16,
   },
 
-  // Info Box Styles
-  infoBox: {
-    backgroundColor: `${colors.primary}10`,
-    borderRadius: 12,
-    padding: spacing.sm,
+  // Rules
+  rules: {
+    gap: spacing.base,
+  },
+  rule: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.xs,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-
-  // Rules List Styles
-  rulesList: {
-    gap: spacing.xs,
-  },
-  ruleItem: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
+    gap: spacing.md,
   },
   ruleNumber: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.accent,
-    fontFamily: 'monospace',
-    marginTop: 2,
+    width: 26,
+    height: 26,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentTint,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  ruleContent: {
-    flex: 1,
-    gap: 4,
+  ruleNumberDanger: {
+    backgroundColor: colors.errorTint,
+  },
+  ruleNumberText: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_700Bold',
+    color: colors.accent,
+  },
+  ruleNumberTextDanger: {
+    color: colors.error,
   },
   ruleTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
     color: colors.primary,
+    marginBottom: 2,
   },
-  ruleDescription: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  ruleBold: {
-    fontWeight: '700',
+  ruleTitleDanger: {
+    color: colors.error,
   },
 
-  // Retention Box Styles
-  retentionBox: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
+  // Retention
   retentionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  retentionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  retentionBadge: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: 8,
+  retentionPill: {
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: radii.full,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  retentionBadgeText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  retentionDescription: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
+  retentionPillText: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.text,
   },
 
-  // Contact Box Styles
-  contactBox: {
+  // Contact
+  contactCard: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    padding: spacing.sm,
-    gap: spacing.xs,
+    borderRadius: radii.input,
+    paddingVertical: spacing.sm,
+    overflow: 'hidden',
   },
   contactHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
   },
   contactTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
     color: colors.background,
-  },
-  contactBody: {
-    fontSize: 13,
-    color: `${colors.background}CC`,
-    lineHeight: 20,
-  },
-  contactLink: {
-    textDecorationLine: 'underline',
-    color: colors.background,
-  },
-
-  // FAQ Styles
-  faqHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  faqHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  faqItem: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: spacing.xs,
-  },
-  faqQuestion: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  faqQuestionText: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-    lineHeight: 20,
   },
-  faqAnswer: {
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.sm,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  contactRowPressed: {
+    backgroundColor: colors.onPrimaryOverlay,
+  },
+  contactIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.full,
+    backgroundColor: colors.onPrimaryOverlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactRowTitle: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.background,
+  },
+  contactRowSubtitle: {
+    ...typography.bodySmall,
+    fontFamily: 'Inter_400Regular',
+    color: colors.primaryTint,
   },
 
-  // Certification Card Styles
-  certificationCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.base,
+  // FAQs
+  faqSection: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  groupTitle: {
+    ...typography.labelMedium,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textSecondary,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    paddingHorizontal: spacing.xs,
+  },
+  faqDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: spacing.base,
+  },
+
+  // Certification
+  certification: {
     alignItems: 'center',
     gap: spacing.sm,
+    paddingTop: spacing.base,
+    paddingHorizontal: spacing.sm,
   },
   certificationIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 9999,
-    backgroundColor: `${colors.primary}20`,
+    width: ICON_CHIP_SIZE + 12,
+    height: ICON_CHIP_SIZE + 12,
+    borderRadius: radii.full,
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
   certificationTitle: {
-    fontSize: 17,
+    ...typography.titleMedium,
+    fontFamily: 'Inter_700Bold',
     fontWeight: '700',
     color: colors.primary,
     textAlign: 'center',
   },
-  certificationDescription: {
-    fontSize: 13,
+  certificationText: {
+    ...typography.bodySmall,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 290,
-  },
-  actionButtons: {
-    width: '100%',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  downloadButton: {
-    height: 48,
-    backgroundColor: colors.accent,
-    borderRadius: 9999,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  downloadButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.background,
-  },
-  backButton: {
-    height: 48,
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    borderRadius: 9999,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
+    maxWidth: 300,
+    marginBottom: spacing.sm,
   },
 });

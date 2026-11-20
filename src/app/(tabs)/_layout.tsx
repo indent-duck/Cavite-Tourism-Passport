@@ -7,8 +7,11 @@ import { getUnseenResults } from '@/lib/stamp-requests';
 import { usePathname, useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { colors } from '@/theme';
+
+const TAB_PATHS = new Set(['/explore', '/passport', '/scan', '/discover', '/account']);
 
 /**
  * Tabs Layout
@@ -26,14 +29,24 @@ export default function TabsLayout() {
   const { data: stampRequests } = useStampRequests();
   const hasUnseenStampResults = getUnseenResults(stampRequests ?? []).length > 0;
 
+  // `usePathname` is global: it switches to e.g. '/settings' the moment a stack
+  // screen is pushed over the tabs, while this layout is still visible behind the
+  // slide-in. Deriving the Header from it directly made the Header mount over
+  // Account mid-transition (shoving the screen down and flipping the status bar),
+  // then unmount again on back. Only follow the pathname while it's a tab route.
+  const [tabPath, setTabPath] = useState(pathname);
+  if (TAB_PATHS.has(pathname) && pathname !== tabPath) {
+    setTabPath(pathname);
+  }
+
   // Show PromoChip only on Explore, Passport, and Discover tabs
-  const showPromoChip = pathname === '/explore' || pathname === '/passport' || pathname === '/discover';
+  const showPromoChip = tabPath === '/explore' || tabPath === '/passport' || tabPath === '/discover';
 
   const handlePointsPress = () => {
     router.push('/rewards' as any);
   };
 
-  const showHeader = !!user && !pathname.includes('/account');
+  const showHeader = !!user && tabPath !== '/account';
 
   return (
     // White backing so the gaps under the Header's rounded bottom corners

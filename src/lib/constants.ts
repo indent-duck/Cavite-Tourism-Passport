@@ -87,6 +87,8 @@ export const SOCIAL_LINKS = {
   DILG_4A: 'https://example.com/dilg-region4a', // TBD
 };
 
+export const HELPDESK_EMAIL = 'helpdesk@example.com'; // TBD
+
 // Passport constants (TBD - pending Tourism Office confirmation)
 export const PASSPORT_ISSUER_LINE = 'Province of Cavite'; // TBD
 export const PASSPORT_SUBTITLE = 'Official Passport'; // TBD
