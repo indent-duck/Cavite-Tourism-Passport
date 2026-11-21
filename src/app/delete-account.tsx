@@ -23,8 +23,8 @@ type IconName = keyof typeof Ionicons.glyphMap;
  *
  * Deleting needs both the "I understand" checkbox and the account password.
  * On success the cache is cleared and the user lands on the login screen,
- * which shows an "Account deleted" feedback dialog.
- * Mock: password "wrong" fails.
+ * which shows an "Account deleted" feedback dialog. A wrong password shows
+ * under the password field; staff accounts are refused with a form message.
  */
 export default function DeleteAccountScreen() {
   const { data: summary } = useAccountDeletionSummary();

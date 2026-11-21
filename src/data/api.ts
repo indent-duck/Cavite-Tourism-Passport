@@ -3,6 +3,7 @@ import { FieldError, NETWORK_ERROR_MESSAGE } from "@/lib/errors";
 import { fromDateKey, toDateKey } from "@/lib/stamp-requests";
 import { supabase } from "@/lib/supabase";
 import {
+    FunctionsHttpError,
     isAuthRetryableFetchError,
     type AuthError,
     type PostgrestError
@@ -470,23 +471,49 @@ export async function getAccountDeletionSummary(): Promise<AccountDeletionSummar
 /**
  * Permanently delete the signed-in user's account
  *
- * Supabase: a `delete-account` Edge Function, since deleting an auth user
- * needs the service role key. It checks the caller's JWT and password,
- * refuses officer/admin accounts (`reward_claims.claimed_by` points at them
- * with no cascade), deletes `stamp-requests/{account_id}/*` from Storage, then
- * calls `auth.admin.deleteUser()`. The database cascades to accounts, stamps,
- * reward_claims and stamp_requests.
- * Not wired yet. Mock: password "wrong" fails. Otherwise it signs out, but
- * the real account (and its stamp requests and claims) is NOT deleted.
+ * Supabase: the `delete-account` Edge Function (supabase/functions), since
+ * deleting an auth user needs the secret key. It checks the caller's token
+ * and password, refuses officer/admin accounts, removes
+ * `stamp-requests/{account_id}/*` from Storage, then deletes the auth user.
+ * The database cascades to accounts, stamps, stamp_requests and
+ * reward_claims. Afterwards the saved session is removed from this device.
  */
 export async function deleteAccount(password: string): Promise<void> {
-  await randomDelay();
+  await requireUserId();
 
-  if (password === 'wrong') {
-    throw new FieldError('password', 'Incorrect password.');
+  const { error } = await supabase.functions.invoke("delete-account", {
+    body: { password },
+  });
+  if (error) {
+    throw await deleteAccountError(error);
   }
 
   await supabase.auth.signOut({ scope: "local" });
+}
+
+/** Turn a failed `delete-account` call into a message for the delete screen */
+async function deleteAccountError(error: Error): Promise<Error> {
+  // Network failures (FunctionsFetchError, FunctionsRelayError) have no body
+  if (!(error instanceof FunctionsHttpError)) {
+    return new Error(NETWORK_ERROR_MESSAGE);
+  }
+  const body: { error?: string } | null = await error.context.json().catch(() => null);
+  switch (body?.error) {
+    case "wrong_password":
+      return new FieldError("password", "Incorrect password.");
+    case "rate_limited":
+      return new FieldError("password", AUTH_ERROR_MESSAGES.over_request_rate_limit);
+    case "staff_account":
+      // Not a field the user can fix, but the message must show in release builds too
+      return new FieldError(
+        "account",
+        "Staff accounts can't be deleted in the app. Please ask an admin.",
+      );
+    case "not_signed_in":
+      return new Error(SIGNED_OUT_MESSAGE);
+    default:
+      return new Error(`Couldn't delete your account (${body?.error ?? error.message}).`);
+  }
 }
 
 // ============================================================================
