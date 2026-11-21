@@ -1,21 +1,21 @@
 import { StampReveal } from '@/components/passport/StampReveal';
 import { ClaimConfirmModal } from '@/components/rewards/ClaimConfirmModal';
 import { ClaimQRView } from '@/components/rewards/ClaimQRView';
-import { RewardDevPanel } from '@/components/rewards/RewardDevPanel';
 import { RewardPhoto } from '@/components/rewards/RewardPhoto';
 import { RewardRequirements } from '@/components/rewards/RewardRequirements';
 import { Button } from '@/components/ui/Button';
+import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { StateView } from '@/components/ui/StateView';
-import type { ActiveClaim, Category, RewardEligibility } from '@/data/types';
+import type { ActiveClaim, Category, GenerateClaimResult, RewardEligibility } from '@/data/types';
 import { useActiveClaim } from '@/hooks/useActiveClaim';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useGenerateClaimQR } from '@/hooks/useGenerateClaimQR';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { useRewardById } from '@/hooks/useRewardById';
 import { useRewardEligibility } from '@/hooks/useRewardEligibility';
-import { useSimulateClaim } from '@/hooks/useSimulateClaim';
 import { CLAIM_QR_EXPIRY_MINUTES, REDEMPTION_LOCATION } from '@/lib/constants';
+import { hapticError } from '@/lib/haptics';
 import {
   describeRemaining,
   formatShortDate,
@@ -27,13 +27,58 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Reward status plus the two claim-pass states */
 type ScreenState = RewardStatus | 'qr-active' | 'qr-expired';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** Why a pass wasn't made: the server's reason, or no connection */
+type ClaimFailure = Extract<GenerateClaimResult, { success: false }>['reason'] | 'network';
+
+/**
+ * The popup for each failure. For the server's reasons the screen also
+ * refreshes behind it, so closing the popup shows where things stand.
+ */
+const CLAIM_FAILURES: Record<ClaimFailure, { icon: IconName; title: string; message: string }> = {
+  soldOut: {
+    icon: 'gift-outline',
+    title: 'This reward just sold out',
+    message: 'All claims were taken before your pass was made. No points were used.',
+  },
+  alreadyClaimedThisPeriod: {
+    icon: 'ribbon-outline',
+    title: 'Already claimed',
+    message: "You've already claimed a reward this promo period.",
+  },
+  notEnoughPoints: {
+    icon: 'star-outline',
+    title: 'Not enough points',
+    message: "You don't have enough points for this reward yet.",
+  },
+  missingCategories: {
+    icon: 'albums-outline',
+    title: 'Stamps still missing',
+    message: 'You need a stamp from each of the 4 categories to claim a reward.',
+  },
+  noActivePeriod: {
+    icon: 'calendar-outline',
+    title: 'Rewards are closed',
+    message: "The promo period isn't running, so rewards can't be claimed right now.",
+  },
+  rewardNotFound: {
+    icon: 'gift-outline',
+    title: 'Reward unavailable',
+    message: 'This reward is no longer offered.',
+  },
+  network: {
+    icon: 'cloud-offline-outline',
+    title: "Couldn't create your pass",
+    message: 'Check your connection and try again.',
+  },
+};
 
 /**
  * Reward Detail Screen
@@ -69,10 +114,14 @@ export default function RewardDetailScreen() {
   const activeClaim = activeClaimQuery.data ?? null;
 
   const generateClaimQR = useGenerateClaimQR();
-  const simulateClaim = useSimulateClaim(rewardId);
 
   const [confirmVisible, setConfirmVisible] = useState(false);
-  const [justClaimed, setJustClaimed] = useState(false);
+  // Kept after the popup closes, so its text doesn't change while it fades out
+  const [claimFailure, setClaimFailure] = useState<ClaimFailure>('network');
+  const [failureVisible, setFailureVisible] = useState(false);
+  // Whether a live pass was shown on this visit: if the reward then turns
+  // claimed, an officer just redeemed it, so the CLAIMED stamp animates in
+  const [sawLivePass, setSawLivePass] = useState(false);
 
   // When the pass lapses, switch to the expired view right away instead of
   // waiting for the next refetch, and keep showing it after the API drops
@@ -155,15 +204,32 @@ export default function RewardDetailScreen() {
   const shownClaim = activeClaim ?? expiredClaim;
   const isPass = (state === 'qr-active' || state === 'qr-expired') && shownClaim;
 
+  // Adjusting state during render (guarded) avoids an extra effect pass
+  if (state === 'qr-active' && !sawLivePass) {
+    setSawLivePass(true);
+  }
+  const justClaimed = sawLivePass && state === 'claimed';
+
   // ---- Actions -------------------------------------------------------------
+
+  const showClaimFailure = (failure: ClaimFailure) => {
+    setConfirmVisible(false);
+    setClaimFailure(failure);
+    setFailureVisible(true);
+    hapticError();
+  };
 
   const generatePass = async () => {
     try {
-      await generateClaimQR.mutateAsync(rewardId);
-      setExpiredClaim(null);
+      const result = await generateClaimQR.mutateAsync(rewardId);
+      if (!result.success) {
+        showClaimFailure(result.reason);
+        return;
+      }
       setConfirmVisible(false);
+      setExpiredClaim(null);
     } catch {
-      Alert.alert('Could not create your pass', 'Check your connection and try again.');
+      showClaimFailure('network');
     }
   };
 
@@ -172,16 +238,6 @@ export default function RewardDetailScreen() {
       pathname: '/explore',
       params: category ? { category } : {},
     });
-  };
-
-  const simulateScan = async () => {
-    if (!shownClaim) return;
-    try {
-      await simulateClaim.mutateAsync({ claimId: shownClaim.claimId, rewardId });
-      setJustClaimed(true);
-    } catch {
-      Alert.alert('Simulation failed', 'Failed to simulate officer scan. Please try again.');
-    }
   };
 
   const firstMissing = eligibility?.missingCategories[0];
@@ -348,21 +404,6 @@ export default function RewardDetailScreen() {
             )}
           </>
         )}
-
-        {__DEV__ && (
-          <RewardDevPanel
-            info={[
-              ['State', state],
-              ['Points', String(user?.points ?? 0)],
-              ['Eligible', eligibility?.eligible ? 'yes' : 'no'],
-              ['Claimed this period', user?.hasClaimedThisPeriod ? 'yes' : 'no'],
-              ['Pass expires', shownClaim ? shownClaim.expiresAt.toLocaleTimeString() : '—'],
-              ['Remaining claims', reward.limited ? String(reward.remainingClaims) : '∞'],
-            ]}
-            onSimulateScan={state === 'qr-active' ? simulateScan : undefined}
-            simulating={simulateClaim.isPending}
-          />
-        )}
       </ScrollView>
 
       {/* Pinned action */}
@@ -377,6 +418,15 @@ export default function RewardDetailScreen() {
         loading={generateClaimQR.isPending}
         onConfirm={generatePass}
         onCancel={() => setConfirmVisible(false)}
+      />
+
+      <FeedbackModal
+        visible={failureVisible}
+        onDone={() => setFailureVisible(false)}
+        tone="error"
+        {...CLAIM_FAILURES[claimFailure]}
+        buttonTitle="OK"
+        testID="claim-failed"
       />
     </>,
   );

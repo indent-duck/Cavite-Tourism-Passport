@@ -1,4 +1,4 @@
-import { CLAIM_QR_EXPIRY_MINUTES, parseSiteQr } from "@/lib/constants";
+import { parseSiteQr } from "@/lib/constants";
 import { FieldError, NETWORK_ERROR_MESSAGE } from "@/lib/errors";
 import { fromDateKey, toDateKey } from "@/lib/stamp-requests";
 import { supabase } from "@/lib/supabase";
@@ -7,12 +7,7 @@ import {
     type AuthError,
     type PostgrestError
 } from "@supabase/supabase-js";
-import {
-    currentMockStamps,
-    currentMockUser,
-    mockAboutCavite,
-    mockActiveClaims
-} from "./mock-data";
+import { currentMockUser, mockAboutCavite } from "./mock-data";
 import {
     AboutCaviteContent,
     AccountDeletionSummary,
@@ -21,6 +16,7 @@ import {
     CollectStampResult,
     Event,
     Expressway,
+    GenerateClaimResult,
     Itinerary,
     PasswordChangeProof,
     POINTS_PER_CATEGORY,
@@ -438,30 +434,35 @@ export async function changePassword(
  */
 export async function getAccountDeletionSummary(): Promise<AccountDeletionSummary> {
   const userId = await requireUserId();
-  const [user, stamps, pending] = await Promise.all([
+  // Both counts filter by account: staff can read everyone's rows
+  const [user, stamps, pending, livePasses] = await Promise.all([
     getCurrentUser(),
     getStamps(),
-    // Filtered by account: admins can read everyone's requests
     supabase
       .from("stamp_requests")
       .select("id", { count: "exact", head: true })
       .eq("account_id", userId)
       .eq("status", "pending"),
+    supabase
+      .from("reward_claims")
+      .select("id", { count: "exact", head: true })
+      .eq("account_id", userId)
+      .eq("status", "generated")
+      .gt("expires_at", new Date().toISOString()),
   ]);
   if (pending.error) {
     throw new Error(pending.error.message);
   }
+  if (livePasses.error) {
+    throw new Error(livePasses.error.message);
+  }
 
-  // Vouchers are still mock until the rewards group is wired
-  const now = Date.now();
   return {
     passportId: user.passportId,
     stampCount: stamps.length,
     points: user.points,
     pendingStampRequests: pending.count ?? 0,
-    hasActiveVoucher: Array.from(mockActiveClaims.values()).some(
-      (claim) => claim.expiresAt.getTime() > now,
-    ),
+    hasActiveVoucher: (livePasses.count ?? 0) > 0,
   };
 }
 
@@ -474,9 +475,8 @@ export async function getAccountDeletionSummary(): Promise<AccountDeletionSummar
  * with no cascade), deletes `stamp-requests/{account_id}/*` from Storage, then
  * calls `auth.admin.deleteUser()`. The database cascades to accounts, stamps,
  * reward_claims and stamp_requests.
- * Not wired yet. Mock: password "wrong" fails. Otherwise it clears this
- * session's mock vouchers and signs out, but the real account (and its stamp
- * requests) is NOT deleted.
+ * Not wired yet. Mock: password "wrong" fails. Otherwise it signs out, but
+ * the real account (and its stamp requests and claims) is NOT deleted.
  */
 export async function deleteAccount(password: string): Promise<void> {
   await randomDelay();
@@ -485,7 +485,6 @@ export async function deleteAccount(password: string): Promise<void> {
     throw new FieldError('password', 'Incorrect password.');
   }
 
-  mockActiveClaims.clear();
   await supabase.auth.signOut({ scope: "local" });
 }
 
@@ -1073,8 +1072,9 @@ interface RewardRow {
   is_available: boolean;
 }
 
-// claimedByUser / claimedAt come from the user's own reward claims, which are
-// wired up with the rest of the rewards flow
+// claimedByUser / claimedAt stay unset: which reward the user claimed this
+// period comes from my_account (User.claimedRewardId), and getRewardStatus()
+// in src/lib/rewards.ts checks that first
 function toReward(row: RewardRow): Reward {
   return {
     id: String(row.id),
@@ -1206,205 +1206,99 @@ export async function getRewardsWithEligibility(): Promise<
 // Active Claims
 // ============================================================================
 
+// What generate_reward_claim returns
+interface GenerateClaimRow {
+  success: boolean;
+  reason?: Extract<GenerateClaimResult, { success: false }>["reason"];
+  claim_id?: number;
+  reward_id?: number;
+  qr_payload?: string;
+  created_at?: string;
+  expires_at?: string;
+}
+
+interface RewardClaimRow {
+  id: number;
+  reward_id: number;
+  token: string;
+  generated_at: string;
+  expires_at: string;
+}
+
 /**
- * Get active claim for a reward
- * Returns active claim from mockActiveClaims Map, or null if none exists or expired
+ * The user's live claim pass for a reward, or null if there is none or it
+ * has expired. A pass stops being live once an officer redeems it, or when
+ * the user generates another one (for any reward).
  */
 export async function getActiveClaim(rewardId: string): Promise<ActiveClaim | null> {
-  await randomDelay();
+  if (!isDbId(rewardId)) return null;
+  const userId = await requireUserId();
 
-  const activeClaim = mockActiveClaims.get(rewardId);
-  
-  if (!activeClaim) {
-    return null;
-  }
+  const row = unwrap(
+    await supabase
+      .from("reward_claims")
+      .select("id, reward_id, token, generated_at, expires_at")
+      // Staff can read everyone's claims, so filter to the user's own
+      .eq("account_id", userId)
+      .eq("reward_id", rewardId)
+      .eq("status", "generated")
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle()
+      .overrideTypes<RewardClaimRow, { merge: false }>(),
+  );
+  if (!row) return null;
 
-  // Check if claim is expired
-  if (activeClaim.expiresAt.getTime() <= Date.now()) {
-    // Remove expired claim
-    mockActiveClaims.delete(rewardId);
-    return null;
-  }
-
-  return activeClaim;
-}
-
-/**
- * Generate claim QR for a reward
- * Creates new ActiveClaim with claimId, qrPayload, rewardId, createdAt, expiresAt
- * Stores in mockActiveClaims Map (overwrites any existing claim for this reward)
- */
-export async function generateClaimQR(rewardId: string): Promise<ActiveClaim> {
-  await randomDelay();
-
-  // Generate unique claim ID
-  const claimId = `${rewardId}-${currentMockUser.id}-${Date.now()}`;
-  
-  // Generate random token
-  const token = Math.random().toString(36).substring(2, 15);
-  
-  // Create QR payload in format: cvt:claim:<claimId>:<token>
-  const qrPayload = `cvt:claim:${claimId}:${token}`;
-  
-  // Calculate expiry time
-  const createdAt = new Date();
-  const expiresAt = new Date(Date.now() + CLAIM_QR_EXPIRY_MINUTES * 60 * 1000);
-
-  const activeClaim: ActiveClaim = {
-    claimId,
-    qrPayload,
-    rewardId,
-    createdAt,
-    expiresAt,
+  return {
+    claimId: String(row.id),
+    // Same format generate_reward_claim returns
+    qrPayload: `cvt:claim:${row.id}:${row.token}`,
+    rewardId: String(row.reward_id),
+    createdAt: new Date(row.generated_at),
+    expiresAt: new Date(row.expires_at),
   };
-
-  // Store in mockActiveClaims Map (overwrites any existing claim for this reward)
-  mockActiveClaims.set(rewardId, activeClaim);
-
-  return activeClaim;
 }
 
 /**
- * Simulate officer scanning and claiming a reward (dev-only)
- * Deducts points and sets hasClaimedThisPeriod on the mock user. Stock in the
- * database is untouched (only redeem_reward_claim changes it).
+ * Generate a claim pass (single-use QR) for a reward
+ *
+ * generate_reward_claim checks every rule again (promo period, one reward per
+ * period, stock, categories, points) and cancels the user's previous live
+ * pass. Points are deducted only when an officer redeems the pass.
  */
-export async function simulateClaim(claimId: string, rewardId: string): Promise<void> {
-  const reward = await getRewardById(rewardId);
-  if (!reward) {
-    throw new Error("Reward not found");
+export async function generateClaimQR(rewardId: string): Promise<GenerateClaimResult> {
+  if (!isDbId(rewardId)) {
+    return { success: false, reason: "rewardNotFound" };
   }
+  await requireUserId();
 
-  // Deduct reward.pointsCost from currentMockUser.points
-  currentMockUser.points -= reward.pointsCost;
-
-  // Set hasClaimedThisPeriod = true and claimedRewardId
-  currentMockUser.hasClaimedThisPeriod = true;
-  currentMockUser.claimedRewardId = rewardId;
-
-  // Remove claim from mockActiveClaims Map
-  mockActiveClaims.delete(rewardId);
-}
-
-/**
- * Set mock scenario for dev testing
- * Updates currentMockUser and currentMockStamps based on scenario
- */
-export function setMockScenario(scenario: 'default' | 'eligible' | 'claimed'): void {
-  // Import mock data to get access to original stamps
-  const { mockStamps, mockUser } = require('./mock-data');
-
-  switch (scenario) {
-    case 'default':
-      // 450 pts, stamps from Dining, Staycation, 2 Heritage, missing Adventure
-      currentMockUser.points = 450;
-      currentMockUser.hasClaimedThisPeriod = false;
-      currentMockUser.claimedRewardId = undefined;
-      
-      // Reset stamps to original default (Dining, Staycation, 2 Heritage)
-      currentMockStamps.length = 0;
-      currentMockStamps.push(
-        {
-          id: "stamp-001",
-          userId: "user-001",
-          siteId: "site-dining-001",
-          siteName: "Café Amadeo",
-          siteCategory: "Dining",
-          municipality: "Amadeo",
-          pointsEarned: 150,
-          collectedAt: new Date("2027-02-10T14:30:00"),
-        },
-        {
-          id: "stamp-002",
-          userId: "user-001",
-          siteId: "site-staycation-001",
-          siteName: "Tagaytay Highlands Resort",
-          siteCategory: "Staycation",
-          municipality: "Tagaytay",
-          pointsEarned: 200,
-          collectedAt: new Date("2027-02-15T10:00:00"),
-        },
-        {
-          id: "stamp-003",
-          userId: "user-001",
-          siteId: "site-heritage-001",
-          siteName: "Aguinaldo Shrine",
-          siteCategory: "Heritage",
-          municipality: "Kawit",
-          pointsEarned: 50,
-          collectedAt: new Date("2027-02-20T11:15:00"),
-        },
-        {
-          id: "stamp-004",
-          userId: "user-001",
-          siteId: "site-heritage-002",
-          siteName: "Fort San Felipe",
-          siteCategory: "Heritage",
-          municipality: "Cavite City",
-          pointsEarned: 50,
-          collectedAt: new Date("2027-02-25T15:45:00"),
-        }
-      );
-      break;
-
-    case 'eligible':
-      // 900 pts, stamps from all four categories
-      currentMockUser.points = 900;
-      currentMockUser.hasClaimedThisPeriod = false;
-      currentMockUser.claimedRewardId = undefined;
-      
-      // Add stamps from all 4 categories
-      currentMockStamps.length = 0;
-      currentMockStamps.push(
-        {
-          id: "stamp-001",
-          userId: "user-001",
-          siteId: "site-dining-001",
-          siteName: "Café Amadeo",
-          siteCategory: "Dining",
-          municipality: "Amadeo",
-          pointsEarned: 150,
-          collectedAt: new Date("2027-02-10T14:30:00"),
-        },
-        {
-          id: "stamp-002",
-          userId: "user-001",
-          siteId: "site-staycation-001",
-          siteName: "Tagaytay Highlands Resort",
-          siteCategory: "Staycation",
-          municipality: "Tagaytay",
-          pointsEarned: 200,
-          collectedAt: new Date("2027-02-15T10:00:00"),
-        },
-        {
-          id: "stamp-003",
-          userId: "user-001",
-          siteId: "site-heritage-001",
-          siteName: "Aguinaldo Shrine",
-          siteCategory: "Heritage",
-          municipality: "Kawit",
-          pointsEarned: 50,
-          collectedAt: new Date("2027-02-20T11:15:00"),
-        },
-        {
-          id: "stamp-005",
-          userId: "user-001",
-          siteId: "site-adventure-001",
-          siteName: "Mount Palay-Palay National Park",
-          siteCategory: "Adventure",
-          municipality: "Maragondon",
-          pointsEarned: 100,
-          collectedAt: new Date("2027-03-05T09:00:00"),
-        }
-      );
-      break;
-
-    case 'claimed':
-      // hasClaimedThisPeriod = true, claimedRewardId = 'reward-001'
-      currentMockUser.hasClaimedThisPeriod = true;
-      currentMockUser.claimedRewardId = 'reward-001';
-      break;
+  const { data, error } = await supabase.rpc("generate_reward_claim", {
+    p_reward_id: Number(rewardId),
+  });
+  if (error) {
+    throw new Error(error.message);
   }
+  // generate_reward_claim returns one jsonb value (see collectStamp)
+  const row = data as unknown as GenerateClaimRow;
+
+  if (
+    !row.success ||
+    row.claim_id === undefined ||
+    !row.qr_payload ||
+    !row.created_at ||
+    !row.expires_at
+  ) {
+    return { success: false, reason: row.reason ?? "rewardNotFound" };
+  }
+  return {
+    success: true,
+    claim: {
+      claimId: String(row.claim_id),
+      qrPayload: row.qr_payload,
+      rewardId: String(row.reward_id ?? rewardId),
+      createdAt: new Date(row.created_at),
+      expiresAt: new Date(row.expires_at),
+    },
+  };
 }
 
 // ============================================================================

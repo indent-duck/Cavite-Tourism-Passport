@@ -23,7 +23,6 @@ export { useRewardsWithEligibility } from './useRewardsWithEligibility';
 export { useScanLocation } from './useScanLocation';
 export { useSettings } from './useSettings';
 export { useSignOut } from './useSignOut';
-export { useSimulateClaim } from './useSimulateClaim';
 export { useSiteById } from './useSiteById';
 export { useSites } from './useSites';
 export { useStampRequests } from './useStampRequests';

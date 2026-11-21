@@ -5,15 +5,37 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-const TONES = {
-  success: { background: colors.successLight, icon: colors.success },
-  neutral: { background: colors.surface, icon: colors.textSecondary },
-} as const;
+const TONES: Record<
+  'success' | 'neutral' | 'error',
+  { background: string; icon: string; badge: string; badgeIcon: IconName }
+> = {
+  success: {
+    background: colors.successLight,
+    icon: colors.success,
+    badge: colors.success,
+    badgeIcon: 'checkmark',
+  },
+  neutral: {
+    background: colors.surface,
+    icon: colors.textSecondary,
+    badge: colors.success,
+    badgeIcon: 'checkmark',
+  },
+  error: {
+    background: colors.errorTint,
+    icon: colors.error,
+    badge: colors.error,
+    badgeIcon: 'alert',
+  },
+};
 
 export interface FeedbackContentProps {
   /** What the action was about, e.g. 'lock-closed' for a password change */
   icon: IconName;
-  /** 'success' (green) by default; 'neutral' (gray) for removals like a deleted account */
+  /**
+   * 'success' (green) by default; 'neutral' (gray) for removals like a
+   * deleted account; 'error' (red, "!" badge) when the action didn't go through
+   */
   tone?: keyof typeof TONES;
   title: string;
   message: string;
@@ -27,8 +49,9 @@ export interface FeedbackContentProps {
 /**
  * FeedbackContent
  *
- * The body of a "done" confirmation after an account action: icon with a
- * green check badge, title, message, optional note pill, and one button.
+ * The body of a result popup: icon with a badge (green check, or a red "!"
+ * when the action didn't go through), title, message, optional note pill,
+ * and one button.
  * FeedbackModal wraps it in a centered dialog; sheets with their own success
  * step (e.g. AddContactSheet) render it directly so both look the same.
  */
@@ -48,8 +71,8 @@ export function FeedbackContent({
     <View style={styles.content} testID={testID}>
       <View style={[styles.iconCircle, { backgroundColor: palette.background }]}>
         <Ionicons name={icon} size={32} color={palette.icon} />
-        <View style={styles.checkBadge}>
-          <Ionicons name="checkmark" size={14} color={colors.background} />
+        <View style={[styles.badge, { backgroundColor: palette.badge }]}>
+          <Ionicons name={palette.badgeIcon} size={14} color={colors.background} />
         </View>
       </View>
 
@@ -87,9 +110,10 @@ export interface FeedbackModalProps extends Omit<FeedbackContentProps, 'onPress'
 /**
  * FeedbackModal
  *
- * Centered confirmation dialog shown after an account action succeeds
- * (password changed, details saved, account deleted). Same frame as the log
- * out dialog: dimmed backdrop, white card, fades in.
+ * Centered dialog with the result of an action: a confirmation when it
+ * succeeds (password changed, details saved, account deleted), or why it
+ * didn't go through (tone 'error', e.g. a reward that just sold out). Same
+ * frame as the log out dialog: dimmed backdrop, white card, fades in.
  */
 export function FeedbackModal({ visible, onDone, ...content }: FeedbackModalProps) {
   return (
@@ -149,14 +173,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.base,
   },
-  checkBadge: {
+  badge: {
     position: 'absolute',
     right: 0,
     bottom: 0,
     width: BADGE_SIZE,
     height: BADGE_SIZE,
     borderRadius: radii.full,
-    backgroundColor: colors.success,
     borderWidth: 2,
     borderColor: colors.background,
     alignItems: 'center',

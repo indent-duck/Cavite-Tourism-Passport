@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RewardRow = RewardWithEligibility & { status: RewardStatus };
@@ -86,6 +86,19 @@ export default function RewardsScreen() {
     userQuery.refetch();
     stampsQuery.refetch();
     rewardsQuery.refetch();
+  };
+
+  // Pull to refresh: points, claims and stock change on the server (an
+  // officer redeeming, a stamp request approved). The rewards fetch also
+  // updates each reward screen's cache (see useRewardsWithEligibility).
+  const [refreshing, setRefreshing] = React.useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([userQuery.refetch(), stampsQuery.refetch(), rewardsQuery.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   let body: React.ReactNode;
@@ -155,6 +168,14 @@ export default function RewardsScreen() {
         }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       />
     );
   }

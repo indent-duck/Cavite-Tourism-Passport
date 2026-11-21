@@ -188,6 +188,20 @@ export interface ActiveClaim {
   expiresAt: Date;
 }
 
+/** Result of generating a claim pass; the server checks every reward rule again */
+export type GenerateClaimResult =
+  | { success: true; claim: ActiveClaim }
+  | {
+      success: false;
+      reason:
+        | "noActivePeriod"
+        | "rewardNotFound"
+        | "alreadyClaimedThisPeriod"
+        | "soldOut"
+        | "missingCategories"
+        | "notEnoughPoints";
+    };
+
 // Promo period
 export interface PromoPeriod {
   startDate: Date;
