@@ -15,6 +15,9 @@ interface StampPhotoFieldProps {
 const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['images'],
   quality: 0.7,
+  // iOS: hand over gallery photos as JPEG. Otherwise iPhone photos come back
+  // as HEIC, which the upload (JPEG, PNG or WebP only) refuses.
+  preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
 };
 
 /**

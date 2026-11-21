@@ -20,7 +20,6 @@ export { useRewardById } from './useRewardById';
 export { useRewardEligibility } from './useRewardEligibility';
 export { useRewards } from './useRewards';
 export { useRewardsWithEligibility } from './useRewardsWithEligibility';
-export { useReviewStampRequest } from './useReviewStampRequest';
 export { useScanLocation } from './useScanLocation';
 export { useSettings } from './useSettings';
 export { useSignOut } from './useSignOut';

@@ -13,6 +13,7 @@ import { useSites } from '@/hooks/useSites';
 import { useStampRequests } from '@/hooks/useStampRequests';
 import { useStamps } from '@/hooks/useStamps';
 import { useSubmitStampRequest } from '@/hooks/useSubmitStampRequest';
+import { FieldError } from '@/lib/errors';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { getVisitDateOptions } from '@/lib/stamp-requests';
 import { colors, spacing } from '@/theme';
@@ -109,8 +110,13 @@ export default function NewStampRequestScreen() {
       // Back to the history screen if the form was opened from it, otherwise
       // replace the form with it (so it isn't stacked twice)
       router.dismissTo({ pathname: '/stamp-requests', params: { submitted: '1' } });
-    } catch {
-      setFormError('Could not send your request. Check your connection and try again.');
+    } catch (error) {
+      // The photo couldn't be read or the upload refused it (too large, wrong format)
+      if (error instanceof FieldError && error.field === 'photo') {
+        setPhotoError(error.message);
+      } else {
+        setFormError('Could not send your request. Check your connection and try again.');
+      }
       hapticError();
     }
   };

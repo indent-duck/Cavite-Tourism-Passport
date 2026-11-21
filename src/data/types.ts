@@ -239,7 +239,8 @@ export interface StampRequest {
   siteCategory: Category;
   municipality: string;
   visitedOn: string; // 'YYYY-MM-DD' (date only, so the cache deserializer keeps it a string)
-  photoUri: string; // Photo of the physical stamp (local URI in mock; storage URL later)
+  photoUri?: string; // Signed URL of the stamp photo; expires, and is undefined if it couldn't be signed
+  photoPath: string; // Storage path of the photo; stable, so it's the image cache key
   note?: string;
   status: StampRequestStatus;
   rejectionReason?: string;
@@ -252,12 +253,12 @@ export interface StampRequest {
 export interface SubmitStampRequestInput {
   siteId: string;
   visitedOn: string;
-  photoUri: string;
+  photoUri: string; // Local URI from the image picker; uploaded on submit
   note?: string;
 }
 
 export type SubmitStampRequestResult =
-  | { success: true; request: StampRequest }
+  | { success: true; requestId: string }
   | {
       success: false;
       reason: "alreadyStamped" | "alreadyPending" | "invalidDate" | "siteNotFound";

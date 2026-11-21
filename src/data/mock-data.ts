@@ -9,7 +9,6 @@ import {
     Settings,
     Site,
     Stamp,
-    StampRequest,
     User
 } from "./types";
 
@@ -572,14 +571,6 @@ export const mockPromoPeriod: PromoPeriod = {
   endDate: new Date(today.getTime() + DAY_MS * 45),
   active: true,
 };
-
-// ============================================================================
-// Stamp Requests
-// ============================================================================
-
-// Physical-stamp requests sent for admin review (in-memory, starts empty;
-// approve/reject them from the dev panel on the Stamp requests screen)
-export const currentMockStampRequests: StampRequest[] = [];
 
 // ============================================================================
 // Settings

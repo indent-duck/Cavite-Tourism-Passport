@@ -35,12 +35,20 @@ export function StampRequestCard({ request, onResubmit }: StampRequestCardProps)
   return (
     <View style={styles.card} testID={`stamp-request-${request.id}`}>
       <View style={styles.row}>
-        <Image
-          source={{ uri: request.photoUri }}
-          style={styles.thumb}
-          contentFit="cover"
-          accessibilityLabel={`Stamp photo for ${request.siteName}`}
-        />
+        {request.photoUri ? (
+          <Image
+            // The signed URL changes on every refetch; the path doesn't, so
+            // the photo is downloaded once and then read from the disk cache
+            source={{ uri: request.photoUri, cacheKey: request.photoPath }}
+            style={styles.thumb}
+            contentFit="cover"
+            accessibilityLabel={`Stamp photo for ${request.siteName}`}
+          />
+        ) : (
+          <View style={[styles.thumb, styles.thumbPlaceholder]}>
+            <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
+          </View>
+        )}
         <View style={styles.info}>
           <Text style={[styles.category, { color: CATEGORY_COLORS[request.siteCategory] }]}>
             {request.siteCategory.toUpperCase()}
@@ -99,6 +107,10 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: radii.md,
     backgroundColor: colors.surface,
+  },
+  thumbPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: {
     flex: 1,

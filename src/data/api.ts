@@ -1,6 +1,6 @@
 import { CLAIM_QR_EXPIRY_MINUTES, parseSiteQr } from "@/lib/constants";
 import { FieldError, NETWORK_ERROR_MESSAGE } from "@/lib/errors";
-import { fromDateKey, isValidVisitDate, toDateKey } from "@/lib/stamp-requests";
+import { fromDateKey, toDateKey } from "@/lib/stamp-requests";
 import { supabase } from "@/lib/supabase";
 import {
     isAuthRetryableFetchError,
@@ -8,7 +8,6 @@ import {
     type PostgrestError
 } from "@supabase/supabase-js";
 import {
-    currentMockStampRequests,
     currentMockStamps,
     currentMockUser,
     mockAboutCavite,
@@ -33,6 +32,7 @@ import {
     Site,
     Stamp,
     StampRequest,
+    StampRequestStatus,
     StampTarget,
     SubmitStampRequestInput,
     SubmitStampRequestResult,
@@ -437,17 +437,28 @@ export async function changePassword(
  * Summarize what deleting the account would remove
  */
 export async function getAccountDeletionSummary(): Promise<AccountDeletionSummary> {
-  const [user, stamps] = await Promise.all([getCurrentUser(), getStamps()]);
+  const userId = await requireUserId();
+  const [user, stamps, pending] = await Promise.all([
+    getCurrentUser(),
+    getStamps(),
+    // Filtered by account: admins can read everyone's requests
+    supabase
+      .from("stamp_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("account_id", userId)
+      .eq("status", "pending"),
+  ]);
+  if (pending.error) {
+    throw new Error(pending.error.message);
+  }
 
-  // Stamp requests and vouchers are still mock until their groups are wired
+  // Vouchers are still mock until the rewards group is wired
   const now = Date.now();
   return {
     passportId: user.passportId,
     stampCount: stamps.length,
     points: user.points,
-    pendingStampRequests: currentMockStampRequests.filter(
-      (request) => request.status === 'pending',
-    ).length,
+    pendingStampRequests: pending.count ?? 0,
     hasActiveVoucher: Array.from(mockActiveClaims.values()).some(
       (claim) => claim.expiresAt.getTime() > now,
     ),
@@ -464,8 +475,8 @@ export async function getAccountDeletionSummary(): Promise<AccountDeletionSummar
  * calls `auth.admin.deleteUser()`. The database cascades to accounts, stamps,
  * reward_claims and stamp_requests.
  * Not wired yet. Mock: password "wrong" fails. Otherwise it clears this
- * session's mock vouchers and stamp requests and signs out, but the real
- * account is NOT deleted.
+ * session's mock vouchers and signs out, but the real account (and its stamp
+ * requests) is NOT deleted.
  */
 export async function deleteAccount(password: string): Promise<void> {
   await randomDelay();
@@ -475,7 +486,6 @@ export async function deleteAccount(password: string): Promise<void> {
   }
 
   mockActiveClaims.clear();
-  currentMockStampRequests.length = 0;
   await supabase.auth.signOut({ scope: "local" });
 }
 
@@ -679,112 +689,190 @@ export async function collectStamp(
 // Stamp Requests (physical passport stamps sent for admin review)
 // ============================================================================
 
+// Private bucket: {user id}/{random}.{ext}. Users upload into and read their
+// own folder; admins read all to review.
+const STAMP_PHOTO_BUCKET = "stamp-requests";
+
+// How long a photo's signed URL works. The list refetches long before this,
+// and the card caches the image by its path, so a fresh URL doesn't
+// download it again.
+const STAMP_PHOTO_URL_SECONDS = 60 * 60;
+
+const STAMP_REQUEST_COLUMNS =
+  "id, site_id, visited_on, photo_path, note, status, rejection_reason, stamp_id, " +
+  "created_at, reviewed_at, result_seen_at, sites(name, category, municipalities(name))";
+
+interface StampRequestRow {
+  id: number;
+  site_id: number;
+  visited_on: string; // 'YYYY-MM-DD'
+  photo_path: string;
+  note: string | null;
+  status: StampRequestStatus;
+  rejection_reason: string | null;
+  stamp_id: number | null; // set on approval
+  created_at: string;
+  reviewed_at: string | null;
+  result_seen_at: string | null;
+  sites: { name: string; category: string; municipalities: { name: string } | null };
+}
+
 /**
- * Get all stamp requests for the current user (any status)
+ * Get all stamp requests for the current user (any status), newest first
  */
 export async function getStampRequests(): Promise<StampRequest[]> {
-  await randomDelay();
-  // Copies, so React Query sees new objects when a request changes in place
-  return currentMockStampRequests.map((request) => ({ ...request }));
+  const userId = await requireUserId();
+
+  const rows = unwrap(
+    await supabase
+      .from("stamp_requests")
+      .select(STAMP_REQUEST_COLUMNS)
+      // Admins can read everyone's requests, so filter to the user's own
+      .eq("account_id", userId)
+      .order("created_at", { ascending: false })
+      .overrideTypes<StampRequestRow[], { merge: false }>(),
+  );
+
+  // One call signs every photo. A failure only costs the thumbnails.
+  const photoUrls = new Map<string, string>();
+  if (rows.length > 0) {
+    const { data } = await supabase.storage
+      .from(STAMP_PHOTO_BUCKET)
+      .createSignedUrls(
+        rows.map((row) => row.photo_path),
+        STAMP_PHOTO_URL_SECONDS,
+      );
+    for (const signed of data ?? []) {
+      if (signed.path && signed.signedUrl) photoUrls.set(signed.path, signed.signedUrl);
+    }
+  }
+
+  return rows.map((row) => ({
+    id: String(row.id),
+    userId,
+    siteId: String(row.site_id),
+    siteName: row.sites.name,
+    siteCategory: CATEGORY_BY_CODE[row.sites.category],
+    municipality: row.sites.municipalities?.name ?? "",
+    visitedOn: row.visited_on,
+    photoUri: photoUrls.get(row.photo_path),
+    photoPath: row.photo_path,
+    note: row.note ?? undefined,
+    status: row.status,
+    rejectionReason: row.rejection_reason ?? undefined,
+    stampId: row.stamp_id !== null ? String(row.stamp_id) : undefined,
+    createdAt: new Date(row.created_at),
+    reviewedAt: row.reviewed_at ? new Date(row.reviewed_at) : undefined,
+    resultSeenAt: row.result_seen_at ? new Date(row.result_seen_at) : undefined,
+  }));
+}
+
+// File types the stamp-requests bucket accepts, by the picker's file extension
+const STAMP_PHOTO_TYPES: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+const UNSUPPORTED_PHOTO_MESSAGE = "This photo's format isn't supported. Please use a JPEG or PNG photo.";
+
+/** Turn a failed photo upload into a message under the photo field where the user can fix it */
+function photoUploadError(error: { message: string; status?: number; statusCode?: string }): Error {
+  const code = String(error.status ?? "");
+  const statusCode = error.statusCode ?? "";
+  if (code === "413" || statusCode === "413" || /too large|maximum allowed size/i.test(error.message)) {
+    return new FieldError(
+      "photo",
+      "This photo is too large (over 5 MB). Please take a new one or choose a smaller photo.",
+    );
+  }
+  if (code === "415" || statusCode === "415" || /mime/i.test(error.message)) {
+    return new FieldError("photo", UNSUPPORTED_PHOTO_MESSAGE);
+  }
+  return new Error(error.message);
+}
+
+// What the submit_stamp_request database function returns
+interface SubmitStampRequestRow {
+  success: boolean;
+  reason?: "siteNotFound" | "alreadyStamped" | "alreadyPending" | "invalidDate";
+  request_id?: number;
 }
 
 /**
  * Submit a request to add a physical passport stamp to the digital passport
- * Rejected up front when the site is unknown, already stamped, already has a
- * pending request, or the visit date is outside the promo period / in the future
+ *
+ * Uploads the photo to the private stamp-requests bucket, then
+ * submit_stamp_request checks the rules on the server: the site exists, it
+ * isn't stamped or pending already, and the visit date is in the promo period
+ * and not in the future (Philippine time). If the request doesn't go through,
+ * the uploaded photo is deleted again.
+ * Throws a FieldError for "photo" when the photo itself is the problem.
  */
 export async function submitStampRequest(
   input: SubmitStampRequestInput,
 ): Promise<SubmitStampRequestResult> {
-  await randomDelay();
-
-  // Sites, stamps and the promo period come from the database; the request
-  // itself is still mock
-  const site = await getSiteById(input.siteId);
-  if (!site) {
+  const userId = await requireUserId();
+  if (!isDbId(input.siteId)) {
     return { success: false, reason: "siteNotFound" };
   }
 
-  if ((await getStamps()).some((s) => s.siteId === site.id)) {
-    return { success: false, reason: "alreadyStamped" };
+  const extension = input.photoUri.split(/[?#]/)[0].split(".").pop()?.toLowerCase() ?? "";
+  const contentType = STAMP_PHOTO_TYPES[extension];
+  if (!contentType) {
+    throw new FieldError("photo", UNSUPPORTED_PHOTO_MESSAGE);
   }
 
-  if (currentMockStampRequests.some((r) => r.siteId === site.id && r.status === "pending")) {
-    return { success: false, reason: "alreadyPending" };
+  let body: ArrayBuffer;
+  try {
+    body = await (await fetch(input.photoUri)).arrayBuffer();
+  } catch {
+    throw new FieldError("photo", "Couldn't read this photo. Please take or choose it again.");
   }
 
-  if (!isValidVisitDate(input.visitedOn, await getPromoPeriod())) {
-    return { success: false, reason: "invalidDate" };
+  const bucket = supabase.storage.from(STAMP_PHOTO_BUCKET);
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+  const { error: uploadError } = await bucket.upload(path, body, { contentType, upsert: false });
+  if (uploadError) {
+    throw photoUploadError(uploadError);
   }
 
-  const request: StampRequest = {
-    id: `stamp-request-${Date.now()}`,
-    userId: await requireUserId(),
-    siteId: site.id,
-    siteName: site.name,
-    siteCategory: site.category,
-    municipality: site.municipality,
-    visitedOn: input.visitedOn,
-    photoUri: input.photoUri,
-    note: input.note?.trim() || undefined,
-    status: "pending",
-    createdAt: new Date(),
-  };
+  const { data, error } = await supabase.rpc("submit_stamp_request", {
+    p_site_id: Number(input.siteId),
+    p_visited_on: input.visitedOn,
+    p_photo_path: path,
+    p_note: input.note?.trim() || null,
+  });
+  // submit_stamp_request returns one jsonb value (see collectStamp)
+  const row = data as unknown as SubmitStampRequestRow | null;
 
-  currentMockStampRequests.push(request);
-  return { success: true, request: { ...request } };
+  if (error || !row?.success || row.request_id === undefined) {
+    // Best effort: an unsent photo would otherwise sit in Storage for nothing
+    await bucket.remove([path]);
+    if (error) {
+      throw new Error(error.message);
+    }
+    return { success: false, reason: row?.reason ?? "siteNotFound" };
+  }
+  return { success: true, requestId: String(row.request_id) };
 }
 
 /**
  * Record that the user has seen the result (approval/rejection) of these requests
  */
 export async function markStampRequestResultsSeen(ids: string[]): Promise<void> {
-  await randomDelay();
+  const requestIds = ids.filter(isDbId);
+  if (requestIds.length === 0) return;
 
-  const seenAt = new Date();
-  for (const request of currentMockStampRequests) {
-    if (ids.includes(request.id) && !request.resultSeenAt) {
-      request.resultSeenAt = seenAt;
-    }
-  }
-}
-
-/**
- * Simulate an admin reviewing a stamp request (dev-only)
- * If the site was stamped in the meantime (e.g. via QR), the request is
- * rejected instead, as the database's unique stamp constraint would.
- * Approving does NOT create a stamp: stamps are real now and only the
- * review_stamp_request database function (admin) can add one. That comes
- * with the stamp requests group.
- */
-export async function reviewStampRequest(
-  requestId: string,
-  decision: "approve" | "reject",
-  reason?: string,
-): Promise<StampRequest> {
-  await randomDelay();
-
-  const request = currentMockStampRequests.find((r) => r.id === requestId);
-  if (!request) {
-    throw new Error("Stamp request not found");
-  }
-  if (request.status !== "pending") {
-    throw new Error("Stamp request was already reviewed");
-  }
-
-  request.reviewedAt = new Date();
-
-  const alreadyStamped = (await getStamps()).some((s) => s.siteId === request.siteId);
-  if (decision === "reject" || alreadyStamped) {
-    request.status = "rejected";
-    request.rejectionReason = alreadyStamped
-      ? "This stamp is already in your digital passport."
-      : reason;
-    return { ...request };
-  }
-
-  request.status = "approved";
-  return { ...request };
+  // The only column users may update, and only on reviewed requests (RLS)
+  unwrap(
+    await supabase
+      .from("stamp_requests")
+      .update({ result_seen_at: new Date().toISOString() })
+      .in("id", requestIds)
+      .is("result_seen_at", null),
+  );
 }
 
 // ============================================================================

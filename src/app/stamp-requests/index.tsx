@@ -1,7 +1,6 @@
 import { ActionBar } from '@/components/detail/ActionBar';
 import { InfoBanner } from '@/components/detail/InfoBanner';
 import { StampRequestCard } from '@/components/stamp-requests/StampRequestCard';
-import { StampRequestDevPanel } from '@/components/stamp-requests/StampRequestDevPanel';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { StateView } from '@/components/ui/StateView';
@@ -42,7 +41,7 @@ export default function StampRequestsScreen() {
 
   // Results listed when the screen comes into focus count as seen. Read from
   // the cache at focus time on purpose: results that arrive while the screen
-  // is open (e.g. via the dev panel) stay unseen, so the Passport tab can
+  // is open (e.g. on pull to refresh) stay unseen, so the Passport tab can
   // still show the dot and play the approval reveal.
   const queryClient = useQueryClient();
   const { mutate: markSeenMutate } = markSeen;
@@ -144,8 +143,6 @@ export default function StampRequestsScreen() {
             })}
           </View>
         )}
-
-        {__DEV__ && !isLoading && <StampRequestDevPanel requests={requests} />}
       </ScreenContainer>
 
       <ActionBar>

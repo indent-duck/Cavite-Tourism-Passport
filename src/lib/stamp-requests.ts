@@ -48,15 +48,6 @@ export function fromDateKey(key: string): Date {
   return new Date(year, month - 1, day);
 }
 
-/** A visit date is valid within the promo period, and not in the future */
-export function isValidVisitDate(key: string, promoPeriod: PromoPeriod, today = new Date()): boolean {
-  return (
-    key >= toDateKey(promoPeriod.startDate) &&
-    key <= toDateKey(promoPeriod.endDate) &&
-    key <= toDateKey(today)
-  );
-}
-
 export interface VisitDateOption {
   key: string;
   label: string;

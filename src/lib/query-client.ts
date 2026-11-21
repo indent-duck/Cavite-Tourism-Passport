@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { QueryClient } from '@tanstack/react-query';
+import { focusManager, QueryClient } from '@tanstack/react-query';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
+import { AppState } from 'react-native';
 
 /**
  * Centralized React Query configuration with AsyncStorage persistence.
@@ -62,6 +63,17 @@ export const queryClient = new QueryClient({
   },
 });
 
+// React Native has no window focus: count the app coming to the foreground
+// instead. Queries are not refetched on focus by default (above); the ones
+// that opt in (stamp requests, reviewed on the server) refetch when the user
+// returns to the app, if stale.
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    handleFocus(state === 'active');
+  });
+  return () => subscription.remove();
+});
+
 // Create persister with custom deserializer
 const asyncStoragePersister = createAsyncStoragePersister({
   storage: AsyncStorage,
@@ -71,8 +83,9 @@ const asyncStoragePersister = createAsyncStoragePersister({
 
 // Bump when the shape of cached data changes, so caches saved by an older
 // build are discarded instead of rendered (v2: User.name -> firstName/lastName,
-// v3: catalog moved from mock IDs to Supabase IDs, v4: stamps from Supabase)
-const CACHE_VERSION = '4';
+// v3: catalog moved from mock IDs to Supabase IDs, v4: stamps from Supabase,
+// v5: stamp requests from Supabase)
+const CACHE_VERSION = '5';
 
 // Configure persistence
 persistQueryClient({
