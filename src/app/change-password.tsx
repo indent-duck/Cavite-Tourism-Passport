@@ -27,6 +27,10 @@ type Method = 'password' | 'code';
  * - "Forgot your current password?" emails a 6-digit code to the account's
  *   address and swaps the current-password field for a code input.
  *
+ * Accounts made with "Continue with Google" have no current password, so they
+ * start with an "Email me a code" button instead (and can then log in with
+ * email and password too).
+ *
  * New password uses the same rules and live checklist as sign up. The user
  * stays signed in; a success dialog confirms the change and returns to Settings.
  * Mock: current password "wrong" fails; the email code is "123456".
@@ -34,6 +38,9 @@ type Method = 'password' | 'code';
 export default function ChangePasswordScreen() {
   const { data: user } = useCurrentUser();
   const { changePassword, sendCode } = useChangePassword();
+  // Signed up with Google and never set a password: there's no current one
+  // to type, so the emailed code is the only way in
+  const googleOnly = !!user?.hasGoogleSignIn && !user.hasEmailSignIn;
 
   const [method, setMethod] = useState<Method>('password');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -87,6 +94,12 @@ export default function ChangePasswordScreen() {
 
   const handleSubmit = async () => {
     setFormError('');
+
+    if (method === 'password' && googleOnly) {
+      setFormError('Tap “Email me a code” first.');
+      hapticError();
+      return;
+    }
 
     const errors = {
       currentPassword:
@@ -176,13 +189,25 @@ export default function ChangePasswordScreen() {
       <StatusBar style="dark" />
 
       <Text style={styles.intro}>
-        {method === 'password'
-          ? 'Enter your current password, then choose a new one. You’ll stay logged in on this device.'
-          : 'Enter the code we emailed you, then choose a new password. You’ll stay logged in on this device.'}
+        {method === 'code'
+          ? 'Enter the code we emailed you, then choose a new password. You’ll stay logged in on this device.'
+          : googleOnly
+            ? 'You log in with Google. To also log in with your email and a password, get a code by email, then choose a password.'
+            : 'Enter your current password, then choose a new one. You’ll stay logged in on this device.'}
       </Text>
 
       <View style={styles.form}>
-        {method === 'password' ? (
+        {method === 'password' && googleOnly ? (
+          <Button
+            title={sendCode.isPending ? 'Sending code…' : 'Email me a code'}
+            onPress={handleSendCode}
+            variant="outline"
+            fullWidth
+            loading={sendCode.isPending}
+            icon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
+            testID="change-password-google-send-code"
+          />
+        ) : method === 'password' ? (
           <View>
             <TextInput
               ref={currentPasswordRef}

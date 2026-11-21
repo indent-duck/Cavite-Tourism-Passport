@@ -1,5 +1,6 @@
 import { parseSiteQr } from "@/lib/constants";
 import { FieldError, NETWORK_ERROR_MESSAGE } from "@/lib/errors";
+import { rememberPushToken, takeSavedPushToken } from "@/lib/push-notifications";
 import { fromDateKey, toDateKey } from "@/lib/stamp-requests";
 import { supabase } from "@/lib/supabase";
 import {
@@ -13,6 +14,7 @@ import {
     AboutCaviteContent,
     AccountDeletionSummary,
     ActiveClaim,
+    DeleteAccountConfirmation,
     Category,
     CollectStampResult,
     Event,
@@ -156,6 +158,26 @@ export async function signIn(email: string, password: string): Promise<User> {
 }
 
 /**
+ * Sign in with the ID token from Google's account picker
+ * (src/lib/google-sign-in.ts). The first sign-in creates the login (the
+ * accounts row comes from the same trigger as email sign-ups). An email
+ * that already has an account gets Google linked to it, so it's the same
+ * passport either way.
+ *
+ * New users still need sign-up step 3 (name and address): `user.firstName`
+ * is empty until then.
+ */
+export async function signInWithGoogle(idToken: string, nonce: string): Promise<User> {
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: "google",
+    token: idToken,
+    nonce,
+  });
+  if (error) throw authError(error);
+  return getCurrentUser();
+}
+
+/**
  * Email a 6-digit code
  * - signup: verifies the address and creates the login if it's new. New
  *   addresses get the "Confirm signup" email, existing ones "Magic Link".
@@ -201,7 +223,7 @@ export async function verifyCode(
     );
     if (account?.first_name) {
       await supabase.auth.signOut({ scope: "local" });
-      throw new Error("This email already has an account. Log in with your password instead.");
+      throw new Error("This email already has an account. Log in instead.");
     }
   }
   return true;
@@ -209,17 +231,17 @@ export async function verifyCode(
 
 /**
  * Finish sign-up (step 3): set the name, address and password. The user was
- * signed in by verifyCode() in step 2.
+ * signed in by verifyCode() in step 2, or by signInWithGoogle(), in which
+ * case there's no password (`password` is null).
  *
  * Safe to retry after a failure: the profile is saved first, and a password
  * that an earlier attempt already set ("same_password") is not an error.
  */
 export async function signUp(
-  email: string,
   firstName: string,
   lastName: string,
   address: string,
-  password: string,
+  password: string | null,
 ): Promise<User> {
   const userId = await requireUserId("Your verification has expired. Please start again.");
 
@@ -236,8 +258,10 @@ export async function signUp(
     throw new Error("Your account record is missing. Please contact the Tourism Office helpdesk.");
   }
 
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error && error.code !== "same_password") throw authError(error);
+  if (password !== null) {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error && error.code !== "same_password") throw authError(error);
+  }
 
   return getCurrentUser();
 }
@@ -290,9 +314,28 @@ export async function verifyContactCode(
 
 /**
  * Sign out on this device. The saved session is removed even when offline.
+ *
+ * This phone's push token is removed first (while still signed in), so the
+ * next person to use the phone doesn't get the previous user's notifications.
  */
 export async function signOut(): Promise<void> {
+  const pushToken = await takeSavedPushToken();
+  if (pushToken) {
+    // Best effort: offline, the token stays until another account registers it
+    await supabase.from("push_tokens").delete().eq("token", pushToken);
+  }
   await supabase.auth.signOut({ scope: "local" });
+}
+
+/**
+ * Save this phone's Expo push token for the signed-in user
+ * (`register_push_token`). A phone signed in to another account before
+ * moves its token over.
+ */
+export async function registerPushToken(token: string): Promise<void> {
+  await requireUserId();
+  unwrap(await supabase.rpc("register_push_token", { p_token: token }));
+  await rememberPushToken(token);
 }
 
 // ============================================================================
@@ -324,7 +367,12 @@ interface MyAccountRow {
  */
 export async function getCurrentUser(): Promise<User> {
   // Signed-out requests can't read my_account at all ("permission denied")
-  await requireUserId();
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) throw new Error(SIGNED_OUT_MESSAGE);
+  // How this login can sign in: "email" (signed up with a code and set a
+  // password) and/or "google"
+  const providers: unknown = sessionData.session.user.app_metadata.providers;
+  const signInMethods = Array.isArray(providers) ? providers : [];
 
   const row = unwrap(
     await supabase
@@ -350,6 +398,8 @@ export async function getCurrentUser(): Promise<User> {
     createdAt: new Date(row.created_at),
     hasClaimedThisPeriod: row.claimed_reward_id !== null,
     claimedRewardId: row.claimed_reward_id !== null ? String(row.claimed_reward_id) : undefined,
+    hasEmailSignIn: signInMethods.includes("email"),
+    hasGoogleSignIn: signInMethods.includes("google"),
   };
 }
 
@@ -473,21 +523,25 @@ export async function getAccountDeletionSummary(): Promise<AccountDeletionSummar
  *
  * Supabase: the `delete-account` Edge Function (supabase/functions), since
  * deleting an auth user needs the secret key. It checks the caller's token
- * and password, refuses officer/admin accounts, removes
+ * and their confirmation (password, or a fresh Google sign-in for accounts
+ * with Google), refuses officer/admin accounts, removes
  * `stamp-requests/{account_id}/*` from Storage, then deletes the auth user.
- * The database cascades to accounts, stamps, stamp_requests and
- * reward_claims. Afterwards the saved session is removed from this device.
+ * The database cascades to accounts, stamps, stamp_requests, reward_claims
+ * and push_tokens. Afterwards the saved session is removed from this device.
  */
-export async function deleteAccount(password: string): Promise<void> {
+export async function deleteAccount(confirmation: DeleteAccountConfirmation): Promise<void> {
   await requireUserId();
 
-  const { error } = await supabase.functions.invoke("delete-account", {
-    body: { password },
-  });
+  const body =
+    "password" in confirmation
+      ? { password: confirmation.password }
+      : { googleIdToken: confirmation.google.idToken, nonce: confirmation.google.nonce };
+  const { error } = await supabase.functions.invoke("delete-account", { body });
   if (error) {
     throw await deleteAccountError(error);
   }
 
+  await takeSavedPushToken(); // its row went with the account
   await supabase.auth.signOut({ scope: "local" });
 }
 
@@ -503,12 +557,19 @@ async function deleteAccountError(error: Error): Promise<Error> {
       return new FieldError("password", "Incorrect password.");
     case "rate_limited":
       return new FieldError("password", AUTH_ERROR_MESSAGES.over_request_rate_limit);
+    // Not fields the user can fix, but the messages must show in release builds too
     case "staff_account":
-      // Not a field the user can fix, but the message must show in release builds too
       return new FieldError(
         "account",
         "Staff accounts can't be deleted in the app. Please ask an admin.",
       );
+    case "wrong_google_account":
+      return new FieldError(
+        "account",
+        "That's a different Google account. Choose the one you sign in to the app with.",
+      );
+    case "google_not_confirmed":
+      return new FieldError("account", "Google couldn't confirm it's you. Please try again.");
     case "not_signed_in":
       return new Error(SIGNED_OUT_MESSAGE);
     default:

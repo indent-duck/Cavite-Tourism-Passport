@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1007136136902",
+    "project_id": "cavite-tourism-passport",
+    "storage_bucket": "cavite-tourism-passport.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007136136902:android:19eda957f13f81056501c7",
+        "android_client_info": {
+          "package_name": "com.lee1plus1.CaviteTourismPassport"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsS7XLY7KdIffcWAMTk2elHg_DRCRJoN4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

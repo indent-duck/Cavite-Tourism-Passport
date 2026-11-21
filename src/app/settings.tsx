@@ -4,10 +4,15 @@ import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { mockFaqs } from '@/data/mock-data';
-import { useCurrentUser, useSettings } from '@/hooks';
+import { useCurrentUser, useOnAppFocus, useSettings } from '@/hooks';
 import { parseAddress } from '@/lib/address';
 import { APP_VERSION, HELPDESK_EMAIL, SOCIAL_LINKS } from '@/lib/constants';
 import { getFullName } from '@/lib/names';
+import {
+  getPushPermission,
+  openNotificationSettings,
+  type PushPermission,
+} from '@/lib/push-notifications';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -349,6 +354,12 @@ function IconChip({ icon, tone, size = 'default' }: { icon: IconName; tone: Tone
   );
 }
 
+/**
+ * The account's notification setting (the server only sends while it's on).
+ * Turning it on asks for Android's permission (usePushNotifications in the
+ * tabs layout); if the phone has blocked notifications for the app, the row
+ * says so and opens system settings instead, rechecking on return.
+ */
 function PushNotificationsRow({
   enabled,
   ready,
@@ -358,14 +369,32 @@ function PushNotificationsRow({
   ready: boolean;
   onChange: (value: boolean) => void;
 }) {
+  const [permission, setPermission] = useState<PushPermission | null>(null);
+  const refreshPermission = () => {
+    getPushPermission().then(setPermission, () => setPermission(null));
+  };
+  useEffect(refreshPermission, []);
+  useOnAppFocus(refreshPermission);
+
+  const blocked = permission === 'denied';
+
+  const handleChange = (value: boolean) => {
+    if (value && blocked) openNotificationSettings();
+    onChange(value);
+  };
+
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-      onPress={() => onChange(!enabled)}
+      onPress={() => (enabled && blocked ? openNotificationSettings() : handleChange(!enabled))}
       disabled={!ready}
       accessibilityRole="switch"
       accessibilityLabel="Push notifications"
-      accessibilityHint="Alerts for new stamp sites, events, and promo deadlines"
+      accessibilityHint={
+        enabled && blocked
+          ? 'Opens phone settings to allow notifications'
+          : 'Alerts for new stamp sites, events, and promo deadlines'
+      }
       accessibilityState={{ checked: enabled, disabled: !ready }}
       testID="settings-push-row"
     >
@@ -373,12 +402,14 @@ function PushNotificationsRow({
       <View style={styles.rowText}>
         <Text style={styles.rowTitle}>Push notifications</Text>
         <Text style={styles.rowSubtitle}>
-          New stamp sites, events, and promo deadlines
+          {enabled && blocked
+            ? 'Blocked in your phone settings. Tap to allow.'
+            : 'New stamp sites, events, and promo deadlines'}
         </Text>
       </View>
       <Switch
         value={enabled}
-        onValueChange={onChange}
+        onValueChange={handleChange}
         disabled={!ready}
         trackColor={{ false: SWITCH_TRACK_OFF, true: colors.primary }}
         thumbColor={colors.background}

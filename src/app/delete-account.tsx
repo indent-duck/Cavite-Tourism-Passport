@@ -2,8 +2,10 @@ import { FormBanner } from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput } from '@/components/ui/TextInput';
-import { useAccountDeletionSummary, useDeleteAccount } from '@/hooks';
+import type { DeleteAccountConfirmation } from '@/data/types';
+import { useAccountDeletionSummary, useCurrentUser, useDeleteAccount } from '@/hooks';
 import { FieldError, getErrorMessage } from '@/lib/errors';
+import { pickGoogleAccount } from '@/lib/google-sign-in';
 import { hapticError } from '@/lib/haptics';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,29 +23,53 @@ type IconName = keyof typeof Ionicons.glyphMap;
  * warns about things still in progress: an active voucher pass and stamp
  * requests waiting for review.
  *
- * Deleting needs both the "I understand" checkbox and the account password.
+ * Deleting needs both the "I understand" checkbox and proof it's the owner:
+ * the account password, or for accounts that use Google, picking that Google
+ * account again (they may not have a password at all).
  * On success the cache is cleared and the user lands on the login screen,
  * which shows an "Account deleted" feedback dialog. A wrong password shows
- * under the password field; staff accounts are refused with a form message.
+ * under the password field; staff accounts and a different Google account
+ * are refused with a form message.
  */
 export default function DeleteAccountScreen() {
   const { data: summary } = useAccountDeletionSummary();
+  const { data: user } = useCurrentUser();
   const deleteAccount = useDeleteAccount();
+  const confirmWithGoogle = user?.hasGoogleSignIn ?? false;
 
   const [password, setPassword] = useState('');
   const [confirmed, setConfirmed] = useState(false);
+  const [pickingGoogle, setPickingGoogle] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [formError, setFormError] = useState('');
 
-  const canDelete = confirmed && password.length > 0;
+  const canDelete = confirmed && (confirmWithGoogle || password.length > 0);
 
   const handleDelete = async () => {
     if (!canDelete) return;
     setPasswordError('');
     setFormError('');
 
+    let confirmation: DeleteAccountConfirmation;
+    if (confirmWithGoogle) {
+      setPickingGoogle(true);
+      try {
+        const credential = await pickGoogleAccount();
+        if (!credential) return; // Picker closed: nothing happens
+        confirmation = { google: { idToken: credential.idToken, nonce: credential.nonce } };
+      } catch (error) {
+        hapticError();
+        setFormError(error instanceof Error ? error.message : 'Google sign-in failed. Please try again.');
+        return;
+      } finally {
+        setPickingGoogle(false);
+      }
+    } else {
+      confirmation = { password };
+    }
+
     try {
-      await deleteAccount.mutateAsync({ password });
+      await deleteAccount.mutateAsync(confirmation);
       // useDeleteAccount takes the user to the login screen
     } catch (error) {
       hapticError();
@@ -108,7 +134,7 @@ export default function DeleteAccountScreen() {
           variant="danger"
           fullWidth
           disabled={!canDelete}
-          loading={deleteAccount.isPending}
+          loading={pickingGoogle || deleteAccount.isPending}
           icon={<Ionicons name="trash-outline" size={18} color={colors.background} />}
           testID="delete-account-submit"
         />
@@ -162,25 +188,35 @@ export default function DeleteAccountScreen() {
 
       {/* Confirmation */}
       <View style={styles.confirm}>
-        <TextInput
-          label="Enter your password to confirm"
-          leftIcon="lock-closed-outline"
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            setPasswordError('');
-            setFormError('');
-          }}
-          placeholder="Your password"
-          secureTextEntry
-          autoCapitalize="none"
-          autoComplete="current-password"
-          textContentType="password"
-          returnKeyType="done"
-          onSubmitEditing={handleDelete}
-          error={passwordError}
-          testID="delete-account-password"
-        />
+        {confirmWithGoogle ? (
+          <View style={styles.googleNote} testID="delete-account-google-note">
+            <Ionicons name="logo-google" size={20} color={colors.textSecondary} />
+            <Text style={styles.googleNoteText}>
+              To confirm, you’ll choose your Google account
+              {user?.email ? ` (${user.email})` : ''} after tapping Delete.
+            </Text>
+          </View>
+        ) : (
+          <TextInput
+            label="Enter your password to confirm"
+            leftIcon="lock-closed-outline"
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              setPasswordError('');
+              setFormError('');
+            }}
+            placeholder="Your password"
+            secureTextEntry
+            autoCapitalize="none"
+            autoComplete="current-password"
+            textContentType="password"
+            returnKeyType="done"
+            onSubmitEditing={handleDelete}
+            error={passwordError}
+            testID="delete-account-password"
+          />
+        )}
 
         <Pressable
           style={styles.checkboxRow}
@@ -309,6 +345,21 @@ const styles = StyleSheet.create({
   // Confirmation
   confirm: {
     gap: spacing.base,
+  },
+  googleNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.input,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  googleNoteText: {
+    ...typography.bodyMedium,
+    fontFamily: 'Inter_500Medium',
+    color: colors.text,
+    flex: 1,
   },
   checkboxRow: {
     flexDirection: 'row',

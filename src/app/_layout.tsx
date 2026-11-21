@@ -1,3 +1,4 @@
+import { showNotificationsInForeground } from '@/lib/push-notifications';
 import { queryClient } from '@/lib/query-client';
 import {
     Inter_400Regular,
@@ -16,6 +17,9 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
+// Notifications that arrive while the app is open still show as a banner
+showNotificationsInForeground();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({

@@ -2,9 +2,10 @@ import { Header } from '@/components/ui/Header';
 import { PromoChip } from '@/components/ui/PromoChip';
 import { TabBar } from '@/components/ui/TabBar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useStampRequests } from '@/hooks/useStampRequests';
 import { getUnseenResults } from '@/lib/stamp-requests';
-import { usePathname, useRouter } from 'expo-router';
+import { Redirect, usePathname, useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -20,6 +21,9 @@ const TAB_PATHS = new Set(['/explore', '/passport', '/scan', '/discover', '/acco
  * Five tabs rendered by the custom `TabBar` (raised center Scan button).
  * Includes Header component at the top with user info and promo chip on select tabs.
  * The Passport tab shows a dot while a reviewed stamp request is unseen.
+ * Also saves the push token and opens tapped notifications
+ * (usePushNotifications), and sends a user without a name back to sign-up
+ * step 3.
  *
  * Validates: Requirements 1.3.3 (Tabs Layout), 3.4 (Custom Tab Bar Implementation)
  */
@@ -29,6 +33,7 @@ export default function TabsLayout() {
   const { data: user } = useCurrentUser();
   const { data: stampRequests } = useStampRequests();
   const hasUnseenStampResults = getUnseenResults(stampRequests ?? []).length > 0;
+  usePushNotifications();
 
   // `usePathname` is global: it switches to e.g. '/settings' the moment a stack
   // screen is pushed over the tabs, while this layout is still visible behind the
@@ -48,6 +53,19 @@ export default function TabsLayout() {
   };
 
   const showHeader = !!user && tabPath !== '/account';
+
+  // Signed in but sign-up step 3 isn't done (closed the app there, or a new
+  // Google account): finish it first. Google accounts have no password to set.
+  if (user && !user.firstName) {
+    return (
+      <Redirect
+        href={{
+          pathname: '/signup/details',
+          params: { method: user.hasGoogleSignIn ? 'google' : 'email' },
+        }}
+      />
+    );
+  }
 
   return (
     // White backing so the gaps under the Header's rounded bottom corners

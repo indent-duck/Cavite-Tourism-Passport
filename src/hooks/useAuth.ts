@@ -2,11 +2,20 @@ import {
     resetPassword as apiResetPassword,
     sendVerificationCode as apiSendVerificationCode,
     signIn as apiSignIn,
+    signInWithGoogle as apiSignInWithGoogle,
     signUp as apiSignUp,
 } from '@/data/api';
 import type { User, VerificationPurpose } from '@/data/types';
+import { pickGoogleAccount } from '@/lib/google-sign-in';
 import { queryClient } from '@/lib/query-client';
 import { useCallback, useState } from 'react';
+
+export interface GoogleSignInResult {
+  user: User;
+  /** Names from the Google account, to prefill sign-up step 3 */
+  givenName: string | null;
+  familyName: string | null;
+}
 
 /**
  * Hook for authentication operations with loading and error state management
@@ -46,17 +55,16 @@ export function useAuth() {
 
   const signUp = useCallback(
     async (
-      email: string,
       firstName: string,
       lastName: string,
       address: string,
-      password: string
+      password: string | null
     ): Promise<User> => {
       setSignUpLoading(true);
       setSignUpError(null);
 
       try {
-        const user = await apiSignUp(email, firstName, lastName, address, password);
+        const user = await apiSignUp(firstName, lastName, address, password);
         queryClient.clear();
         return user;
       } catch (error) {
@@ -69,6 +77,24 @@ export function useAuth() {
     },
     []
   );
+
+  // Continue with Google: the account picker, then Supabase. Resolves null
+  // when the user closes the picker. A user whose firstName is empty is new
+  // and still needs sign-up step 3.
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const signInWithGoogle = useCallback(async (): Promise<GoogleSignInResult | null> => {
+    setGoogleLoading(true);
+    try {
+      const credential = await pickGoogleAccount();
+      if (!credential) return null;
+      const user = await apiSignInWithGoogle(credential.idToken, credential.nonce);
+      queryClient.clear();
+      return { user, givenName: credential.givenName, familyName: credential.familyName };
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, []);
 
   // Send Verification Code
   const [sendCodeLoading, setSendCodeLoading] = useState(false);
@@ -118,6 +144,10 @@ export function useAuth() {
       fn: signUp,
       loading: signUpLoading,
       error: signUpError,
+    },
+    google: {
+      fn: signInWithGoogle,
+      loading: googleLoading,
     },
     sendCode: {
       fn: sendCode,

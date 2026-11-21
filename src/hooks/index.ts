@@ -17,6 +17,7 @@ export { useMarkStampRequestsSeen } from './useMarkStampRequestsSeen';
 export { useOnAppFocus } from './useOnAppFocus';
 export { useCameraPermission, useLocationPermission } from './usePermissions';
 export { usePromoPeriod } from './usePromoPeriod';
+export { usePushNotifications } from './usePushNotifications';
 export { useRewardById } from './useRewardById';
 export { useRewardEligibility } from './useRewardEligibility';
 export { useRewards } from './useRewards';

@@ -14,7 +14,16 @@ export interface User {
   createdAt: Date;
   hasClaimedThisPeriod?: boolean; // User has claimed a reward this promo period
   claimedRewardId?: string; // ID of the reward claimed (if hasClaimedThisPeriod is true)
+  /** Signed up with email (and set a password then); false for Google-only accounts */
+  hasEmailSignIn?: boolean;
+  /** Has used "Continue with Google" (a Google identity is linked) */
+  hasGoogleSignIn?: boolean;
 }
+
+/** How the user proves it's them before their account is deleted */
+export type DeleteAccountConfirmation =
+  | { password: string }
+  | { google: { idToken: string; nonce: string } };
 
 /** Which flow an emailed 6-digit code belongs to */
 export type VerificationPurpose = 'signup' | 'reset';

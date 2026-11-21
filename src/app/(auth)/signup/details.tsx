@@ -1,9 +1,16 @@
-import { AuthHeader, authScreenStyles, FormBanner, MunicipalityPicker } from '@/components/auth';
+import {
+  AuthHeader,
+  authScreenStyles,
+  FormBanner,
+  MunicipalityPicker,
+  TermsCheckbox,
+} from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { PasswordCriteria } from '@/components/ui/PasswordCriteria';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
+import { useSignOut } from '@/hooks/useSignOut';
 import { formatAddress } from '@/lib/address';
 import { hapticError } from '@/lib/haptics';
 import { getNameError, MAX_NAME_LENGTH, normalizeName } from '@/lib/names';
@@ -22,33 +29,61 @@ import { StyleSheet, Text, View, type ScrollView } from 'react-native';
  * The address is built from a city/municipality picked from all of Cavite's
  * LGUs plus an optional barangay/street line. Includes live password criteria.
  *
+ * `method=google` (a new "Continue with Google" account): no password, since
+ * they sign in with Google; the names come prefilled from Google. Coming from
+ * the login screen they haven't accepted the terms yet, so the checkbox shows
+ * here (`termsAccepted=yes` when sign-up step 1 already did).
+ * Leaving this screen without finishing signs out: the tabs would only send
+ * the user back here.
+ *
  * Validates: Requirements 1.4 (Sign up step 3)
  */
 export default function SignupDetailsScreen() {
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const params = useLocalSearchParams<{
+    method?: 'email' | 'google';
+    firstName?: string;
+    lastName?: string;
+    termsAccepted?: 'yes';
+  }>();
+  const isGoogle = params.method === 'google';
+  const needsTerms = isGoogle && params.termsAccepted !== 'yes';
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState(params.firstName ?? '');
+  const [lastName, setLastName] = useState(params.lastName ?? '');
   const [municipality, setMunicipality] = useState<string | null>(null);
   const [street, setStreet] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [firstNameError, setFirstNameError] = useState('');
   const [lastNameError, setLastNameError] = useState('');
   const [municipalityError, setMunicipalityError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [termsError, setTermsError] = useState('');
   const [formError, setFormError] = useState('');
   // The Create account button sits right under Confirm password. Keep that much
   // room (field bottom -> button bottom) between the focused field and the
   // keyboard so focusing Confirm password also reveals the button. Measured from
   // layout rather than switched per focused field, so it never lags behind focus.
+  // Google sign-ups have no password fields, so nothing to make room for.
   const [confirmBottom, setConfirmBottom] = useState(0);
   const [buttonBottom, setButtonBottom] = useState(0);
-  const spaceBelowConfirm = Math.max(0, buttonBottom - confirmBottom);
+  const spaceBelowConfirm = isGoogle ? 0 : Math.max(0, buttonBottom - confirmBottom);
 
   const { signUp } = useAuth();
+  const { signOut } = useSignOut();
+
+  // Back to step 2 when there is one; otherwise (Google, or reopened here
+  // after closing the app) cancel by signing out
+  const handleBack = () => {
+    if (!isGoogle && router.canGoBack()) {
+      router.back();
+    } else {
+      signOut();
+    }
+  };
 
   const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const firstNameRef = useRef<TextInputRef>(null);
@@ -66,21 +101,30 @@ export default function SignupDetailsScreen() {
     setMunicipalityError('');
     setPasswordError('');
     setConfirmPasswordError('');
+    setTermsError('');
     setFormError('');
 
     const errors = {
       firstName: getNameError(firstName, 'First name'),
       lastName: getNameError(lastName, 'Last name'),
       municipality: !municipality ? 'Select your city or municipality' : '',
-      password: !password
-        ? 'Password is required'
-        : !isValidPassword(password)
-          ? 'Password must meet all criteria'
-          : '',
-      confirmPassword: !confirmPassword
-        ? 'Please confirm your password'
-        : password !== confirmPassword
-          ? 'Passwords do not match'
+      password: isGoogle
+        ? ''
+        : !password
+          ? 'Password is required'
+          : !isValidPassword(password)
+            ? 'Password must meet all criteria'
+            : '',
+      confirmPassword: isGoogle
+        ? ''
+        : !confirmPassword
+          ? 'Please confirm your password'
+          : password !== confirmPassword
+            ? 'Passwords do not match'
+            : '',
+      terms:
+        needsTerms && !termsAccepted
+          ? 'Please accept the Terms of Service and Privacy Policy to continue'
           : '',
     };
 
@@ -89,6 +133,7 @@ export default function SignupDetailsScreen() {
     setMunicipalityError(errors.municipality);
     setPasswordError(errors.password);
     setConfirmPasswordError(errors.confirmPassword);
+    setTermsError(errors.terms);
 
     // Take the user to the first problem, top to bottom
     if (
@@ -96,7 +141,8 @@ export default function SignupDetailsScreen() {
       errors.lastName ||
       errors.municipality ||
       errors.password ||
-      errors.confirmPassword
+      errors.confirmPassword ||
+      errors.terms
     ) {
       hapticError();
       if (errors.firstName) {
@@ -110,16 +156,22 @@ export default function SignupDetailsScreen() {
         });
       } else if (errors.password) {
         passwordRef.current?.focus();
-      } else {
+      } else if (errors.confirmPassword) {
         confirmPasswordRef.current?.focus();
       }
+      // A terms error shows under the checkbox, right above the button
       return;
     }
 
     const address = formatAddress(street, municipality ?? '');
 
     try {
-      await signUp.fn(email, normalizeName(firstName), normalizeName(lastName), address, password);
+      await signUp.fn(
+        normalizeName(firstName),
+        normalizeName(lastName),
+        address,
+        isGoogle ? null : password
+      );
       // On success, navigate to main app and clear auth stack
       router.replace('/(tabs)/explore');
     } catch (error) {
@@ -140,7 +192,12 @@ export default function SignupDetailsScreen() {
       contentContainerStyle={authScreenStyles.scrollContent}
       keyboardBottomOffset={spacing.base + spaceBelowConfirm}
     >
-      <AuthHeader step={3} totalSteps={3} onBack={() => router.back()} backLabel="Back to verification" />
+      <AuthHeader
+        step={isGoogle ? 2 : 3}
+        totalSteps={isGoogle ? 2 : 3}
+        onBack={handleBack}
+        backLabel={!isGoogle && router.canGoBack() ? 'Back to verification' : 'Cancel sign-up'}
+      />
 
       <Text style={[authScreenStyles.headline, styles.headline]} accessibilityRole="header">
         Your personal details
@@ -218,60 +275,75 @@ export default function SignupDetailsScreen() {
           autoCapitalize="words"
           autoComplete="address-line1"
           textContentType="streetAddressLine1"
-          returnKeyType="next"
-          submitBehavior="submit"
-          onSubmitEditing={() => passwordRef.current?.focus()}
+          returnKeyType={isGoogle ? 'done' : 'next'}
+          submitBehavior={isGoogle ? undefined : 'submit'}
+          onSubmitEditing={() => (isGoogle ? handleCreateAccount() : passwordRef.current?.focus())}
         />
 
-        <View style={styles.passwordGroup}>
-          <TextInput
-            ref={passwordRef}
-            label="Password"
-            leftIcon="lock-closed-outline"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              setPasswordError('');
-            }}
-            placeholder="Create a password"
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-            textContentType="newPassword"
-            returnKeyType="next"
-            submitBehavior="submit"
-            onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-            error={passwordError}
-          />
-          {/* Criteria sit directly under the field they describe */}
-          <PasswordCriteria password={password} style={styles.criteria} />
-        </View>
+        {!isGoogle && (
+          <>
+            <View style={styles.passwordGroup}>
+              <TextInput
+                ref={passwordRef}
+                label="Password"
+                leftIcon="lock-closed-outline"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setPasswordError('');
+                }}
+                placeholder="Create a password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="new-password"
+                textContentType="newPassword"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                error={passwordError}
+              />
+              {/* Criteria sit directly under the field they describe */}
+              <PasswordCriteria password={password} style={styles.criteria} />
+            </View>
 
-        <View
-          onLayout={(event) => {
-            const { y, height } = event.nativeEvent.layout;
-            setConfirmBottom(y + height);
-          }}
-        >
-          <TextInput
-            ref={confirmPasswordRef}
-            label="Confirm password"
-            leftIcon="lock-closed-outline"
-            value={confirmPassword}
-            onChangeText={(text) => {
-              setConfirmPassword(text);
-              setConfirmPasswordError('');
+            <View
+              onLayout={(event) => {
+                const { y, height } = event.nativeEvent.layout;
+                setConfirmBottom(y + height);
+              }}
+            >
+              <TextInput
+                ref={confirmPasswordRef}
+                label="Confirm password"
+                leftIcon="lock-closed-outline"
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setConfirmPasswordError('');
+                }}
+                placeholder="Re-enter your password"
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="new-password"
+                textContentType="newPassword"
+                returnKeyType="done"
+                onSubmitEditing={handleCreateAccount}
+                error={confirmPasswordError}
+              />
+            </View>
+          </>
+        )}
+
+        {needsTerms && (
+          <TermsCheckbox
+            accepted={termsAccepted}
+            onChange={(accepted) => {
+              setTermsAccepted(accepted);
+              setTermsError('');
             }}
-            placeholder="Re-enter your password"
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-            textContentType="newPassword"
-            returnKeyType="done"
-            onSubmitEditing={handleCreateAccount}
-            error={confirmPasswordError}
+            error={termsError}
           />
-        </View>
+        )}
 
         {formError ? <FormBanner message={formError} /> : null}
 

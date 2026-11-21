@@ -1,4 +1,5 @@
 import { signOut as apiSignOut } from '@/data/api';
+import { forgetGoogleAccount } from '@/lib/google-sign-in';
 import { endSession } from '@/lib/session';
 import { useCallback, useState } from 'react';
 
@@ -17,8 +18,10 @@ export function useSignOut() {
     setIsLoading(true);
 
     try {
-      // Call API to sign out (resets mock user state)
+      // Removes this phone's push token, then the saved session
       await apiSignOut();
+      // The next "Continue with Google" asks which account again
+      await forgetGoogleAccount();
     } catch (error) {
       // Even if the API call fails, still leave the app locally
       console.error('Sign out error:', error);

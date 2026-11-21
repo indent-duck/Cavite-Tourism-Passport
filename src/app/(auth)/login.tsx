@@ -1,4 +1,11 @@
-import { AuthLink, AuthSwitchPrompt, FormBanner, PassportCover } from '@/components/auth';
+import {
+    AuthLink,
+    AuthSwitchPrompt,
+    FormBanner,
+    GoogleButton,
+    OrDivider,
+    PassportCover,
+} from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { KeyboardFooter } from '@/components/ui/KeyboardFooter';
@@ -28,7 +35,9 @@ const PAGE_OVERLAP = 24;
  * Login Screen
  *
  * Leather "passport cover" hero with the sign-in form on a cream page below.
- * Signs in with Supabase Auth and navigates to Explore on success.
+ * Signs in with Supabase Auth (email and password, or "Continue with
+ * Google") and navigates to Explore on success. A Google account signing in
+ * for the first time goes to sign-up step 3 instead.
  * Opened after deleting an account (`?notice=account-deleted`), it first
  * shows a feedback dialog confirming the deletion.
  *
@@ -48,7 +57,7 @@ export default function LoginScreen() {
   const { notice } = useLocalSearchParams<{ notice?: string }>();
   const [showDeletedFeedback, setShowDeletedFeedback] = useState(notice === 'account-deleted');
 
-  const { signIn } = useAuth();
+  const { signIn, google } = useAuth();
   const insets = useSafeAreaInsets();
   // The login screen stays mounted under the forgot-password screens, so only
   // force a light status bar while it is the visible screen
@@ -121,6 +130,35 @@ export default function LoginScreen() {
     }
   };
 
+  const handleGoogle = async () => {
+    setEmailError('');
+    setPasswordError('');
+    setFormError('');
+
+    try {
+      const result = await google.fn();
+      if (!result) return; // Picker closed
+      if (result.user.firstName) {
+        router.replace('/(tabs)/explore');
+      } else {
+        // New Google account: name (prefilled from Google), address and the terms
+        router.replace({
+          pathname: '/signup/details',
+          params: {
+            method: 'google',
+            firstName: result.givenName ?? '',
+            lastName: result.familyName ?? '',
+          },
+        });
+      }
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Google sign-in failed. Please try again.'
+      );
+      hapticError();
+    }
+  };
+
   return (
     <View
       style={styles.screen}
@@ -160,6 +198,14 @@ export default function LoginScreen() {
                 formHeight.value = event.nativeEvent.layout.height;
               }}
             >
+              <GoogleButton
+                onPress={handleGoogle}
+                loading={google.loading}
+                disabled={signIn.loading}
+                testID="login-google"
+              />
+              <OrDivider />
+
               <TextInput
                 ref={emailRef}
                 label="Email address"
@@ -227,6 +273,7 @@ export default function LoginScreen() {
           variant="accent"
           fullWidth
           loading={signIn.loading}
+          disabled={google.loading}
           icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
         />
         <AuthSwitchPrompt

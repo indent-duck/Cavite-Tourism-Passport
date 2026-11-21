@@ -1,5 +1,6 @@
 import { deleteAccount, getAccountDeletionSummary } from '@/data/api';
-import type { AccountDeletionSummary } from '@/data/types';
+import type { AccountDeletionSummary, DeleteAccountConfirmation } from '@/data/types';
+import { forgetGoogleAccount } from '@/lib/google-sign-in';
 import { endSession } from '@/lib/session';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
@@ -22,9 +23,10 @@ export function useAccountDeletionSummary() {
  * confirms the deletion in a feedback dialog. There is no way back into the app.
  */
 export function useDeleteAccount() {
-  return useMutation<void, Error, { password: string }>({
-    mutationFn: ({ password }) => deleteAccount(password),
+  return useMutation<void, Error, DeleteAccountConfirmation>({
+    mutationFn: deleteAccount,
     onSuccess: () => {
+      void forgetGoogleAccount();
       endSession({ pathname: '/login', params: { notice: 'account-deleted' } });
     },
   });

@@ -19,7 +19,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.lee1plus1.CaviteTourismPassport",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "server",
@@ -46,7 +47,16 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to take a photo of your passport stamp.",
           "microphonePermission": false
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#004987",
+          "defaultChannel": "default"
+        }
+      ],
+      "react-native-nitro-google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

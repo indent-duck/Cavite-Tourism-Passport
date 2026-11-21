@@ -1,10 +1,11 @@
 import {
   AuthHeader,
   AuthSwitchPrompt,
-  TermsSheet,
+  FormBanner,
+  GoogleButton,
+  OrDivider,
+  TermsCheckbox,
   authScreenStyles,
-  linkTextStyle,
-  type TermsSheetRef,
 } from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -12,18 +13,21 @@ import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
 import { EMAIL_REGEX } from '@/lib/constants';
 import { hapticError } from '@/lib/haptics';
-import { colors, spacing, typography } from '@/theme';
+import { colors, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+const TERMS_REQUIRED = 'Please accept the Terms of Service and Privacy Policy to continue';
 
 /**
  * Sign Up - Step 1: Email Entry
  *
  * First step of the signup process where user enters their email address
  * and agrees to the terms of service. Sends verification code on success.
+ * "Continue with Google" (also needs the terms) skips the code: a new
+ * Google account goes straight to step 3, an existing one into the app.
  *
  * Validates: Requirements 1.2 (Sign up step 1)
  */
@@ -32,14 +36,15 @@ export default function SignupEmailScreen() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [termsError, setTermsError] = useState('');
+  const [googleError, setGoogleError] = useState('');
 
-  const { sendCode } = useAuth();
+  const { sendCode, google } = useAuth();
   const emailRef = useRef<TextInputRef>(null);
-  const termsSheetRef = useRef<TermsSheetRef>(null);
 
   const handleContinue = async () => {
     setEmailError('');
     setTermsError('');
+    setGoogleError('');
 
     const trimmed = email.trim();
     let emailProblem = '';
@@ -52,7 +57,7 @@ export default function SignupEmailScreen() {
     if (emailProblem || !termsAccepted) {
       setEmailError(emailProblem);
       if (!termsAccepted) {
-        setTermsError('Please accept the Terms of Service and Privacy Policy to continue');
+        setTermsError(TERMS_REQUIRED);
       }
       hapticError();
       if (emailProblem) emailRef.current?.focus();
@@ -74,14 +79,40 @@ export default function SignupEmailScreen() {
     }
   };
 
-  const toggleTerms = () => {
-    setTermsAccepted((accepted) => !accepted);
+  const handleGoogle = async () => {
+    setEmailError('');
     setTermsError('');
-  };
+    setGoogleError('');
 
-  const acceptTerms = () => {
-    setTermsAccepted(true);
-    setTermsError('');
+    if (!termsAccepted) {
+      setTermsError(TERMS_REQUIRED);
+      hapticError();
+      return;
+    }
+
+    try {
+      const result = await google.fn();
+      if (!result) return; // Picker closed
+      if (result.user.firstName) {
+        // This Google account already has a passport
+        router.replace('/(tabs)/explore');
+      } else {
+        router.replace({
+          pathname: '/signup/details',
+          params: {
+            method: 'google',
+            termsAccepted: 'yes',
+            firstName: result.givenName ?? '',
+            lastName: result.familyName ?? '',
+          },
+        });
+      }
+    } catch (error) {
+      setGoogleError(
+        error instanceof Error ? error.message : 'Google sign-in failed. Please try again.'
+      );
+      hapticError();
+    }
   };
 
   return (
@@ -99,6 +130,7 @@ export default function SignupEmailScreen() {
             variant="accent"
             fullWidth
             loading={sendCode.loading}
+            disabled={google.loading}
             icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
           />
           <AuthSwitchPrompt
@@ -116,6 +148,17 @@ export default function SignupEmailScreen() {
       </Text>
 
       <View style={styles.form}>
+        <View style={styles.googleGroup}>
+          <GoogleButton
+            onPress={handleGoogle}
+            loading={google.loading}
+            disabled={sendCode.loading}
+            testID="signup-google"
+          />
+          {googleError ? <FormBanner message={googleError} /> : null}
+        </View>
+        <OrDivider />
+
         <TextInput
           ref={emailRef}
           label="Email address"
@@ -135,54 +178,16 @@ export default function SignupEmailScreen() {
           error={emailError}
         />
 
-        {/* Terms: the whole row toggles the checkbox; the links open the terms sheet */}
-        <View style={styles.termsBlock}>
-          <Pressable
-            onPress={toggleTerms}
-            style={styles.termsRow}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: termsAccepted }}
-            accessibilityLabel="I agree to the Terms of Service and Privacy Policy"
-          >
-            <View
-              style={[
-                styles.checkbox,
-                termsAccepted && styles.checkboxChecked,
-                !!termsError && styles.checkboxError,
-              ]}
-            >
-              {termsAccepted && <Ionicons name="checkmark" size={16} color={colors.background} />}
-            </View>
-            <Text style={styles.termsText}>
-              I agree to the{' '}
-              <Text
-                style={styles.termsLink}
-                onPress={() => termsSheetRef.current?.present('terms')}
-                accessibilityRole="link"
-              >
-                Terms of Service
-              </Text>{' '}
-              and{' '}
-              <Text
-                style={styles.termsLink}
-                onPress={() => termsSheetRef.current?.present('privacy')}
-                accessibilityRole="link"
-              >
-                Privacy Policy
-              </Text>
-              .
-            </Text>
-          </Pressable>
-          {termsError ? (
-            <View style={styles.errorRow} accessibilityLiveRegion="polite">
-              <Ionicons name="alert-circle" size={14} color={colors.error} />
-              <Text style={styles.errorText}>{termsError}</Text>
-            </View>
-          ) : null}
-        </View>
+        {/* Applies to both ways of signing up */}
+        <TermsCheckbox
+          accepted={termsAccepted}
+          onChange={(accepted) => {
+            setTermsAccepted(accepted);
+            setTermsError('');
+          }}
+          error={termsError}
+        />
       </View>
-
-      <TermsSheet ref={termsSheetRef} accepted={termsAccepted} onAccept={acceptTerms} />
     </ScreenContainer>
   );
 }
@@ -194,55 +199,7 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.lg,
   },
-  termsBlock: {
-    gap: spacing.xs,
-  },
-  // Row is at least 44px tall so the checkbox is easy to hit
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  googleGroup: {
     gap: spacing.md,
-    minHeight: 44,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: colors.background,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  checkboxError: {
-    borderColor: colors.error,
-  },
-  termsText: {
-    ...typography.bodyMedium,
-    fontFamily: 'Inter_400Regular',
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  // Same size as the sentence so the links sit on the same baseline
-  termsLink: {
-    ...typography.bodyMedium,
-    fontFamily: linkTextStyle.fontFamily,
-    color: linkTextStyle.color,
-    textDecorationLine: 'underline',
-  },
-  errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  errorText: {
-    ...typography.bodySmall,
-    color: colors.error,
-    flex: 1,
   },
 });
