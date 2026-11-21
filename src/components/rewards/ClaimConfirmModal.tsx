@@ -11,6 +11,11 @@ export interface ClaimConfirmModalProps {
   reward: Reward;
   /** End of the current promo period, e.g. "Mar 31, 2027" */
   periodEnd?: string;
+  /**
+   * Title of another reward the user has a live pass for. Making this pass
+   * cancels that one (one live pass per user), so the dialog says so.
+   */
+  replacesPassFor?: string;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -25,6 +30,7 @@ export function ClaimConfirmModal({
   visible,
   reward,
   periodEnd,
+  replacesPassFor,
   loading = false,
   onConfirm,
   onCancel,
@@ -57,6 +63,13 @@ export function ClaimConfirmModal({
           <Text style={styles.rewardName}>{reward.title}</Text>
 
           <View style={styles.facts}>
+            {replacesPassFor ? (
+              <Fact icon="swap-horizontal" emphasis>
+                This replaces your pass for{' '}
+                <Text style={styles.bold}>{replacesPassFor}</Text>. That pass will stop
+                working.
+              </Fact>
+            ) : null}
             <Fact icon="alert-circle" emphasis>
               You can claim only <Text style={styles.bold}>one reward</Text> this promo
               period. The others stay locked until {periodEnd ?? 'the period ends'}.

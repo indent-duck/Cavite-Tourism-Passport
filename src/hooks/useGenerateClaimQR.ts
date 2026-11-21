@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { generateClaimQR } from '@/data/api';
-import type { ActiveClaim, GenerateClaimResult } from '@/data/types';
+import type { ActiveClaim, GenerateClaimResult, LivePass, Reward } from '@/data/types';
 
 /**
  * Hook for generating a claim pass (QR) for a reward
@@ -27,8 +27,18 @@ export function useGenerateClaimQR() {
         );
         queryClient.setQueryData(['activeClaim', rewardId], result.claim);
         queryClient.invalidateQueries({ queryKey: ['activeClaim', rewardId] });
+
+        // The hub banner shows the new pass at once (the reward screen has
+        // already loaded the reward's name), then confirms with the server
+        const reward = queryClient.getQueryData<Reward | null>(['reward', rewardId]);
+        if (reward) {
+          const pass: LivePass = { ...result.claim, rewardTitle: reward.title };
+          queryClient.setQueryData(['livePass'], pass);
+        }
+        queryClient.invalidateQueries({ queryKey: ['livePass'] });
         return;
       }
+      queryClient.invalidateQueries({ queryKey: ['livePass'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['rewards'] });
       queryClient.invalidateQueries({ queryKey: ['rewardEligibility'] });

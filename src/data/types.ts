@@ -188,6 +188,11 @@ export interface ActiveClaim {
   expiresAt: Date;
 }
 
+/** The user's one live claim pass (any reward), with the reward's name for the Rewards hub */
+export interface LivePass extends ActiveClaim {
+  rewardTitle: string;
+}
+
 /** Result of generating a claim pass; the server checks every reward rule again */
 export type GenerateClaimResult =
   | { success: true; claim: ActiveClaim }

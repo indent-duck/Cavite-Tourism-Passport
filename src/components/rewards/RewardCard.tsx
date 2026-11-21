@@ -16,7 +16,8 @@ import { StyleSheet, Text, View } from 'react-native';
  * - Photo with points pill (top-left) and "N left" pill for limited rewards
  * - Title and two-line description
  * - Locked rewards: slim points bar + "250 pts + Adventure stamp to go"
- * - Footer: status chip and a chevron (the whole card is the tap target)
+ * - Footer: status chip ("Pass ready" while the user's live pass is for
+ *   this reward) and a chevron (the whole card is the tap target)
  * - Rewards that can't be claimed (sold out, period used) are dimmed
  *
  * Validates: Requirements 4.2 (RewardCard Component)
@@ -26,6 +27,8 @@ export interface RewardCardProps {
   reward: Reward;
   status: RewardStatus;
   eligibility?: RewardEligibility;
+  /** The user's live claim pass is for this reward: shows "Pass ready" */
+  hasLivePass?: boolean;
   onPress: () => void;
   testID?: string;
 }
@@ -68,14 +71,24 @@ const STATUS_CHIP: Record<
   },
 };
 
+const PASS_READY_CHIP = {
+  label: 'Pass ready',
+  icon: 'qr-code' as IconName,
+  fg: colors.accent,
+  bg: colors.accentTint,
+};
+
 export function RewardCard({
   reward,
   status,
   eligibility,
+  hasLivePass = false,
   onPress,
   testID,
 }: RewardCardProps) {
-  const chip = STATUS_CHIP[status];
+  // Like the reward screen, a pass only counts while the reward is claimable
+  const showPass = hasLivePass && (status === 'ready' || status === 'locked');
+  const chip = showPass ? PASS_READY_CHIP : STATUS_CHIP[status];
   const isDimmed = status === 'sold-out' || status === 'period-used';
   const showProgress = status === 'locked' && eligibility;
   const remaining = eligibility ? describeRemaining(eligibility) : null;

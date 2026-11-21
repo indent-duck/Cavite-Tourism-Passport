@@ -1,6 +1,7 @@
 import { RewardPhoto } from '@/components/rewards/RewardPhoto';
 import { ActiveClaim, Reward } from '@/data/types';
 import { REDEMPTION_LOCATION } from '@/lib/constants';
+import { formatCountdown } from '@/lib/rewards';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -39,13 +40,6 @@ export interface ClaimQRViewProps {
 }
 
 const MONO_FONT = Platform.select({ ios: 'Menlo', default: 'monospace' });
-
-function formatTime(ms: number): string {
-  const totalSeconds = Math.ceil(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-}
 
 /** Extract claim ID from payload (format: cvt:claim:<claimId>:<token>) */
 function extractClaimId(claim: ActiveClaim): string {
@@ -116,11 +110,11 @@ export function ClaimQRView({
         accessible
         accessibilityRole="timer"
         accessibilityLabel={
-          isExpired ? 'Pass expired' : `Pass valid for ${formatTime(shownMs)}`
+          isExpired ? 'Pass expired' : `Pass valid for ${formatCountdown(shownMs)}`
         }
       >
         <Text style={styles.timerLabel}>{isExpired ? 'Pass expired' : 'Valid for'}</Text>
-        <Text style={[styles.timer, { color: timerColor }]}>{formatTime(shownMs)}</Text>
+        <Text style={[styles.timer, { color: timerColor }]}>{formatCountdown(shownMs)}</Text>
         <View style={styles.timerTrack}>
           <View
             style={[

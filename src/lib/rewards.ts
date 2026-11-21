@@ -89,6 +89,14 @@ export function compareRewards(
   return a.reward.pointsCost - b.reward.pointsCost;
 }
 
+/** Time left on a claim pass, "mm:ss" (rounded up, so 00:00 means expired) */
+export function formatCountdown(ms: number): string {
+  const totalSeconds = Math.ceil(Math.max(0, ms) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
 /** "Mar 31, 2027" */
 export function formatShortDate(date: Date): string {
   return date.toLocaleDateString('en-US', {

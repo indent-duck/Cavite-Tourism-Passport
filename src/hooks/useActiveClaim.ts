@@ -28,6 +28,7 @@ export function useActiveClaim(rewardId: string) {
       if (ended) {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['currentUser'] }),
+          queryClient.invalidateQueries({ queryKey: ['livePass'] }),
           queryClient.invalidateQueries({ queryKey: ['rewards'] }),
           queryClient.invalidateQueries({ queryKey: ['rewardEligibility'] }),
           queryClient.invalidateQueries({ queryKey: ['reward', rewardId] }),

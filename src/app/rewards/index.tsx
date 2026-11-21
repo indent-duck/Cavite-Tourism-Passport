@@ -1,8 +1,10 @@
+import { LivePassBanner } from '@/components/rewards/LivePassBanner';
 import { PointsSummaryCard, type PointsSummaryCardProps } from '@/components/rewards/PointsSummaryCard';
 import { RewardCard } from '@/components/rewards/RewardCard';
 import { StateView } from '@/components/ui/StateView';
 import type { Category, User } from '@/data/types';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useLivePass } from '@/hooks/useLivePass';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import {
   useRewardsWithEligibility,
@@ -35,6 +37,8 @@ const ItemSeparator = () => <View style={styles.separator} />;
  *
  * Layout:
  * - Blue header matching the tab screens' Header (entry is the points pill)
+ * - While a claim pass is live: which reward it's for, time left, and a
+ *   tap to open the pass (that reward's card also says "Pass ready")
  * - Points summary: balance, next goal, required stamp slots
  * - "One reward per period" rule, shown before the user picks anything
  * - Rewards sorted by what's actionable: claimed, ready, closest locked,
@@ -51,9 +55,11 @@ export default function RewardsScreen() {
   const userQuery = useCurrentUser();
   const stampsQuery = useStamps();
   const rewardsQuery = useRewardsWithEligibility();
+  const livePassQuery = useLivePass();
   const { data: promoPeriod } = usePromoPeriod();
 
   const user = userQuery.data;
+  const livePass = livePassQuery.data ?? null;
   const stamps = stampsQuery.data;
   const rewards = rewardsQuery.data;
 
@@ -95,7 +101,12 @@ export default function RewardsScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([userQuery.refetch(), stampsQuery.refetch(), rewardsQuery.refetch()]);
+      await Promise.all([
+        userQuery.refetch(),
+        stampsQuery.refetch(),
+        rewardsQuery.refetch(),
+        livePassQuery.refetch(),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -135,6 +146,7 @@ export default function RewardsScreen() {
             reward={item.reward}
             status={item.status}
             eligibility={item.eligibility}
+            hasLivePass={livePass?.rewardId === item.reward.id}
             onPress={() => router.push(`/rewards/${item.reward.id}`)}
             testID={`reward-card-${item.reward.id}`}
           />
@@ -142,6 +154,15 @@ export default function RewardsScreen() {
         ItemSeparatorComponent={ItemSeparator}
         ListHeaderComponent={
           <View style={styles.listHeader}>
+            {livePass && (
+              <LivePassBanner
+                key={livePass.claimId}
+                pass={livePass}
+                onShowPass={() => router.push(`/rewards/${livePass.rewardId}`)}
+                testID="live-pass-banner"
+              />
+            )}
+
             <PointsSummaryCard
               points={user?.points ?? 0}
               stampCategories={collectedCategories}

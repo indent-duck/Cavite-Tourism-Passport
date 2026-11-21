@@ -18,6 +18,7 @@ import {
     Expressway,
     GenerateClaimResult,
     Itinerary,
+    LivePass,
     PasswordChangeProof,
     POINTS_PER_CATEGORY,
     ProfileUpdate,
@@ -1217,12 +1218,39 @@ interface GenerateClaimRow {
   expires_at?: string;
 }
 
+const CLAIM_COLUMNS = "id, reward_id, token, generated_at, expires_at";
+
 interface RewardClaimRow {
   id: number;
   reward_id: number;
   token: string;
   generated_at: string;
   expires_at: string;
+}
+
+function toActiveClaim(row: RewardClaimRow): ActiveClaim {
+  return {
+    claimId: String(row.id),
+    // Same format generate_reward_claim returns
+    qrPayload: `cvt:claim:${row.id}:${row.token}`,
+    rewardId: String(row.reward_id),
+    createdAt: new Date(row.generated_at),
+    expiresAt: new Date(row.expires_at),
+  };
+}
+
+/**
+ * The signed-in user's live passes: not redeemed, cancelled or expired.
+ * Filtered by account because staff can read everyone's claims. There is
+ * at most one (generate_reward_claim cancels the previous pass).
+ */
+function livePassesQuery(userId: string, columns: string) {
+  return supabase
+    .from("reward_claims")
+    .select(columns)
+    .eq("account_id", userId)
+    .eq("status", "generated")
+    .gt("expires_at", new Date().toISOString());
 }
 
 /**
@@ -1235,27 +1263,29 @@ export async function getActiveClaim(rewardId: string): Promise<ActiveClaim | nu
   const userId = await requireUserId();
 
   const row = unwrap(
-    await supabase
-      .from("reward_claims")
-      .select("id, reward_id, token, generated_at, expires_at")
-      // Staff can read everyone's claims, so filter to the user's own
-      .eq("account_id", userId)
+    await livePassesQuery(userId, CLAIM_COLUMNS)
       .eq("reward_id", rewardId)
-      .eq("status", "generated")
-      .gt("expires_at", new Date().toISOString())
       .maybeSingle()
       .overrideTypes<RewardClaimRow, { merge: false }>(),
   );
-  if (!row) return null;
+  return row ? toActiveClaim(row) : null;
+}
 
-  return {
-    claimId: String(row.id),
-    // Same format generate_reward_claim returns
-    qrPayload: `cvt:claim:${row.id}:${row.token}`,
-    rewardId: String(row.reward_id),
-    createdAt: new Date(row.generated_at),
-    expiresAt: new Date(row.expires_at),
-  };
+/**
+ * The user's live claim pass for any reward, or null. For the Rewards hub
+ * banner and the "this replaces your pass" warning.
+ */
+export async function getLivePass(): Promise<LivePass | null> {
+  const userId = await requireUserId();
+
+  const row = unwrap(
+    await livePassesQuery(userId, `${CLAIM_COLUMNS}, rewards(name)`)
+      .order("generated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .overrideTypes<RewardClaimRow & { rewards: { name: string } }, { merge: false }>(),
+  );
+  return row ? { ...toActiveClaim(row), rewardTitle: row.rewards.name } : null;
 }
 
 /**

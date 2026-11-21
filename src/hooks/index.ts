@@ -11,6 +11,7 @@ export { useEvents } from './useEvents';
 export { useExpressways } from './useExpressways';
 export { useItineraries } from './useItineraries';
 export { useItineraryById } from './useItineraryById';
+export { useLivePass } from './useLivePass';
 export { useLocationServices } from './useLocationServices';
 export { useMarkStampRequestsSeen } from './useMarkStampRequestsSeen';
 export { useOnAppFocus } from './useOnAppFocus';

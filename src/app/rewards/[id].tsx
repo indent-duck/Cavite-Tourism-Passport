@@ -11,6 +11,7 @@ import type { ActiveClaim, Category, GenerateClaimResult, RewardEligibility } fr
 import { useActiveClaim } from '@/hooks/useActiveClaim';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useGenerateClaimQR } from '@/hooks/useGenerateClaimQR';
+import { useLivePass } from '@/hooks/useLivePass';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { useRewardById } from '@/hooks/useRewardById';
 import { useRewardEligibility } from '@/hooks/useRewardEligibility';
@@ -106,6 +107,9 @@ export default function RewardDetailScreen() {
   const eligibilityQuery = useRewardEligibility(rewardId);
   const userQuery = useCurrentUser();
   const activeClaimQuery = useActiveClaim(rewardId);
+  // The user's live pass for any reward: a pass for another reward gets
+  // replaced if they claim this one (useLivePass drops it once expired)
+  const { data: livePass } = useLivePass();
   const { data: promoPeriod } = usePromoPeriod();
 
   const reward = rewardQuery.data;
@@ -415,6 +419,9 @@ export default function RewardDetailScreen() {
         visible={confirmVisible}
         reward={reward}
         periodEnd={periodEnd}
+        replacesPassFor={
+          livePass && livePass.rewardId !== rewardId ? livePass.rewardTitle : undefined
+        }
         loading={generateClaimQR.isPending}
         onConfirm={generatePass}
         onCancel={() => setConfirmVisible(false)}
