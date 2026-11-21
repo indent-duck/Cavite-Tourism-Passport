@@ -24,8 +24,8 @@ type IconName = keyof typeof Ionicons.glyphMap;
  * requests waiting for review.
  *
  * Deleting needs both the "I understand" checkbox and proof it's the owner:
- * the account password, or for accounts that use Google, picking that Google
- * account again (they may not have a password at all).
+ * the account password, or for Google accounts without a password, picking
+ * that Google account again.
  * On success the cache is cleared and the user lands on the login screen,
  * which shows an "Account deleted" feedback dialog. A wrong password shows
  * under the password field; staff accounts and a different Google account
@@ -35,7 +35,8 @@ export default function DeleteAccountScreen() {
   const { data: summary } = useAccountDeletionSummary();
   const { data: user } = useCurrentUser();
   const deleteAccount = useDeleteAccount();
-  const confirmWithGoogle = user?.hasGoogleSignIn ?? false;
+  // The password when there is one; Google only for logins without a password
+  const confirmWithGoogle = !!user && !user.hasPassword && !!user.hasGoogleSignIn;
 
   const [password, setPassword] = useState('');
   const [confirmed, setConfirmed] = useState(false);

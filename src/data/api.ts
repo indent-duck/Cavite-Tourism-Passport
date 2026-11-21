@@ -344,7 +344,7 @@ export async function registerPushToken(token: string): Promise<void> {
 
 const MY_ACCOUNT_COLUMNS =
   "id, email, passport_id, first_name, last_name, address, contact_number, " +
-  "contact_verified_at, created_at, points, claimed_reward_id";
+  "contact_verified_at, created_at, points, claimed_reward_id, has_password";
 
 // The my_account view: the signed-in user's account plus their points and
 // claimed reward in the active promo period
@@ -360,6 +360,7 @@ interface MyAccountRow {
   created_at: string;
   points: number;
   claimed_reward_id: number | null;
+  has_password: boolean; // migration 004
 }
 
 /**
@@ -369,8 +370,9 @@ export async function getCurrentUser(): Promise<User> {
   // Signed-out requests can't read my_account at all ("permission denied")
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session) throw new Error(SIGNED_OUT_MESSAGE);
-  // How this login can sign in: "email" (signed up with a code and set a
-  // password) and/or "google"
+  // The login's identities, e.g. ["email"], ["google"] or both. Only used to
+  // see whether Google is linked: whether there's a password comes from the
+  // database (has_password), since a Google login can be given one later.
   const providers: unknown = sessionData.session.user.app_metadata.providers;
   const signInMethods = Array.isArray(providers) ? providers : [];
 
@@ -398,7 +400,7 @@ export async function getCurrentUser(): Promise<User> {
     createdAt: new Date(row.created_at),
     hasClaimedThisPeriod: row.claimed_reward_id !== null,
     claimedRewardId: row.claimed_reward_id !== null ? String(row.claimed_reward_id) : undefined,
-    hasEmailSignIn: signInMethods.includes("email"),
+    hasPassword: row.has_password,
     hasGoogleSignIn: signInMethods.includes("google"),
   };
 }

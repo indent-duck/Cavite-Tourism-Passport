@@ -40,7 +40,7 @@ export default function ChangePasswordScreen() {
   const { changePassword, sendCode } = useChangePassword();
   // Signed up with Google and never set a password: there's no current one
   // to type, so the emailed code is the only way in
-  const googleOnly = !!user?.hasGoogleSignIn && !user.hasEmailSignIn;
+  const googleOnly = !!user && !user.hasPassword && !!user.hasGoogleSignIn;
 
   const [method, setMethod] = useState<Method>('password');
   const [currentPassword, setCurrentPassword] = useState('');

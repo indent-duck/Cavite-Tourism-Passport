@@ -17,7 +17,7 @@ import { colors, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import Animated, {
@@ -89,9 +89,20 @@ export default function LoginScreen() {
     // top of the form under the status bar
     const needed = formBottom + spacing.base - footerTop;
     const maxLift = formTop - topInset - spacing.base;
-    const lift = Math.max(0, Math.min(needed, maxLift));
+    // ...and never more than the footer has risen with the keyboard. The
+    // scroll view's bottom edge moves up with the lift, so lifting further
+    // only hides the end of the form (e.g. an error banner) behind that edge.
+    // With the keyboard closed, a form taller than the screen scrolls instead.
+    const footerRise = -keyboard.height.value - bottomInset * keyboard.progress.value;
+    const lift = Math.max(0, Math.min(needed, maxLift, footerRise));
     return { transform: [{ translateY: -lift }] };
   });
+
+  // The form error sits at the end of the form, which on a short screen can
+  // be below the visible part, so bring it into view when it appears
+  useEffect(() => {
+    if (formError) scrollRef.current?.scrollToEnd({ animated: true });
+  }, [formError, scrollRef]);
 
   const handleLogin = async () => {
     setEmailError('');

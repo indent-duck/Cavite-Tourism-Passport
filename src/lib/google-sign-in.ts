@@ -1,3 +1,4 @@
+import { NETWORK_ERROR_MESSAGE } from '@/lib/errors';
 import * as Crypto from 'expo-crypto';
 import {
   GoogleOneTapSignIn,
@@ -63,7 +64,7 @@ export async function pickGoogleAccount(): Promise<GoogleCredential | null> {
     if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
       return null;
     }
-    throw googleError(error);
+    throw await googleError(error);
   }
 }
 
@@ -79,17 +80,47 @@ export async function forgetGoogleAccount(): Promise<void> {
   }
 }
 
-/** A message for a failed Google sign-in */
-function googleError(error: unknown): Error {
-  if (isErrorWithCode(error)) {
-    switch (error.code) {
-      case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-        return new Error('Google sign-in needs Google Play services. Please update them and try again.');
-      case statusCodes.DEVELOPER_ERROR:
-        return new Error(
-          "Google sign-in isn't set up correctly for this build. Please log in with your email instead.",
-        );
-    }
+/**
+ * A message for a failed Google sign-in.
+ *
+ * The library guesses the kind of failure from the wording of Android's
+ * error, and being offline can read like a setup problem (DEVELOPER_ERROR),
+ * so the connection is checked first.
+ */
+async function googleError(error: unknown): Promise<Error> {
+  if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+    return new Error('Google sign-in needs Google Play services. Please update them and try again.');
   }
-  return error instanceof Error ? error : new Error('Google sign-in failed. Please try again.');
+  if (await isOffline()) {
+    return new Error(NETWORK_ERROR_MESSAGE);
+  }
+  if (isErrorWithCode(error) && error.code === statusCodes.DEVELOPER_ERROR) {
+    return new Error(
+      "Google sign-in isn't set up correctly for this build. Please log in with your email instead.",
+    );
+  }
+  // Development builds show the library's details; release builds a plain message
+  if (__DEV__ && error instanceof Error) return error;
+  return new Error("Couldn't sign in with Google. Please try again.");
+}
+
+const CONNECTION_CHECK_TIMEOUT_MS = 4000;
+
+/**
+ * True when Supabase can't be reached at all, e.g. in airplane mode. Any
+ * answer, even an error status, means the phone is online.
+ */
+async function isOffline(): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CONNECTION_CHECK_TIMEOUT_MS);
+  try {
+    await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`, {
+      signal: controller.signal,
+    });
+    return false;
+  } catch {
+    return true; // no connection, or too slow to count as one
+  } finally {
+    clearTimeout(timer);
+  }
 }

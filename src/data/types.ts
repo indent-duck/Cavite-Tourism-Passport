@@ -14,8 +14,11 @@ export interface User {
   createdAt: Date;
   hasClaimedThisPeriod?: boolean; // User has claimed a reward this promo period
   claimedRewardId?: string; // ID of the reward claimed (if hasClaimedThisPeriod is true)
-  /** Signed up with email (and set a password then); false for Google-only accounts */
-  hasEmailSignIn?: boolean;
+  /**
+   * The login has a password (from the database, not guessed from how the
+   * user signed up): false for accounts made with Google until they set one
+   */
+  hasPassword?: boolean;
   /** Has used "Continue with Google" (a Google identity is linked) */
   hasGoogleSignIn?: boolean;
 }
