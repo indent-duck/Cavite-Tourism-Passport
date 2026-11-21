@@ -1,56 +1,113 @@
-# Welcome to your Expo app 👋
+# Cavite Tourism Passport
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The digital version of the Province of Cavite's tourism passport. Tourists
+browse partner sites, scan a QR code on-site to collect a stamp, earn points,
+and claim a prize at the tourism office with a single-use QR pass.
 
-## Get started
+**Android only** (portrait). Built with Expo (development builds, not Expo
+Go), React Native, TypeScript and Expo Router, with a Supabase backend.
 
-1. Install dependencies
+## Status (2026-11-22)
+
+| Area | Status |
+| ---- | ------ |
+| Auth: email sign-up with a 6-digit code, log in, forgot password, change password | ✅ Live on Supabase |
+| Continue with Google (log in and sign up) | ✅ Live |
+| Catalog: sites, itineraries, events, expressways, rewards, promo period | ✅ Live |
+| QR stamps with server-side location check, digital passport, points | ✅ Live |
+| Stamp requests (photo of a physical stamp, reviewed by an admin) | ✅ Live; reviewed in the Supabase SQL editor until the admin dashboard exists |
+| Rewards: eligibility, single-use claim pass, live pass banner | ✅ Live; redeemed in the SQL editor until the officer tool exists |
+| Delete account (Edge Function) | ✅ Live |
+| Push notifications: permission, token, opening tapped notifications | ✅ Live |
+| Push notifications: sending from the server (promo-end reminders and so on) | ⏳ Next |
+| Contact number verification by SMS | ⏳ Waiting for an SMS provider |
+| Catalog photos, real app icon and notification icon | ⏳ Before launch |
+
+Every feature marked live passed a phone test round on Android. The detailed
+progress, setup steps and test checklists are in
+`supabase/INTEGRATION-STATUS.md`, which is git-ignored (see "Files that
+aren't in git").
+
+## Getting started
+
+1. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+   On Windows, check afterwards that `package-lock.json` still lists
+   `@emnapi/core` and `@emnapi/runtime`. npm drops them there, and EAS
+   builds then fail at `npm ci`. Add packages with `npx expo install <package>`.
 
-   ```bash
-   npx expo start
+2. Create `.env` in the project folder:
+
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=...
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=...        # Supabase publishable key, never the secret key
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...     # Google Cloud "Web application" OAuth client ID
+   EXPO_PUBLIC_PROTOMAPS_API_KEY=...        # map tiles
    ```
 
-In the output, you'll find options to open the app in a
+3. Build the development client in the cloud and install the APK on an
+   Android phone (only needed again when native packages or `app.json`
+   plugins change):
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npx eas-cli@latest build --profile development --platform android
+   ```
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+4. Start the dev server and open the app on the phone:
 
-## Get a fresh project
+   ```bash
+   npx expo start --dev-client
+   ```
 
-When you're ready, run:
+Before calling a change done:
 
 ```bash
-npm run reset-project
+npx tsc --noEmit   # typecheck
+npx expo lint      # lint
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## How it's organized
 
-### Other setup steps
+- `src/app/`: screens (Expo Router routes)
+- `src/components/`, `src/hooks/`, `src/lib/`, `src/theme/`: UI, data hooks, helpers, design tokens
+- `src/data/api.ts`: the only file that talks to Supabase. Screens use hooks, hooks use `api.ts`.
+- `google-services.json`: Firebase config for push notifications (not secret, committed for EAS)
+- `docs/app.md`: the feature list and behavior rules
+- `.kiro/steering/`: product, tech and structure conventions
+- `design/`: visual references (not part of the app)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Backend
 
-## Learn more
+Supabase provides Auth (email codes sent through Brevo SMTP, and Google),
+Postgres with Row Level Security, Storage (stamp request photos) and Edge
+Functions. The app never writes stamps, claims or points directly; database
+functions check the rules on the server. The `delete-account` Edge Function
+is deployed from the Supabase Dashboard.
 
-To learn more about developing your project with Expo, look at the following resources:
+Server-side secrets stay in the dashboards, not in the repository:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Supabase:** the secret key and the Edge Function secret `GOOGLE_WEB_CLIENT_ID`
+- **Expo:** the FCM service account key
+- **Google Cloud:** the OAuth clients
 
-## Join the community
+## Files that aren't in git
 
-Join our community of developers creating universal apps.
+`supabase/` and `schema/supabase-schema.sql` are git-ignored and exist only on
+the developer's machine. Keep a backup of them:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `schema/supabase-schema.sql`: the full database
+- `supabase/migrations/`: database changes since the schema was first run
+- `supabase/functions/`: Edge Function source
+- `supabase/INTEGRATION-STATUS.md`: progress, setup and phone test checklists
+- `supabase/testing.sql`: SQL for the current test round
+- `supabase/seed-dev.sql`: development data
+- `supabase/templates/`: email templates
+
+## Out of scope
+
+The admin dashboard, the officer claim-scanning tool and the promo period
+reset are separate projects.

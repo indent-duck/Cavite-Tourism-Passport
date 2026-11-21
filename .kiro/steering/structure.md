@@ -7,13 +7,14 @@
 ```
 app/                         # Expo Router routes only, kept thin
   _layout.tsx
+  index.tsx                  # opens Explore when signed in, otherwise login
   (auth)/
     _layout.tsx
-    login.tsx
+    login.tsx                # email + password, or Continue with Google
     signup/
       email.tsx
       verify.tsx
-      details.tsx
+      details.tsx            # also the last step for new Google accounts (no password)
     forgot/
       email.tsx
       verify.tsx
@@ -31,8 +32,14 @@ app/                         # Expo Router routes only, kept thin
   itineraries/[id].tsx       # Itinerary Detail
   events/[id].tsx            # Event Information Panel
   rewards/index.tsx          # Rewards list
-  rewards/[id].tsx           # Reward Detail
+  rewards/[id].tsx           # Reward Detail (claim pass QR)
   settings.tsx
+  edit-profile.tsx
+  change-password.tsx
+  delete-account.tsx
+  privacy.tsx
+  stamp-requests/index.tsx   # the user's stamp requests and their results
+  stamp-requests/new.tsx     # send a photo of a physical stamp
 
 src/
   components/
@@ -46,11 +53,27 @@ src/
   theme/                     # colors, spacing, typography, radii
   data/
     types.ts
-    mock-data.ts             # the single file of seed data
-    api.ts                   # mock now, Supabase later
-  hooks/                     # useSites, useStamps, useRewards, and so on
+    mock-data.ts             # leftover mock data (contact number, About Cavite, FAQs)
+    api.ts                   # the only file that talks to Supabase
+  hooks/                     # useSites, useStamps, useRewards, usePushNotifications, and so on
   lib/
     query-client.ts
+    supabase.ts              # Supabase client
+    push-notifications.ts    # permission, push token, channel, tapped notifications
+    google-sign-in.ts        # Google account picker and nonce
+
+supabase/                    # git-ignored, on the developer's machine only
+  INTEGRATION-STATUS.md      # progress, setup steps, phone test checklists
+  testing.sql                # SQL for the current phone test round
+  seed-dev.sql               # development data and reusable admin/officer blocks
+  migrations/                # database changes since the schema was first run
+  functions/<name>/index.ts  # Edge Functions (Deno), e.g. delete-account
+  templates/                 # auth email templates
+
+schema/
+  supabase-schema.sql        # full database (git-ignored)
+
+google-services.json         # Firebase config for push notifications (committed)
 
 design/                      # visual references, not part of the app bundle
   <stitch project brief>.md
