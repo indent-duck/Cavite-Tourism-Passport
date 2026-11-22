@@ -3,7 +3,7 @@
 > Key features to highlight in digitizing the Cavite Tourism Passport. This is not the complete list of screens and components in the app. Platform: Android only.
 > Feature numbers come from the master feature list (Features.docx), so gaps in numbering are intentional. Features 19 (reset) and 21 are out of scope for this project (see "Out of Scope" below). #22 Settings (which hosts #16, #17, and #18) and #23 Event Information Panel were added during review. #7 Manual Stamp Request was first out of scope and was later added to the app as a photo request reviewed by admins.
 >
-> Implementation status (2026-11-22): every MVP feature runs on the live Supabase backend except sending push notifications from the server (#17 and #20: written, with stamp request results, promo-end reminders and admin broadcasts, but not yet set up on the live project and phone-tested) and contact number verification in #2 (waiting for an SMS provider). Details: `supabase/INTEGRATION-STATUS.md` on the developer's machine.
+> Implementation status (2026-11-22): every MVP feature runs on the live Supabase backend, including push notifications sent from the server (#17 and #20: stamp request results, promo-end reminders and admin broadcasts), except contact number verification in #2 (waiting for an SMS provider). Details: `supabase/INTEGRATION-STATUS.md` on the developer's machine.
 
 **Type legend:** `screen` = full page, `component` = reusable UI element, `indicator` = small status display, `rule/logic` = behavior or business rule with no dedicated UI, `system behavior` = background behavior (e.g. notifications)
 

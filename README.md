@@ -19,7 +19,7 @@ Go), React Native, TypeScript and Expo Router, with a Supabase backend.
 | Rewards: eligibility, single-use claim pass, live pass banner | ✅ Live; redeemed in the SQL editor until the officer tool exists |
 | Delete account (Edge Function) | ✅ Live |
 | Push notifications: permission, token, opening tapped notifications | ✅ Live |
-| Push notifications: sending from the server (stamp request results, promo-end reminders, admin broadcasts) | 🚧 Written; Dashboard setup and phone test next |
+| Push notifications: sending from the server (stamp request results, promo-end reminders, admin broadcasts) | ✅ Live; broadcasts are sent from the SQL editor until the admin dashboard exists |
 | Contact number verification by SMS | ⏳ Waiting for an SMS provider |
 | Catalog photos, real app icon and notification icon | ⏳ Before launch |
 
