@@ -74,22 +74,22 @@ export default function DiscoverScreen() {
     return () => cancelIdleCallback(handle);
   }, []);
 
-  const tabIcon = (view: DiscoverView, name: 'party-popper' | 'map') => (
-    <MaterialCommunityIcons
-      name={name}
-      size={16}
-      color={selectedView === view ? colors.background : colors.textSecondary}
-    />
-  );
-
   return (
     <ScreenContainer edges={['left', 'right']} testID="discover-screen">
       {/* Segmented control */}
       <View style={styles.segmentedControlWrapper}>
         <SegmentedControl<DiscoverView>
           options={[
-            { label: 'Events', value: 'events', icon: tabIcon('events', 'party-popper') },
-            { label: 'About Cavite', value: 'about', icon: tabIcon('about', 'map') },
+            {
+              label: 'Events',
+              value: 'events',
+              icon: (color) => renderTabIcon('party-popper', color),
+            },
+            {
+              label: 'About Cavite',
+              value: 'about',
+              icon: (color) => renderTabIcon('map', color),
+            },
           ]}
           selectedValue={selectedView}
           onValueChange={setSelectedView}
@@ -121,6 +121,11 @@ export default function DiscoverScreen() {
       </View>
     </ScreenContainer>
   );
+}
+
+/** Segmented control icon; the control picks the color as its pill slides */
+function renderTabIcon(name: 'party-popper' | 'map', color: string) {
+  return <MaterialCommunityIcons name={name} size={16} color={color} />;
 }
 
 interface EventsViewProps {

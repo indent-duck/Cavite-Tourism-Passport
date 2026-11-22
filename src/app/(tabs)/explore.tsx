@@ -512,14 +512,6 @@ export default function ExploreScreen() {
     { paddingBottom: TAB_BAR_HEIGHT + insets.bottom },
   ];
 
-  const tabIcon = (view: ExploreView, name: "location" | "map-outline") => (
-    <Ionicons
-      name={name}
-      size={16}
-      color={activeView === view ? colors.background : colors.textSecondary}
-    />
-  );
-
   const mapOverlay = isMapMode ? renderSitesState(styles.mapOverlayContent) : null;
 
   const totalSites = sites?.length ?? 0;
@@ -599,11 +591,15 @@ export default function ExploreScreen() {
       <View style={styles.segmentedControlWrapper}>
         <SegmentedControl<ExploreView>
           options={[
-            { label: "Sites", value: "Sites", icon: tabIcon("Sites", "location") },
+            {
+              label: "Sites",
+              value: "Sites",
+              icon: (color) => renderTabIcon("location", color),
+            },
             {
               label: "Itineraries",
               value: "Itineraries",
-              icon: tabIcon("Itineraries", "map-outline"),
+              icon: (color) => renderTabIcon("map-outline", color),
             },
           ]}
           selectedValue={activeView}
@@ -716,6 +712,11 @@ export default function ExploreScreen() {
       </View>
     </ScreenContainer>
   );
+}
+
+/** Segmented control icon; the control picks the color as its pill slides */
+function renderTabIcon(name: "location" | "map-outline", color: string) {
+  return <Ionicons name={name} size={16} color={color} />;
 }
 
 const styles = StyleSheet.create({
