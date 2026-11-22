@@ -13,7 +13,7 @@ import {
 import type { Event, Expressway } from "@/data/types";
 import { TAB_BAR_HEIGHT } from "@/lib/constants";
 import { getEventStatus } from "@/lib/event-utils";
-import { colors, radii, spacing, typography } from "@/theme";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -80,7 +80,7 @@ export function AboutCaviteContent({
     >
       {/* Hero */}
       <View style={[styles.padded, styles.section]}>
-        <View style={styles.heroCard}>
+        <Card style={styles.heroCard} contentStyle={styles.heroContent}>
           <MaterialCommunityIcons
             name="flag-variant"
             size={160}
@@ -108,7 +108,7 @@ export function AboutCaviteContent({
               </View>
             ))}
           </View>
-        </View>
+        </Card>
       </View>
 
       {/* Province Highlights */}
@@ -124,6 +124,7 @@ export function AboutCaviteContent({
           decelerationRate="fast"
           snapToInterval={HIGHLIGHT_CARD_WIDTH + spacing.md}
           snapToAlignment="start"
+          style={styles.carousel}
           contentContainerStyle={styles.carouselContent}
         >
           {PROVINCE_HIGHLIGHTS.map((highlight) => (
@@ -235,6 +236,7 @@ export function AboutCaviteContent({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.expresswayCarousel}
             contentContainerStyle={[
               styles.carouselContent,
               styles.expresswayRow,
@@ -286,12 +288,13 @@ function HighlightCard({
     <Card
       onPress={onPress}
       accessibilityLabel={`${highlight.title}. Explore ${highlight.cta}`}
-      style={[
-        styles.highlightCard,
-        // 8% tint of the category color
+      style={styles.highlightCard}
+      contentStyle={[
+        styles.highlightContent,
+        // 8% tint of the category color, over the card's opaque white so
+        // the shadow doesn't show through it
         { backgroundColor: `${color}14` },
       ]}
-      contentStyle={styles.highlightContent}
     >
       <View style={styles.highlightTop}>
         <View style={[styles.highlightIcon, { backgroundColor: color }]}>
@@ -378,18 +381,26 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
+  // A horizontal ScrollView clips to its bounds, so the vertical padding
+  // leaves room for the cards' shadows; the negative margin takes it back out
+  // of the spacing around the carousel.
+  carousel: {
+    marginVertical: -spacing.sm,
+  },
   carouselContent: {
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
     gap: spacing.md,
   },
 
   // Hero
   heroCard: {
     backgroundColor: colors.primary,
-    borderRadius: radii.card,
+  },
+  // Card's inner layer clips the watermark, so the shadow isn't clipped
+  heroContent: {
     padding: spacing.lg,
     gap: spacing.md,
-    overflow: "hidden",
   },
   heroWatermark: {
     position: "absolute",
@@ -446,11 +457,8 @@ const styles = StyleSheet.create({
   },
 
   // Highlights carousel
-  // Tinted panel rather than a raised card: no shadow
   highlightCard: {
     width: HIGHLIGHT_CARD_WIDTH,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   highlightContent: {
     flexGrow: 1,
@@ -499,6 +507,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.card,
     padding: spacing.base,
+    ...shadows.card,
   },
   timelineRow: {
     flexDirection: "row",
@@ -570,6 +579,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.card,
     padding: spacing.md,
     gap: 2,
+    ...shadows.card,
   },
   dishIcon: {
     width: 36,
@@ -591,6 +601,11 @@ const styles = StyleSheet.create({
   },
 
   // Expressways
+  // Only the bottom shadow padding is taken back: the top padding is the
+  // gap under the map, and a negative top margin would overlap the map
+  expresswayCarousel: {
+    marginBottom: -spacing.sm,
+  },
   expresswayRow: {
     paddingTop: spacing.md,
   },

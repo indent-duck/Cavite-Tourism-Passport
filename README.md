@@ -19,7 +19,7 @@ Go), React Native, TypeScript and Expo Router, with a Supabase backend.
 | Rewards: eligibility, single-use claim pass, live pass banner | ✅ Live; redeemed in the SQL editor until the officer tool exists |
 | Delete account (Edge Function) | ✅ Live |
 | Push notifications: permission, token, opening tapped notifications | ✅ Live |
-| Push notifications: sending from the server (promo-end reminders and so on) | ⏳ Next |
+| Push notifications: sending from the server (stamp request results, promo-end reminders, admin broadcasts) | 🚧 Written; Dashboard setup and phone test next |
 | Contact number verification by SMS | ⏳ Waiting for an SMS provider |
 | Catalog photos, real app icon and notification icon | ⏳ Before launch |
 
@@ -85,12 +85,15 @@ npx expo lint      # lint
 Supabase provides Auth (email codes sent through Brevo SMTP, and Google),
 Postgres with Row Level Security, Storage (stamp request photos) and Edge
 Functions. The app never writes stamps, claims or points directly; database
-functions check the rules on the server. The `delete-account` Edge Function
-is deployed from the Supabase Dashboard.
+functions check the rules on the server. The `delete-account` and
+`send-push` Edge Functions are deployed from the Supabase Dashboard. Push
+notifications are queued by the database, and a cron job (pg_cron, pg_net)
+wakes `send-push` to send them through Expo's push service.
 
 Server-side secrets stay in the dashboards, not in the repository:
 
-- **Supabase:** the secret key and the Edge Function secret `GOOGLE_WEB_CLIENT_ID`
+- **Supabase:** the secret key, the Edge Function secrets `GOOGLE_WEB_CLIENT_ID`
+  and `PUSH_SEND_SECRET`, and the Vault secrets `project_url` and `push_send_secret`
 - **Expo:** the FCM service account key
 - **Google Cloud:** the OAuth clients
 

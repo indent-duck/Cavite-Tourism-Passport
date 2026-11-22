@@ -1,6 +1,6 @@
 import { Category, POINTS_PER_CATEGORY } from "@/data/types";
 import { REQUIRED_CATEGORIES } from "@/lib/rewards";
-import { colors, radii, spacing, typography } from "@/theme";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryTint,
     borderRadius: radii.card,
     padding: spacing.base,
+    ...shadows.card,
   },
   balanceLabel: {
     ...typography.labelMedium,

@@ -1,6 +1,7 @@
 import { registerPushToken } from '@/data/api';
 import { useSettings } from '@/hooks/useSettings';
-import { getPushToken, notificationRoute } from '@/lib/push-notifications';
+import { getPushToken, notificationRoute, notificationUrl } from '@/lib/push-notifications';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { router, type Href } from 'expo-router';
 import { useEffect } from 'react';
@@ -15,8 +16,12 @@ import { useEffect } from 'react';
  *   before sending. The token is saved again if Expo/FCM replaces it.
  * - A tapped notification opens the screen in its `data.url`, both when it
  *   started the app and while the app is running.
+ * - A stamp request result (sent when an admin reviews one) refreshes the
+ *   requests as soon as it arrives in the open app, and again when tapped,
+ *   so the screen it opens already shows the result.
  */
 export function usePushNotifications() {
+  const queryClient = useQueryClient();
   const { settings } = useSettings();
   const enabled = settings?.pushNotificationsEnabled ?? false;
 
@@ -45,10 +50,19 @@ export function usePushNotifications() {
   useEffect(() => {
     let active = true;
 
+    // A review result: fetch the requests again (useStampRequests then
+    // refreshes the new stamp and points too)
+    const refresh = (route: string | null) => {
+      if (route?.startsWith('/stamp-requests')) {
+        queryClient.invalidateQueries({ queryKey: ['stampRequests'] });
+      }
+    };
+
     const open = (response: Notifications.NotificationResponse) => {
       // Handled once: a later remount (e.g. after signing in again) mustn't reopen it
       Notifications.clearLastNotificationResponseAsync();
       const route = notificationRoute(response);
+      refresh(route);
       if (route) router.push(route as Href);
     };
 
@@ -56,10 +70,14 @@ export function usePushNotifications() {
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (active && response) open(response);
     });
-    const subscription = Notifications.addNotificationResponseReceivedListener(open);
+    const tapped = Notifications.addNotificationResponseReceivedListener(open);
+    const received = Notifications.addNotificationReceivedListener((notification) =>
+      refresh(notificationUrl(notification)),
+    );
     return () => {
       active = false;
-      subscription.remove();
+      tapped.remove();
+      received.remove();
     };
-  }, []);
+  }, [queryClient]);
 }

@@ -1,4 +1,4 @@
-import { colors, radii } from "@/theme";
+import { colors, radii, shadows } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet } from "react-native";
@@ -51,10 +51,9 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderRadius: radii.input,
-    borderWidth: 1,
-    borderColor: colors.border,
+    ...shadows.card,
   },
   containerPressed: {
     opacity: 0.6,

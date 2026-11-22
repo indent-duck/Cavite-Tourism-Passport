@@ -49,14 +49,11 @@ export function ExpresswayCard({ expressway, selected, onPress }: ExpresswayCard
 }
 
 const styles = StyleSheet.create({
-  // A flat selector tile rather than a raised card: no shadow
   container: {
     width: 176,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
   },
   containerSelected: {
     borderColor: colors.primary,

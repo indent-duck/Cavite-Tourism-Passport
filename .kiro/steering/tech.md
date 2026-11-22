@@ -16,7 +16,7 @@
 - Font: `@expo-google-fonts/inter` (Inter is the app font)
 - Reward claim QR: `react-native-qrcode-svg` with `react-native-svg`
 - Photos for stamp requests: `expo-image-picker`
-- Push notifications: `expo-notifications` (FCM through Expo's push service; needs `google-services.json`)
+- Push notifications: `expo-notifications` (FCM through Expo's push service; needs `google-services.json`). The server sends them: the database queues them in `push_outbox`, and a pg_cron job wakes the `send-push` Edge Function through pg_net
 - Google sign-in: `react-native-nitro-google-signin` with `react-native-nitro-modules` (Android Credential Manager, free), and `expo-crypto` for the sign-in nonce
 - Keyboard handling: `react-native-keyboard-controller`
 
@@ -41,7 +41,7 @@
 ## Data layer (Supabase)
 - Flow: screen -> hook in `src/hooks` -> function in `src/data/api.ts` -> Supabase. `api.ts` is the only file that talks to Supabase (client in `src/lib/supabase.ts`). Screens and components never call Supabase or import mock data directly.
 - The app never writes stamps, claims or points itself: it calls database functions (`collect_stamp`, `submit_stamp_request`, `generate_reward_claim`, `register_push_token`) that check the rules on the server. Row Level Security limits every table to what the signed-in user may see.
-- Work that needs the secret key runs in Edge Functions (`supabase/functions/`, Deno, deployed from the Supabase Dashboard): `delete-account` so far. They are left out of the app's typecheck and lint.
+- Work that needs the secret key runs in Edge Functions (`supabase/functions/`, Deno, deployed from the Supabase Dashboard): `delete-account` (called by the app) and `send-push` (called by a cron job, never by the app). They are left out of the app's typecheck and lint.
 - Still mock in `api.ts`: the contact number (`sendContactCode`, `verifyContactCode`, waiting for an SMS provider) and static content (About Cavite, FAQs), which stays in the app on purpose. `src/data/mock-data.ts` remains for those until launch.
 - React Query is configured in one place: `src/lib/query-client.ts`. Bump `CACHE_VERSION` there when a cached data shape changes.
 - All shared types live in `src/data/types.ts`.
@@ -68,4 +68,4 @@ Request camera and location permission before showing the scanner screen. Handle
 - Route files use default exports (required by Expo Router). All other modules use named exports.
 - Use the `@/` import alias for `src/` (for example `@/theme`, `@/components/ui/Button`).
 - Lint with ESLint and `eslint-config-expo`.
-- No secrets in the repository: keys go in `.env` and EAS environment variables, and server secrets (the Supabase secret key, `GOOGLE_WEB_CLIENT_ID` for Edge Functions, the FCM service account key) stay in the Supabase and Expo dashboards. `google-services.json` is not secret and is committed (EAS builds need it).
+- No secrets in the repository: keys go in `.env` and EAS environment variables, and server secrets (the Supabase secret key, `GOOGLE_WEB_CLIENT_ID` and `PUSH_SEND_SECRET` for Edge Functions, the Vault secrets for the push cron job, the FCM service account key) stay in the Supabase and Expo dashboards. `google-services.json` is not secret and is committed (EAS builds need it).

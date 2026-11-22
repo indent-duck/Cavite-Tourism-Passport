@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     gap: spacing.base,
   },
   list: {
-    gap: spacing.md,
+    gap: spacing.base,
   },
   state: {
     paddingVertical: spacing.huge,

@@ -91,8 +91,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     minHeight: 56,
   },
+  // colors.border, not surface, so the press also shows on off-white cards
   rowPressed: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.border,
   },
   title: {
     ...typography.labelLarge,

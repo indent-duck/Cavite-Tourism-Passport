@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
-import { StatusPill, type StatusPillTone } from '@/components/ui/StatusPill';
+import { Card } from '@/components/ui/Card';
 import type { StampRequest, StampRequestStatus } from '@/data/types';
-import { formatVisitDate } from '@/lib/stamp-requests';
+import { formatVisitDate, toDateKey } from '@/lib/stamp-requests';
 import { colors, radii, spacing, typography } from '@/theme';
 import { CATEGORY_COLORS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,11 +10,47 @@ import { StyleSheet, Text, View } from 'react-native';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-const STATUS: Record<StampRequestStatus, { label: string; tone: StatusPillTone; icon: IconName }> = {
-  pending: { label: 'Pending review', tone: 'warning', icon: 'time-outline' },
-  approved: { label: 'Approved', tone: 'success', icon: 'checkmark-circle' },
-  rejected: { label: 'Not approved', tone: 'error', icon: 'alert-circle' },
+interface StatusStyle {
+  label: string;
+  icon: IconName;
+  /** Footer band background */
+  tint: string;
+  iconColor: string;
+  textColor: string;
+}
+
+// Same palette as StatusPill's warning / success / error tones
+const STATUS: Record<StampRequestStatus, StatusStyle> = {
+  pending: {
+    label: 'Pending review',
+    icon: 'time-outline',
+    tint: colors.accentTint,
+    iconColor: colors.accent,
+    textColor: colors.textTertiary,
+  },
+  approved: {
+    label: 'Approved',
+    icon: 'checkmark-circle',
+    tint: colors.successLight,
+    iconColor: colors.success,
+    textColor: colors.successDark,
+  },
+  rejected: {
+    label: 'Not approved',
+    icon: 'alert-circle',
+    tint: colors.errorTint,
+    iconColor: colors.error,
+    textColor: colors.error,
+  },
 };
+
+/** "Sent Nov 20, 2026" while pending; "Reviewed Nov 21, 2026" once reviewed */
+function getStatusDate(request: StampRequest): string {
+  if (request.status !== 'pending' && request.reviewedAt) {
+    return `Reviewed ${formatVisitDate(toDateKey(new Date(request.reviewedAt)))}`;
+  }
+  return `Sent ${formatVisitDate(toDateKey(new Date(request.createdAt)))}`;
+}
 
 interface StampRequestCardProps {
   request: StampRequest;
@@ -25,16 +61,18 @@ interface StampRequestCardProps {
 /**
  * StampRequestCard
  *
- * One stamp request in the history list: photo thumbnail, site, visit date,
- * status pill, and for rejected requests the admin's reason and a
- * "Submit again" action.
+ * One stamp request in the history list, on an elevated card: photo, site,
+ * municipality and visit date on top; a footer band tinted by review status
+ * with the status and when it was sent/reviewed. Rejected requests also show
+ * the admin's reason and a "Submit again" action in the footer.
  */
 export function StampRequestCard({ request, onResubmit }: StampRequestCardProps) {
   const status = STATUS[request.status];
+  const isRejected = request.status === 'rejected';
 
   return (
-    <View style={styles.card} testID={`stamp-request-${request.id}`}>
-      <View style={styles.row}>
+    <Card style={styles.card} testID={`stamp-request-${request.id}`}>
+      <View style={styles.body}>
         {request.photoUri ? (
           <Image
             // The signed URL changes on every refetch; the path doesn't, so
@@ -46,7 +84,7 @@ export function StampRequestCard({ request, onResubmit }: StampRequestCardProps)
           />
         ) : (
           <View style={[styles.thumb, styles.thumbPlaceholder]}>
-            <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
+            <Ionicons name="image-outline" size={28} color={colors.textSecondary} />
           </View>
         )}
         <View style={styles.info}>
@@ -56,57 +94,77 @@ export function StampRequestCard({ request, onResubmit }: StampRequestCardProps)
           <Text style={styles.siteName} numberOfLines={2}>
             {request.siteName}
           </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            {request.municipality} · Visited {formatVisitDate(request.visitedOn)}
-          </Text>
-          <View style={styles.pillRow}>
-            <StatusPill label={status.label} tone={status.tone} icon={status.icon} />
+          <View style={styles.metaRow}>
+            <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+            <Text style={styles.meta} numberOfLines={1}>
+              {request.municipality}
+            </Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+            <Text style={styles.meta} numberOfLines={1}>
+              Visited {formatVisitDate(request.visitedOn)}
+            </Text>
           </View>
         </View>
       </View>
 
-      {request.status === 'rejected' && (
-        <View style={styles.rejection}>
-          {request.rejectionReason ? (
-            <Text style={styles.reason}>
-              <Text style={styles.reasonLabel}>Reason: </Text>
-              {request.rejectionReason}
-            </Text>
-          ) : null}
-          {onResubmit && (
+      <View style={[styles.footer, { backgroundColor: status.tint }]}>
+        <View style={styles.statusRow}>
+          <View style={styles.status}>
+            <Ionicons name={status.icon} size={18} color={status.iconColor} />
+            <Text style={[styles.statusLabel, { color: status.textColor }]}>{status.label}</Text>
+          </View>
+          <Text style={styles.statusDate} numberOfLines={1}>
+            {getStatusDate(request)}
+          </Text>
+        </View>
+
+        {isRejected && request.rejectionReason ? (
+          <Text style={styles.reason}>
+            <Text style={styles.reasonLabel}>Reason: </Text>
+            {request.rejectionReason}
+          </Text>
+        ) : null}
+
+        {isRejected && onResubmit && (
+          <View style={styles.action}>
             <Button
               title="Submit again"
               onPress={onResubmit}
-              variant="outline"
+              variant="primary"
               size="compact"
-              icon={<Ionicons name="refresh" size={16} color={colors.primary} />}
+              fullWidth
+              icon={<Ionicons name="camera-outline" size={18} color={colors.background} />}
               testID={`stamp-request-resubmit-${request.id}`}
             />
-          )}
-        </View>
-      )}
-    </View>
+          </View>
+        )}
+      </View>
+    </Card>
   );
 }
 
+const THUMB_SIZE = 84;
+
 const styles = StyleSheet.create({
+  // Off-white so the card stands apart from the white screen
   card: {
-    padding: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  body: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.md,
-    borderRadius: radii.card,
+    padding: spacing.md,
+  },
+  thumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  thumb: {
-    width: 72,
-    height: 72,
-    borderRadius: radii.md,
-    backgroundColor: colors.surface,
   },
   thumbPlaceholder: {
     alignItems: 'center',
@@ -125,21 +183,42 @@ const styles = StyleSheet.create({
     ...typography.titleMedium,
     fontFamily: 'Inter_700Bold',
     color: colors.text,
+    marginBottom: 2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   meta: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+    flexShrink: 1,
   },
-  pillRow: {
-    flexDirection: 'row',
-    marginTop: spacing.xs,
-  },
-  rejection: {
+  footer: {
     gap: spacing.sm,
-    alignItems: 'flex-start',
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  status: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+  },
+  statusLabel: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  statusDate: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    flexShrink: 1,
   },
   reason: {
     ...typography.bodyMedium,
@@ -147,5 +226,9 @@ const styles = StyleSheet.create({
   },
   reasonLabel: {
     fontFamily: 'Inter_600SemiBold',
+  },
+  action: {
+    marginTop: spacing.xs,
+    marginBottom: 2,
   },
 });

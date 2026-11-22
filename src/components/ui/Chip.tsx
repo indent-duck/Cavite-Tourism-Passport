@@ -1,4 +1,4 @@
-import { colors, radii, spacing, typography } from "@/theme";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -13,6 +13,11 @@ export interface ChipProps {
   textColor?: string;
   /** Optional count shown after the label, e.g. number of matching items */
   count?: number;
+  /**
+   * Raised with the card shadow instead of a border, for filter rows. The
+   * row's ScrollView needs vertical padding or it clips the shadow.
+   */
+  elevated?: boolean;
 }
 
 // Pads the touch area to the 44pt platform minimum without changing visuals
@@ -31,6 +36,7 @@ const HIT_SLOP = {
  * - Border radius: 16px (pill shape)
  * - Unselected: white background, border, primary text
  * - Selected: primary blue background, white text, no border
+ * - Elevated: card shadow instead of the border, in either state
  * - Padding: 12px horizontal (default), 8px horizontal (small)
  * - Icon spacing: 6px from text
  * - Touch area: padded to 44px tall via hitSlop
@@ -59,6 +65,7 @@ export function Chip({
   backgroundColor,
   textColor: customTextColor,
   count,
+  elevated = false,
 }: ChipProps) {
   const handlePress = () => {
     if (onPress) {
@@ -80,6 +87,7 @@ export function Chip({
         styles.container,
         isSmall ? styles.containerSmall : styles.containerDefault,
         selected ? styles.containerSelected : styles.containerUnselected,
+        elevated && styles.containerElevated,
         pressed && styles.containerPressed,
         backgroundColor && { backgroundColor: bgColor },
         backgroundColor && !selected && { borderWidth: 0 },
@@ -129,6 +137,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderWidth: 0,
   },
+  containerElevated: {
+    borderWidth: 0,
+    ...shadows.card,
+  },
   containerPressed: {
     opacity: 0.7,
   },
@@ -137,6 +149,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.labelLarge,
+    fontFamily: "Inter_600SemiBold",
     fontWeight: "600",
   },
   count: {

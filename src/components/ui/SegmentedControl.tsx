@@ -1,4 +1,4 @@
-import { colors, radii, spacing, typography } from "@/theme";
+import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -61,9 +61,10 @@ export function SegmentedControl<T extends string = string>({
 }
 
 const styles = StyleSheet.create({
+  // Light navy track: the grey surface color barely shows against white
   container: {
     flexDirection: "row",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primaryTint,
     borderRadius: radii.button,
     padding: spacing.xs,
   },
@@ -85,9 +86,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radii.button,
     borderBottomRightRadius: radii.button,
   },
+  // Raised above the track
   optionActive: {
     backgroundColor: colors.primary,
     borderRadius: radii.button,
+    ...shadows.card,
   },
   optionPressed: {
     opacity: 0.7,
@@ -97,7 +100,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   optionText: {
-    ...typography.labelSmall,
+    ...typography.labelMedium,
+    fontFamily: "Inter_700Bold",
     color: colors.textSecondary,
   },
   optionTextActive: {

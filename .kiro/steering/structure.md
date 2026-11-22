@@ -67,7 +67,7 @@ supabase/                    # git-ignored, on the developer's machine only
   testing.sql                # SQL for the current phone test round
   seed-dev.sql               # development data and reusable admin/officer blocks
   migrations/                # database changes since the schema was first run
-  functions/<name>/index.ts  # Edge Functions (Deno), e.g. delete-account
+  functions/<name>/index.ts  # Edge Functions (Deno): delete-account, send-push
   templates/                 # auth email templates
 
 schema/

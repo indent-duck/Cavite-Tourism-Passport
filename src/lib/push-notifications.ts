@@ -81,10 +81,16 @@ export function openNotificationSettings() {
 }
 
 /**
- * The app route a notification should open when tapped: its `data.url`, if
- * it's an in-app path such as "/stamp-requests" or "/rewards/12"
+ * The app route a notification is about: its `data.url`, if it's an in-app
+ * path such as "/stamp-requests" or "/rewards/12". The server's send-push
+ * Edge Function sets it.
  */
-export function notificationRoute(response: Notifications.NotificationResponse): string | null {
-  const url = response.notification.request.content.data?.url;
+export function notificationUrl(notification: Notifications.Notification): string | null {
+  const url = notification.request.content.data?.url;
   return typeof url === 'string' && url.startsWith('/') ? url : null;
+}
+
+/** The app route a tapped notification should open (see notificationUrl) */
+export function notificationRoute(response: Notifications.NotificationResponse): string | null {
+  return notificationUrl(response.notification);
 }

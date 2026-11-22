@@ -417,17 +417,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
-  // Shared card
+  // Shared card: off-white on the white screen, lifted by the card shadow
+  // (same look as the Passport tab's stamp requests card)
   card: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     padding: spacing.base,
-    borderWidth: 1,
-    borderColor: colors.border,
     ...shadows.card,
   },
+  // A step darker than the card, so the press still shows
   cardPressed: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.border,
   },
   listCard: {
     padding: 0,
@@ -467,11 +467,9 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     padding: spacing.base,
-    borderWidth: 1,
-    borderColor: colors.border,
     ...shadows.card,
   },
   statHeader: {
@@ -511,7 +509,8 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 6,
     width: "100%",
-    backgroundColor: colors.surface,
+    // Track a step darker than the off-white card
+    backgroundColor: colors.border,
     borderRadius: radii.full,
     marginTop: spacing.sm,
     overflow: "hidden",
@@ -538,11 +537,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     ...shadows.card,
   },
   promoText: {
@@ -612,7 +609,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
   },
   linkRowPressed: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.border,
   },
   linkText: {
     flex: 1,

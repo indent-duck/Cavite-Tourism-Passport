@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import type { Stamp, StampRequest } from '@/data/types';
 import { getSiteStampState, getUnseenResults } from '@/lib/stamp-requests';
-import { colors, radii, spacing, typography } from '@/theme';
+import { colors, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -37,7 +38,7 @@ export function StampRequestsCard({ requests, stamps, onMarkSeen }: StampRequest
   const dismissRejections = () => onMarkSeen(unseenRejections.map((request) => request.id));
 
   return (
-    <View style={styles.card} testID="stamp-requests-card">
+    <Card style={styles.card} testID="stamp-requests-card">
       {rejection && (
         <View style={styles.rejection} accessibilityRole="alert" testID="stamp-request-rejection">
           <View style={styles.rejectionHeader}>
@@ -105,7 +106,7 @@ export function StampRequestsCard({ requests, stamps, onMarkSeen }: StampRequest
         onPress={() => router.push('/stamp-requests/new')}
         testID="stamp-requests-new-row"
       />
-    </View>
+    </Card>
   );
 }
 
@@ -150,12 +151,11 @@ function CardRow({
 const ICON_CHIP_SIZE = 40;
 
 const styles = StyleSheet.create({
+  // Elevated Card (rounded, shadow, clips the rejection tint and row press
+  // highlights to its corners) in the same off-white as the cards on the
+  // Stamp requests screen
   card: {
-    backgroundColor: colors.background,
-    borderRadius: radii.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
   },
   rejection: {
     gap: spacing.sm,
@@ -194,8 +194,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.base,
   },
+  // A step darker than the card, so the press still shows
   rowPressed: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.border,
   },
   iconChip: {
     width: ICON_CHIP_SIZE,

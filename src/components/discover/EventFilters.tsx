@@ -69,6 +69,7 @@ export function EventFilters({ events, selected, onChange }: EventFiltersProps) 
             selected={isSelected}
             onPress={() => onChange(option.value)}
             backgroundColor={isSelected ? option.color : undefined}
+            elevated
             icon={
               <Ionicons
                 name={option.icon}
@@ -85,13 +86,17 @@ export function EventFilters({ events, selected, onChange }: EventFiltersProps) 
 }
 
 const styles = StyleSheet.create({
+  // The vertical margin takes back the extra padding below, so the spacing
+  // around the row is what it was before the chips had shadows
   scroll: {
     marginHorizontal: -spacing.base,
+    marginVertical: -spacing.xs,
   },
   content: {
     gap: spacing.sm,
     paddingHorizontal: spacing.base,
-    // Room for the chips' padded touch area
-    paddingVertical: spacing.xs,
+    // Room for the chips' padded touch area and their shadows, which a
+    // horizontal ScrollView would clip
+    paddingVertical: spacing.sm,
   },
 });

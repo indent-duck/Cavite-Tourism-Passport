@@ -57,7 +57,8 @@ const TONES: Record<Tone, { background: string; icon: string }> = {
   primary: { background: colors.primaryTint, icon: colors.primary },
   accent: { background: colors.accentTint, icon: colors.accent },
   success: { background: colors.successLight, icon: colors.success },
-  neutral: { background: colors.surface, icon: colors.textSecondary },
+  // colors.border, not surface, so the chip still shows on the off-white cards
+  neutral: { background: colors.border, icon: colors.textSecondary },
   danger: { background: colors.errorTint, icon: colors.error },
 };
 
@@ -610,12 +611,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
-  // Grouped card (rows separated by inset dividers)
+  // Grouped card (rows separated by inset dividers): off-white on the white
+  // screen, lifted by the card shadow (same look as the Account tab cards)
   card: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
-    borderWidth: 1,
-    borderColor: colors.border,
     overflow: 'hidden',
     ...shadows.card,
   },
@@ -627,8 +627,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     minHeight: 64,
   },
+  // A step darker than the card, so the press still shows
   rowPressed: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.border,
   },
   rowPressedDestructive: {
     backgroundColor: colors.errorTint,

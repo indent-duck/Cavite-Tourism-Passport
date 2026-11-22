@@ -16,7 +16,8 @@ export interface StatusPillProps {
 
 const TONES: Record<StatusPillTone, { background: string; icon: string; text: string }> = {
   success: { background: colors.successLight, icon: colors.success, text: colors.successDark },
-  neutral: { background: colors.surface, icon: colors.textSecondary, text: colors.textSecondary },
+  // colors.border, not surface, so the pill still shows on off-white cards
+  neutral: { background: colors.border, icon: colors.textSecondary, text: colors.textSecondary },
   warning: { background: colors.accentTint, icon: colors.accent, text: colors.textTertiary },
   error: { background: colors.errorTint, icon: colors.error, text: colors.error },
 };

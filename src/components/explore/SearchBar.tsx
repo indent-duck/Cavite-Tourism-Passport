@@ -1,4 +1,4 @@
-import { colors, radii, spacing, typography } from '@/theme';
+import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -15,9 +15,9 @@ export interface SearchBarProps {
  * A search input with search icon and conditional clear button.
  * 
  * **Visual Specifications:**
- * - Height: 40px
- * - Background: surface color (#F4F6FA)
- * - Border: 1px border color
+ * - Height: 44px
+ * - Background: white, raised with the card shadow (no border), so it
+ *   stands out on the white filter bar and over the map
  * - Search icon on the left (20px)
  * - Clear button (X) on the right when value is present
  * - 12px border radius, 12px horizontal padding
@@ -87,17 +87,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderRadius: radii.input,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
+    ...shadows.card,
   },
   searchIcon: {
     marginRight: spacing.sm,
   },
   input: {
     ...typography.bodyMedium,
+    fontFamily: 'Inter_400Regular',
     color: colors.text,
     flex: 1,
     padding: 0,

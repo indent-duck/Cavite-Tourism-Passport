@@ -69,6 +69,7 @@ export function SiteFilters({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.chips}
         contentContainerStyle={styles.chipsContent}
         keyboardShouldPersistTaps="handled"
       >
@@ -85,6 +86,7 @@ export function SiteFilters({
               selected={selected}
               onPress={() => onCategoryChange(category)}
               backgroundColor={selected ? color : undefined}
+              elevated
               icon={
                 <Ionicons
                   name={category === "All" ? "apps" : CATEGORY_ICONS[category]}
@@ -115,10 +117,16 @@ const styles = StyleSheet.create({
   searchBar: {
     flex: 1,
   },
+  // Takes back the extra padding below, so the spacing around the row is
+  // what it was before the chips had shadows
+  chips: {
+    marginVertical: -spacing.xs,
+  },
   chipsContent: {
     gap: spacing.sm,
     paddingHorizontal: spacing.base,
-    // Room for the chips' padded touch area
-    paddingVertical: spacing.xs,
+    // Room for the chips' padded touch area and their shadows, which a
+    // horizontal ScrollView would clip
+    paddingVertical: spacing.sm,
   },
 });
