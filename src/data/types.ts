@@ -136,7 +136,12 @@ export interface Expressway {
   locationSpan: string; // Endpoints, e.g., "Parañaque – Kawit"
   length?: string; // e.g., "45 km"
   description: string;
+  /** The expressway's line on the About Cavite map; missing = no line drawn */
+  route?: ExpresswayRoute;
 }
+
+/** GeoJSON geometry, [longitude, latitude] pairs */
+export type ExpresswayRoute = GeoJSON.LineString | GeoJSON.MultiLineString;
 
 // About Cavite content
 export interface AboutCaviteSection {

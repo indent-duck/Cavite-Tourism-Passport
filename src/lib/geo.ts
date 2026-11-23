@@ -39,3 +39,28 @@ export function formatDistance(meters: number): string {
   const km = meters / 1000;
   return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
 }
+
+/** [west, south, east, north], the order MapLibre's fitBounds takes */
+export type LngLatBox = [number, number, number, number];
+
+/** The box around every [longitude, latitude] point given; null for none */
+export function getBounds(points: Iterable<readonly number[]>): LngLatBox | null {
+  let west = Infinity;
+  let south = Infinity;
+  let east = -Infinity;
+  let north = -Infinity;
+  for (const [lng, lat] of points) {
+    if (lng < west) west = lng;
+    if (lng > east) east = lng;
+    if (lat < south) south = lat;
+    if (lat > north) north = lat;
+  }
+  return west === Infinity ? null : [west, south, east, north];
+}
+
+/** Every point of a LineString or MultiLineString */
+export function linePoints(
+  line: GeoJSON.LineString | GeoJSON.MultiLineString
+): GeoJSON.Position[] {
+  return line.type === 'LineString' ? line.coordinates : line.coordinates.flat();
+}

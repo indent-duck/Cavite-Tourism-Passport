@@ -19,6 +19,7 @@ import {
     CollectStampResult,
     Event,
     Expressway,
+    ExpresswayRoute,
     GenerateClaimResult,
     Itinerary,
     LivePass,
@@ -1117,6 +1118,7 @@ interface ExpresswayRow {
   location_span: string | null;
   length_km: number | null;
   description: string | null;
+  route: ExpresswayRoute | null;
 }
 
 /**
@@ -1126,7 +1128,7 @@ export async function getExpressways(): Promise<Expressway[]> {
   const rows = unwrap(
     await supabase
       .from("expressways")
-      .select("id, name, location_span, length_km, description")
+      .select("id, name, location_span, length_km, description, route")
       .order("sort_order")
       .overrideTypes<ExpresswayRow[], { merge: false }>(),
   );
@@ -1136,6 +1138,7 @@ export async function getExpressways(): Promise<Expressway[]> {
     locationSpan: row.location_span ?? "",
     length: row.length_km !== null ? `${Number(row.length_km)} km` : undefined,
     description: row.description ?? "",
+    route: row.route ?? undefined,
   }));
 }
 

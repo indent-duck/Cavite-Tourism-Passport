@@ -1,6 +1,9 @@
 import { EventDateBlock } from "@/components/discover/EventDateBlock";
-import { ExpresswayCard } from "@/components/discover/ExpresswayCard";
-import { CaviteMap } from "@/components/map/CaviteMap";
+import {
+  EXPRESSWAY_CARD_WIDTH,
+  ExpresswayCard,
+} from "@/components/discover/ExpresswayCard";
+import { CaviteMap, type MapRoute } from "@/components/map/CaviteMap";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import {
@@ -13,10 +16,17 @@ import {
 import type { Event, Expressway } from "@/data/types";
 import { TAB_BAR_HEIGHT } from "@/lib/constants";
 import { getEventStatus } from "@/lib/event-utils";
-import { colors, radii, shadows, spacing, typography } from "@/theme";
+import {
+  colors,
+  expresswayColors,
+  radii,
+  shadows,
+  spacing,
+  typography,
+} from "@/theme";
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useRef, useState, type ComponentRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,6 +34,10 @@ type HighlightCategory = ProvinceHighlight["category"];
 
 const HIGHLIGHT_CARD_WIDTH = 248;
 const MAP_HEIGHT = 260;
+
+/** An expressway's line and card color, by its place in the list */
+const expresswayColor = (index: number) =>
+  expresswayColors[index % expresswayColors.length];
 
 interface AboutCaviteContentProps {
   expressways: Expressway[];
@@ -51,13 +65,42 @@ export function AboutCaviteContent({
     string | null
   >(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
+  const expresswayRowRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const selectedExpressway = expressways.find(
     (expressway) => expressway.id === selectedExpresswayId,
   );
 
+  // Expressways without a route still get a card, just no line
+  const expresswayRoutes: MapRoute[] = expressways.flatMap(
+    (expressway, index) =>
+      expressway.route
+        ? [
+            {
+              id: expressway.id,
+              color: expresswayColor(index),
+              geometry: expressway.route,
+            },
+          ]
+        : [],
+  );
+
   const toggleExpressway = (id: string) =>
     setSelectedExpresswayId((current) => (current === id ? null : id));
+
+  // Tapping a line selects it (tap the map elsewhere to clear) and brings its
+  // card into view
+  const selectExpresswayOnMap = (id: string) => {
+    setSelectedExpresswayId(id);
+    const index = expressways.findIndex((expressway) => expressway.id === id);
+    if (index < 0) return;
+    expresswayRowRef.current?.scrollTo({
+      x: index * (EXPRESSWAY_CARD_WIDTH + spacing.md),
+      animated: true,
+    });
+  };
+
+  const clearExpressway = () => setSelectedExpresswayId(null);
 
   const stats = [
     { value: "1898", label: "Independence" },
@@ -227,6 +270,10 @@ export function AboutCaviteContent({
         <View style={styles.padded}>
           <CaviteMap
             height={MAP_HEIGHT}
+            routes={expresswayRoutes}
+            selectedRouteId={selectedExpresswayId}
+            onRoutePress={selectExpresswayOnMap}
+            onMapPress={clearExpressway}
             selectedLabel={selectedExpressway?.name}
             onMapInteractionChange={setIsMapInteracting}
           />
@@ -234,6 +281,7 @@ export function AboutCaviteContent({
 
         {expressways.length > 0 && (
           <ScrollView
+            ref={expresswayRowRef}
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.expresswayCarousel}
@@ -242,12 +290,13 @@ export function AboutCaviteContent({
               styles.expresswayRow,
             ]}
           >
-            {expressways.map((expressway) => (
+            {expressways.map((expressway, index) => (
               <ExpresswayCard
                 key={expressway.id}
                 expressway={expressway}
                 selected={expressway.id === selectedExpresswayId}
                 onPress={toggleExpressway}
+                color={expresswayColor(index)}
               />
             ))}
           </ScrollView>

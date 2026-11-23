@@ -58,6 +58,17 @@ export const colors = {
   categoryFestival: "#F47B20", // Orange for Festival stamps (reuses accent)
 } as const;
 
+/**
+ * Expressway lines on the About Cavite map, and the matching card accents.
+ * Assigned in list order (CAVITEX, CAVITEX C5 Link, CALAX), repeating if
+ * more are added. Picked to stand apart from each other and the basemap.
+ */
+export const expresswayColors = [
+  colors.primary, // Navy
+  colors.accent, // Orange
+  colors.success, // Green
+] as const;
+
 // ============================================================================
 // SPACING
 // ============================================================================

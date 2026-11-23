@@ -4,35 +4,62 @@ import { colors, radii, spacing, typography } from '@/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
+/** Card width, for scrolling the row to a card */
+export const EXPRESSWAY_CARD_WIDTH = 176;
+
+const BORDER_WIDTH = 2;
+
 export interface ExpresswayCardProps {
   expressway: Expressway;
   selected: boolean;
   onPress: (id: string) => void;
+  /** The expressway's line color on the map, so the card matches its line */
+  color?: string;
 }
 
 /**
  * Compact expressway card, sized for a horizontal row under the province map
  * so the map stays in view while the user picks one.
  */
-export function ExpresswayCard({ expressway, selected, onPress }: ExpresswayCardProps) {
+export function ExpresswayCard({
+  expressway,
+  selected,
+  onPress,
+  color = colors.primary,
+}: ExpresswayCardProps) {
   return (
     <Card
       onPress={() => onPress(expressway.id)}
       accessibilityState={{ selected }}
       accessibilityLabel={`${expressway.name}, ${expressway.locationSpan}`}
-      style={[styles.container, selected && styles.containerSelected]}
-      contentStyle={styles.content}
+      style={[
+        styles.container,
+        selected && { borderColor: color, backgroundColor: colors.background },
+      ]}
+      contentStyle={[
+        styles.content,
+        // 8% tint of the line color on the inner layer, over the outer
+        // layer's opaque white: on the outer layer (which draws the shadow)
+        // Android shows the shadow through a translucent background
+        selected && { backgroundColor: `${color}14` },
+      ]}
     >
       <View style={styles.header}>
-        <View style={[styles.iconChip, selected && styles.iconChipSelected]}>
+        <View
+          style={[
+            styles.iconChip,
+            // 12% tint while not selected, solid once selected
+            { backgroundColor: selected ? color : `${color}1F` },
+          ]}
+        >
           <MaterialCommunityIcons
             name="highway"
             size={18}
-            color={selected ? colors.background : colors.primary}
+            color={selected ? colors.background : color}
           />
         </View>
         {expressway.length ? (
-          <Text style={[styles.length, selected && styles.lengthSelected]}>
+          <Text style={[styles.length, selected && { color }]}>
             {expressway.length}
           </Text>
         ) : null}
@@ -50,16 +77,15 @@ export function ExpresswayCard({ expressway, selected, onPress }: ExpresswayCard
 
 const styles = StyleSheet.create({
   container: {
-    width: 176,
+    width: EXPRESSWAY_CARD_WIDTH,
     backgroundColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: BORDER_WIDTH,
     borderColor: 'transparent',
   },
-  containerSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryTint,
-  },
   content: {
+    // Follows the inside edge of the border, so the selected tint reaches
+    // into the corners
+    borderRadius: radii.card - BORDER_WIDTH,
     padding: spacing.md,
     gap: spacing.xs,
   },
@@ -73,19 +99,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radii.full,
-    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconChipSelected: {
-    backgroundColor: colors.primary,
   },
   length: {
     ...typography.labelMedium,
     color: colors.textSecondary,
-  },
-  lengthSelected: {
-    color: colors.primary,
   },
   name: {
     ...typography.titleMedium,

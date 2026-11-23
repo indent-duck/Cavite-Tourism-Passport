@@ -85,8 +85,8 @@ const asyncStoragePersister = createAsyncStoragePersister({
 // build are discarded instead of rendered (v2: User.name -> firstName/lastName,
 // v3: catalog moved from mock IDs to Supabase IDs, v4: stamps from Supabase,
 // v5: stamp requests from Supabase, v6: claim passes from Supabase,
-// v7: the user has hasPassword / hasGoogleSignIn)
-const CACHE_VERSION = '7';
+// v7: the user has hasPassword / hasGoogleSignIn, v8: expressways have a route)
+const CACHE_VERSION = '8';
 
 // Configure persistence
 persistQueryClient({

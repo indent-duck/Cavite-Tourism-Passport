@@ -2,22 +2,146 @@
  * CaviteMap Component
  * 
  * Renders an interactive map using MapLibre with Protomaps tiles.
- * Displays site pins, handles pin selection, and fits camera to visible sites.
+ * Displays site pins and route lines (e.g. expressways), handles selecting
+ * either, and fits the camera to the selected route or everything shown.
  */
 
 import type { Site } from '@/data/types';
+import { getBounds, linePoints } from '@/lib/geo';
 import { colors, radii, spacing, typography } from '@/theme';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
-import { Camera, Map, Marker, type CameraRef, type LngLat } from '@maplibre/maplibre-react-native';
+import {
+  Camera,
+  GeoJSONSource,
+  Layer,
+  Map,
+  Marker,
+  type CameraRef,
+  type LineLayerSpecification,
+  type LngLat,
+  type LngLatBounds,
+  type PressEventWithFeatures,
+  type ViewPadding,
+} from '@maplibre/maplibre-react-native';
 import { memo, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type NativeSyntheticEvent,
+} from 'react-native';
 
 // Default top offset for 'right-below-controls' (Explore's floating filters)
 const BELOW_CONTROLS_TOP = spacing.xl * 4;
 
 // Cavite center coordinates
 const CAVITE_CENTER: LngLat = [120.8833, 14.25]; // [lng, lat]
+const CAVITE_ZOOM = 9;
+const SINGLE_SITE_ZOOM = 14;
+const CAMERA_DURATION = 1000;
+
+// The re-center button, and the name label at the bottom (labelMedium line
+// plus vertical padding): the camera keeps what it frames clear of both
+const CONTROL_SIZE = 40;
+const LABEL_HEIGHT = 32;
+
+/**
+ * Route lines go under this layer of the Protomaps style, so road and place
+ * names stay readable on top of them. It must exist in the style: on Android
+ * a layer whose beforeId is missing waits for it and is never drawn.
+ */
+const ROUTES_BELOW_LAYER = 'roads_labels_minor';
+
+// Stable defaults, so a render without these props doesn't pass a new array
+const NO_SITES: Site[] = [];
+const NO_ROUTES: MapRoute[] = [];
+
+/** A line on the map, e.g. an expressway */
+export interface MapRoute {
+  id: string;
+  color: string;
+  geometry: GeoJSON.LineString | GeoJSON.MultiLineString;
+}
+
+type CameraMove =
+  | { kind: 'fly'; center: LngLat; zoom: number }
+  | { kind: 'fit'; bounds: LngLatBounds; padding: ViewPadding };
+
+/**
+ * Where the camera goes: to the selected route, else to every route and pin
+ * together. Null when there's nothing to frame.
+ */
+function getCameraMove(
+  sites: Site[],
+  routes: MapRoute[],
+  selectedRouteId: string | null | undefined,
+  padding: ViewPadding,
+): CameraMove | null {
+  const selectedRoute = routes.find((route) => route.id === selectedRouteId);
+  const points = selectedRoute
+    ? linePoints(selectedRoute.geometry)
+    : [
+        ...routes.flatMap((route) => linePoints(route.geometry)),
+        ...sites.map((site) => [site.longitude, site.latitude]),
+      ];
+
+  const bounds = getBounds(points);
+  if (!bounds) return null;
+
+  const [west, south, east, north] = bounds;
+  // A single pin: zoom in on it
+  if (west === east && south === north) {
+    return { kind: 'fly', center: [west, south], zoom: SINGLE_SITE_ZOOM };
+  }
+  return { kind: 'fit', bounds, padding };
+}
+
+function moveCamera(camera: CameraRef, move: CameraMove) {
+  if (move.kind === 'fly') {
+    camera.flyTo({ center: move.center, zoom: move.zoom, duration: CAMERA_DURATION });
+  } else {
+    camera.fitBounds(move.bounds, { padding: move.padding, duration: CAMERA_DURATION });
+  }
+}
+
+type LinePaint = NonNullable<LineLayerSpecification['paint']>;
+type LineLayout = NonNullable<LineLayerSpecification['layout']>;
+
+/**
+ * Route line styles. A selected route is drawn on top and wider, and the
+ * others fade. Each line has a white casing so it stands out from the
+ * basemap's own road lines.
+ */
+function getRouteStyles(selectedRouteId: string | null | undefined) {
+  const selected = selectedRouteId ?? '';
+
+  const opacity: LinePaint['line-opacity'] = selectedRouteId
+    ? ['case', ['==', ['get', 'id'], selected], 1, 0.35]
+    : 1;
+
+  const layout: LineLayout = {
+    'line-join': 'round',
+    'line-cap': 'round',
+    'line-sort-key': ['case', ['==', ['get', 'id'], selected], 1, 0],
+  };
+
+  const casing: LinePaint = {
+    'line-color': colors.background,
+    'line-width': ['case', ['==', ['get', 'id'], selected], 9, 7],
+    'line-opacity': opacity,
+  };
+
+  const line: LinePaint = {
+    'line-color': ['get', 'color'],
+    'line-width': ['case', ['==', ['get', 'id'], selected], 6, 4],
+    'line-opacity': opacity,
+  };
+
+  return { layout, casing, line };
+}
 
 export interface CaviteMapProps {
   sites?: Site[];
@@ -26,8 +150,14 @@ export interface CaviteMapProps {
   visitedSiteIds?: ReadonlySet<string>;
   /** Pin drawn enlarged, e.g. the one whose preview is open */
   selectedSiteId?: string | null;
-  /** Tap on the map itself (not a pin), e.g. to dismiss a preview */
+  /** Tap on the map itself (not a pin or route), e.g. to dismiss a preview */
   onMapPress?: () => void;
+  /** Lines drawn under the pins and the map's labels, e.g. expressways */
+  routes?: MapRoute[];
+  /** Route drawn on top and wider while the others fade; the camera frames it */
+  selectedRouteId?: string | null;
+  /** Tap on a route's line */
+  onRoutePress?: (routeId: string) => void;
   /**
    * Fixed map height. Omit to fill the parent (flex: 1) — the parent must
    * then have a bounded height.
@@ -64,12 +194,15 @@ export interface CaviteMapProps {
 }
 
 function CaviteMapView({
-  sites = [], 
-  onSitePress, 
+  sites = NO_SITES,
+  onSitePress,
   visitedSiteIds,
   selectedSiteId,
   onMapPress,
-  height, 
+  routes = NO_ROUTES,
+  selectedRouteId,
+  onRoutePress,
+  height,
   selectedLabel, 
   onMapInteractionChange,
   showControls = true,
@@ -80,24 +213,36 @@ function CaviteMapView({
   const cameraRef = useRef<CameraRef>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
-  // A pin tap can also reach the map's own onPress; ignore map taps briefly
-  // after a pin tap so the pin's selection isn't immediately cleared.
-  const pinPressGuard = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A pin or route tap can also reach the map's own onPress; ignore map taps
+  // briefly after one so its selection isn't immediately cleared.
+  const featurePressGuard = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
-    if (pinPressGuard.current) clearTimeout(pinPressGuard.current);
+    if (featurePressGuard.current) clearTimeout(featurePressGuard.current);
   }, []);
 
-  const handlePinPress = (siteId: string) => {
-    if (pinPressGuard.current) clearTimeout(pinPressGuard.current);
-    pinPressGuard.current = setTimeout(() => {
-      pinPressGuard.current = null;
+  const guardMapPress = () => {
+    if (featurePressGuard.current) clearTimeout(featurePressGuard.current);
+    featurePressGuard.current = setTimeout(() => {
+      featurePressGuard.current = null;
     }, 400);
+  };
+
+  const handlePinPress = (siteId: string) => {
+    guardMapPress();
     onSitePress?.(siteId);
   };
 
+  const handleRoutePress = (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
+    const routeId = event.nativeEvent.features[0]?.properties?.id;
+    if (typeof routeId !== 'string') return;
+    event.stopPropagation();
+    guardMapPress();
+    onRoutePress?.(routeId);
+  };
+
   const handleMapPress = () => {
-    if (pinPressGuard.current) return;
+    if (featurePressGuard.current) return;
     onMapPress?.();
   };
 
@@ -110,75 +255,49 @@ function CaviteMapView({
     ? `https://api.protomaps.com/styles/v2/light.json?key=${apiKey}`
     : 'https://demotiles.maplibre.org/style.json'; // Fallback demo style
 
-  // Fit camera to sites when they change
+  // Room the camera leaves around what it frames: clear of the floating
+  // controls and, while it shows, the name label at the bottom
+  const fitPadding: ViewPadding = {
+    top:
+      controlsPosition === 'right-below-controls'
+        ? spacing.xl * 4
+        : showControls
+          ? spacing.md + CONTROL_SIZE + spacing.sm
+          : spacing.xl,
+    right: spacing.xl,
+    bottom: selectedLabel ? spacing.lg + LABEL_HEIGHT + spacing.sm : spacing.xl,
+    left: spacing.xl,
+  };
+
+  const cameraMove = getCameraMove(sites, routes, selectedRouteId, fitPadding);
+  // Keyed on the serialized move, so the camera moves when what it frames
+  // changes, not on every render that rebuilds an equal one (that would pull
+  // the camera back while the user is panning). Nothing to frame: stay put.
+  const cameraMoveKey = cameraMove && JSON.stringify(cameraMove);
+
   useEffect(() => {
-    if (sites.length > 0 && cameraRef.current) {
-      const coordinates: LngLat[] = sites.map(site => [site.longitude, site.latitude]);
-      
-      if (coordinates.length === 1) {
-        // Single site: center on it
-        cameraRef.current.flyTo({
-          center: coordinates[0],
-          zoom: 14,
-          duration: 1000,
-        });
-      } else if (coordinates.length > 1) {
-        // Multiple sites: fit bounds
-        const lngs = coordinates.map(c => c[0]);
-        const lats = coordinates.map(c => c[1]);
-        
-        // bounds: [west, south, east, north]
-        const bounds: [number, number, number, number] = [
-          Math.min(...lngs), // west
-          Math.min(...lats), // south
-          Math.max(...lngs), // east
-          Math.max(...lats), // north
-        ];
-        
-        cameraRef.current.fitBounds(bounds, {
-          padding: { top: spacing.xl * 4, right: spacing.xl, bottom: spacing.xl, left: spacing.xl },
-          duration: 1000,
-        });
-      }
-    }
-  }, [sites]);
+    if (!cameraMoveKey || !cameraRef.current) return;
+    moveCamera(cameraRef.current, JSON.parse(cameraMoveKey) as CameraMove);
+  }, [cameraMoveKey]);
 
   const handleRecenter = () => {
     if (!cameraRef.current) return;
-
-    if (sites.length === 0) {
-      // No sites: fly to Cavite center
-      cameraRef.current.flyTo({
-        center: CAVITE_CENTER,
-        zoom: 9,
-        duration: 1000,
-      });
-    } else if (sites.length === 1) {
-      // Single site: fly to it
-      const site = sites[0];
-      cameraRef.current.flyTo({
-        center: [site.longitude, site.latitude],
-        zoom: 14,
-        duration: 1000,
-      });
-    } else {
-      // Multiple sites: fit bounds
-      const lngs = sites.map(s => s.longitude);
-      const lats = sites.map(s => s.latitude);
-      
-      const bounds: [number, number, number, number] = [
-        Math.min(...lngs),
-        Math.min(...lats),
-        Math.max(...lngs),
-        Math.max(...lats),
-      ];
-      
-      cameraRef.current.fitBounds(bounds, {
-        padding: { top: spacing.xl * 4, right: spacing.xl, bottom: spacing.xl, left: spacing.xl },
-        duration: 1000,
-      });
-    }
+    moveCamera(
+      cameraRef.current,
+      cameraMove ?? { kind: 'fly', center: CAVITE_CENTER, zoom: CAVITE_ZOOM },
+    );
   };
+
+  const routeFeatures: GeoJSON.FeatureCollection = {
+    type: 'FeatureCollection',
+    features: routes.map((route) => ({
+      type: 'Feature',
+      id: route.id,
+      properties: { id: route.id, color: route.color },
+      geometry: route.geometry,
+    })),
+  };
+  const routeStyles = getRouteStyles(selectedRouteId);
 
   if (!apiKey) {
     return (
@@ -237,9 +356,33 @@ function CaviteMapView({
           ref={cameraRef}
           initialViewState={{
             center: CAVITE_CENTER,
-            zoom: 9,
+            zoom: CAVITE_ZOOM,
           }}
         />
+
+        {/* Route lines: casing first, so each line draws on its casing */}
+        {routes.length > 0 && (
+          <GeoJSONSource
+            id="routes"
+            data={routeFeatures}
+            onPress={onRoutePress ? handleRoutePress : undefined}
+          >
+            <Layer
+              id="route-casings"
+              type="line"
+              beforeId={ROUTES_BELOW_LAYER}
+              layout={routeStyles.layout}
+              paint={routeStyles.casing}
+            />
+            <Layer
+              id="route-lines"
+              type="line"
+              beforeId={ROUTES_BELOW_LAYER}
+              layout={routeStyles.layout}
+              paint={routeStyles.line}
+            />
+          </GeoJSONSource>
+        )}
 
         {/* Site markers */}
         {sites.map((site) => {
@@ -483,6 +626,6 @@ const styles = StyleSheet.create({
 /**
  * Memoized: the map renders a native marker per site, so it should only
  * re-render when its own props change. Pass stable callbacks (setters or
- * useCallback) and memoized `sites`/`visitedSiteIds` to benefit.
+ * useCallback) and memoized `sites`/`visitedSiteIds`/`routes` to benefit.
  */
 export const CaviteMap = memo(CaviteMapView);
