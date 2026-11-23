@@ -180,7 +180,7 @@ export default function PrivacyScreen() {
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>What we collect</Text>
             <CheckItem>Full legal name & permanent Philippine municipality / city</CheckItem>
-            <CheckItem>Verified mobile number (via one-time SMS OTP verification)</CheckItem>
+            <CheckItem>Email address (verified with a one-time code at sign-up)</CheckItem>
             <CheckItem>Issued passport identifier (e.g., CVT-2027-xxxxxx)</CheckItem>
           </View>
           <Callout icon="close-circle" tone="error" title="Strictly excluded">

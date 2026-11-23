@@ -1,4 +1,3 @@
-import { AddContactSheet } from '@/components/account/AddContactSheet';
 import { AccordionRow } from '@/components/ui/AccordionRow';
 import { Button } from '@/components/ui/Button';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -37,8 +36,8 @@ import {
  *
  * Opened from the Account tab's "Settings & Preferences" row.
  *
- * 1. Account – personal details, change password, add/verify contact number
- *    (only until it is verified), and delete account (destructive, last)
+ * 1. Account – personal details, change password, and delete account
+ *    (destructive, last)
  * 2. Device & alerts – push notification toggle (optimistic) and the real
  *    foreground location permission status, with a shortcut to enable it
  * 3. Help & FAQs – single-open accordion
@@ -115,9 +114,7 @@ export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
   const { data: user } = useCurrentUser();
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
-  const [contactSheetVisible, setContactSheetVisible] = useState(false);
 
-  const hasContact = Boolean(user?.contactNumber);
   const municipality = user ? (parseAddress(user.address).municipality ?? user.address) : null;
 
   const handleLinkPress = async (url: string) => {
@@ -168,25 +165,6 @@ export default function SettingsScreen() {
               onPress={() => router.push('/change-password')}
               testID="settings-change-password"
             />
-            {/* Shown until the number is verified; the Account tab shows it afterwards */}
-            {user && !user.contactVerified && (
-              <>
-                <View style={styles.rowDivider} />
-                <NavRow
-                  icon="phone-portrait-outline"
-                  tone="accent"
-                  title={hasContact ? 'Verify contact number' : 'Add contact number'}
-                  subtitle="For SMS codes on perks and stamp claims"
-                  onPress={() => setContactSheetVisible(true)}
-                  trailing={
-                    <View style={styles.smallButton}>
-                      <Text style={styles.smallButtonText}>{hasContact ? 'Verify' : 'Add'}</Text>
-                    </View>
-                  }
-                  testID="settings-contact-number"
-                />
-              </>
-            )}
             <View style={styles.rowDivider} />
             <NavRow
               icon="trash-outline"
@@ -301,14 +279,6 @@ export default function SettingsScreen() {
           </View>
         </View>
       </View>
-
-      {/* Add / verify contact number (refreshes currentUser on success) */}
-      <AddContactSheet
-        visible={contactSheetVisible}
-        onDismiss={() => setContactSheetVisible(false)}
-        onSuccess={() => {}}
-        initialNumber={user?.contactNumber}
-      />
     </ScreenContainer>
   );
 }
@@ -672,7 +642,7 @@ const styles = StyleSheet.create({
     marginHorizontal: (ICON_CHIP_SIZE - ICON_CHIP_SIZE_SMALL) / 2,
   },
 
-  // Small pill button ("Turn on" location, "Add"/"Verify" contact number)
+  // Small pill button ("Turn on" location)
   smallButton: {
     paddingHorizontal: spacing.md,
     paddingVertical: 6,

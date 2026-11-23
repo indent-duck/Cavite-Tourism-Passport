@@ -1,4 +1,3 @@
-import { AddContactSheet } from "@/components/account/AddContactSheet";
 import { LogoutConfirmModal } from "@/components/account/LogoutConfirmModal";
 import { PassportIdCard } from "@/components/account/PassportIdCard";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
@@ -14,24 +13,23 @@ import { colors, radii, shadows, spacing, typography } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * Account Tab Screen
  *
- * Displays the digital passport ID card, activity stats, account details with
- * contact number management, navigation links, and logout.
+ * Displays the digital passport ID card, activity stats, account details,
+ * navigation links, and logout.
  *
  * Features:
  * - Digital Cavite Tourism Passport ID card (name, address, passport ID)
  * - Activity stats (stamps → Passport tab, points → Rewards) and promo period
- * - Account details (email, contact number with add/verify flow)
+ * - Account details (email)
  * - Navigation to Settings, Redemptions, Privacy Policy
  * - Sign out functionality
  */
 export default function AccountScreen() {
-  const [contactSheetVisible, setContactSheetVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -52,8 +50,6 @@ export default function AccountScreen() {
   const stampProgress = totalStamps
     ? Math.min(stampCount / totalStamps, 1)
     : 0;
-
-  const hasContact = Boolean(user.contactNumber);
 
   return (
     <ScreenContainer
@@ -163,42 +159,6 @@ export default function AccountScreen() {
           <Text style={styles.sectionTitle}>Account details</Text>
 
           <DetailRow icon="mail-outline" label="Email" value={user.email} />
-
-          <View style={styles.divider} />
-
-          <DetailRow
-            icon="phone-portrait-outline"
-            label="Contact number"
-            value={user.contactNumber ?? "Not added"}
-            muted={!hasContact}
-            trailing={
-              user.contactVerified ? (
-                <StatusPill label="Verified" tone="success" icon="checkmark-circle" />
-              ) : (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.contactButton,
-                    pressed && styles.contactButtonPressed,
-                  ]}
-                  onPress={() => setContactSheetVisible(true)}
-                  hitSlop={spacing.sm}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    hasContact ? "Verify contact number" : "Add contact number"
-                  }
-                >
-                  <Ionicons
-                    name={hasContact ? "shield-checkmark-outline" : "add"}
-                    size={14}
-                    color={colors.background}
-                  />
-                  <Text style={styles.contactButtonText}>
-                    {hasContact ? "Verify" : "Add"}
-                  </Text>
-                </Pressable>
-              )
-            }
-          />
         </View>
 
         {/* Navigation Links */}
@@ -257,14 +217,6 @@ export default function AccountScreen() {
         </Text>
       </View>
 
-      {/* Add / Verify Contact Number Sheet (refetch is handled by React Query) */}
-      <AddContactSheet
-        visible={contactSheetVisible}
-        onDismiss={() => setContactSheetVisible(false)}
-        onSuccess={() => {}}
-        initialNumber={user.contactNumber}
-      />
-
       <LogoutConfirmModal
         visible={logoutModalVisible}
         onDismiss={() => setLogoutModalVisible(false)}
@@ -304,29 +256,20 @@ function DetailRow({
   icon,
   label,
   value,
-  muted,
-  trailing,
 }: {
   icon: IconName;
   label: string;
   value: string;
-  muted?: boolean;
-  trailing?: ReactNode;
 }) {
   return (
     <View style={styles.detailRow}>
       <Ionicons name={icon} size={20} color={colors.primary} />
       <View style={styles.detailText}>
         <Text style={styles.detailLabel}>{label}</Text>
-        <Text
-          style={[styles.detailValue, muted && styles.detailValueMuted]}
-          numberOfLines={1}
-          ellipsizeMode="middle"
-        >
+        <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="middle">
           {value}
         </Text>
       </View>
-      {trailing}
     </View>
   );
 }
@@ -440,11 +383,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: "uppercase",
     marginBottom: spacing.md,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
   },
   iconChip: {
     width: ICON_CHIP_SIZE,
@@ -576,28 +514,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: colors.text,
     marginTop: 2,
-  },
-  detailValueMuted: {
-    fontFamily: "Inter_400Regular",
-    fontWeight: "400",
-    color: colors.textSecondary,
-  },
-  contactButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    backgroundColor: colors.accent,
-    borderRadius: radii.button,
-  },
-  contactButtonPressed: {
-    opacity: 0.85,
-  },
-  contactButtonText: {
-    ...typography.labelMedium,
-    fontFamily: "Inter_600SemiBold",
-    color: colors.background,
   },
 
   // Navigation links

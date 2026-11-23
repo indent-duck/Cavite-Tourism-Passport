@@ -42,7 +42,7 @@
 - Flow: screen -> hook in `src/hooks` -> function in `src/data/api.ts` -> Supabase. `api.ts` is the only file that talks to Supabase (client in `src/lib/supabase.ts`). Screens and components never call Supabase or import mock data directly.
 - The app never writes stamps, claims or points itself: it calls database functions (`collect_stamp`, `submit_stamp_request`, `generate_reward_claim`, `register_push_token`) that check the rules on the server. Row Level Security limits every table to what the signed-in user may see.
 - Work that needs the secret key runs in Edge Functions (`supabase/functions/`, Deno, deployed from the Supabase Dashboard): `delete-account` (called by the app) and `send-push` (called by a cron job, never by the app). They are left out of the app's typecheck and lint.
-- Still mock in `api.ts`: the contact number (`sendContactCode`, `verifyContactCode`, waiting for an SMS provider) and static content (About Cavite, FAQs), which stays in the app on purpose. `src/data/mock-data.ts` remains for those until launch.
+- Still mock in `api.ts`: static content (About Cavite, FAQs), which stays in the app on purpose. `src/data/mock-data.ts` remains for those until launch.
 - React Query is configured in one place: `src/lib/query-client.ts`. Bump `CACHE_VERSION` there when a cached data shape changes.
 - All shared types live in `src/data/types.ts`.
 - Database schema: `schema/supabase-schema.sql` (full) plus `supabase/migrations/` (changes since). Progress, setup and phone test checklists: `supabase/INTEGRATION-STATUS.md`. Both folders are git-ignored and exist only on the developer's machine.

@@ -53,7 +53,7 @@ src/
   theme/                     # colors, spacing, typography, radii
   data/
     types.ts
-    mock-data.ts             # leftover mock data (contact number, About Cavite, FAQs)
+    mock-data.ts             # leftover mock data (About Cavite, FAQs)
     api.ts                   # the only file that talks to Supabase
   hooks/                     # useSites, useStamps, useRewards, usePushNotifications, and so on
   lib/

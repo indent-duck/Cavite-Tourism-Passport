@@ -7,8 +7,6 @@ export interface User {
   firstName: string; // Given name(s), e.g. "Juan" or "Maria Clara"
   lastName: string; // Surname, e.g. "Dela Cruz" (use getFullName() to display both)
   address: string;
-  contactNumber?: string; // Added later in Account settings
-  contactVerified?: boolean;
   passportId: string; // Format: CVT-YYYY-NNNNNN
   points: number;
   createdAt: Date;

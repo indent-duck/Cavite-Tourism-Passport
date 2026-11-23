@@ -25,7 +25,7 @@ export const legalContent: LegalContent = {
 
   informationWeCollect: `We collect several types of information from and about users of our App:
 
-**Personal Information:** When you register for an account, we collect your full name, email address, residential address, and passport ID number. If you choose to add a contact number, we also collect your mobile phone number.
+**Personal Information:** When you register for an account, we collect your full name, email address, residential address, and passport ID number.
 
 **Location Data:** We collect precise location data from your mobile device when you scan QR codes at partner tourism sites to verify you are physically present at the location. This data is used solely for stamp validation purposes.
 
@@ -43,7 +43,7 @@ export const legalContent: LegalContent = {
 
 **Service Improvement:** To analyze usage patterns, improve App features, and enhance the overall tourism experience in Cavite.
 
-**Communications:** To send you important notifications about your account, stamp collections, reward eligibility, and promotional period updates. If you provide a verified contact number, we may send SMS notifications.
+**Communications:** To send you important notifications about your account, stamp collections, reward eligibility, and promotional period updates.
 
 **Compliance:** To comply with legal obligations, enforce our terms of service, and protect the rights and safety of our users and partners.`,
 
@@ -53,7 +53,7 @@ export const legalContent: LegalContent = {
 
 **Provincial Government:** Your tourism passport data may be shared with the Provincial Tourism Office and relevant government agencies for tourism planning, statistics, and program evaluation.
 
-**Service Providers:** We may share information with third-party service providers who perform services on our behalf, such as cloud hosting, data analytics, and SMS delivery. These providers are contractually obligated to protect your information.
+**Service Providers:** We may share information with third-party service providers who perform services on our behalf, such as cloud hosting, data analytics, and email and push notification delivery. These providers are contractually obligated to protect your information.
 
 **Legal Requirements:** We may disclose your information if required to do so by law or in response to valid requests by public authorities (e.g., court orders, government agencies).
 
@@ -69,7 +69,7 @@ We do not sell, rent, or trade your personal information to third parties for ma
 
 **Deletion:** You may request deletion of your account and associated data by contacting the Provincial Tourism Office. Note that some data may be retained for legal or administrative purposes even after deletion.
 
-**Withdrawal of Consent:** You may withdraw consent for location tracking or SMS notifications through your device settings or the App's Settings screen. However, withdrawing location consent will prevent you from collecting stamps.
+**Withdrawal of Consent:** You may withdraw consent for location tracking or push notifications through your device settings or the App's Settings screen. However, withdrawing location consent will prevent you from collecting stamps.
 
 **Data Portability:** You may request a copy of your tourism passport data in a portable format.
 

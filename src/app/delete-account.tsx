@@ -103,7 +103,7 @@ export default function DeleteAccountScreen() {
     },
     { icon: 'gift-outline', text: 'Reward history and voucher passes' },
     { icon: 'document-text-outline', text: 'Stamp requests and their photos' },
-    { icon: 'person-outline', text: 'Your name, address, email and contact number' },
+    { icon: 'person-outline', text: 'Your name, address and email' },
   ];
 
   const warnings: string[] = [];

@@ -52,8 +52,8 @@ export interface FeedbackContentProps {
  * The body of a result popup: icon with a badge (green check, or a red "!"
  * when the action didn't go through), title, message, optional note pill,
  * and one button.
- * FeedbackModal wraps it in a centered dialog; sheets with their own success
- * step (e.g. AddContactSheet) render it directly so both look the same.
+ * FeedbackModal wraps it in a centered dialog; a sheet with its own success
+ * step can render it directly so both look the same.
  */
 export function FeedbackContent({
   icon,

@@ -9,7 +9,7 @@ import {
     type AuthError,
     type PostgrestError
 } from "@supabase/supabase-js";
-import { currentMockUser, mockAboutCavite } from "./mock-data";
+import { mockAboutCavite } from "./mock-data";
 import {
     AboutCaviteContent,
     AccountDeletionSummary,
@@ -282,38 +282,6 @@ export async function resetPassword(email: string, newPassword: string): Promise
 }
 
 /**
- * Send SMS verification code to contact number
- * Mock: Always succeeds
- */
-export async function sendContactCode(contactNumber: string): Promise<boolean> {
-  await randomDelay();
-  // Mock: always succeeds (simulates sending SMS code)
-  return true;
-}
-
-/**
- * Verify SMS code for contact number
- * Mock: Code "123456" succeeds, all others fail
- * On success, updates currentMockUser with verified contact number
- */
-export async function verifyContactCode(
-  contactNumber: string,
-  code: string,
-): Promise<boolean> {
-  await randomDelay();
-
-  if (code !== "123456") {
-    return false;
-  }
-
-  // Update mock user with verified contact number
-  currentMockUser.contactNumber = contactNumber;
-  currentMockUser.contactVerified = true;
-
-  return true;
-}
-
-/**
  * Sign out on this device. The saved session is removed even when offline.
  *
  * This phone's push token is removed first (while still signed in), so the
@@ -344,8 +312,8 @@ export async function registerPushToken(token: string): Promise<void> {
 // ============================================================================
 
 const MY_ACCOUNT_COLUMNS =
-  "id, email, passport_id, first_name, last_name, address, contact_number, " +
-  "contact_verified_at, created_at, points, claimed_reward_id, has_password";
+  "id, email, passport_id, first_name, last_name, address, created_at, " +
+  "points, claimed_reward_id, has_password";
 
 // The my_account view: the signed-in user's account plus their points and
 // claimed reward in the active promo period
@@ -356,8 +324,6 @@ interface MyAccountRow {
   first_name: string | null; // null until sign-up step 3
   last_name: string | null;
   address: string | null;
-  contact_number: string | null;
-  contact_verified_at: string | null;
   created_at: string;
   points: number;
   claimed_reward_id: number | null;
@@ -394,8 +360,6 @@ export async function getCurrentUser(): Promise<User> {
     firstName: row.first_name ?? "",
     lastName: row.last_name ?? "",
     address: row.address ?? "",
-    contactNumber: row.contact_number ?? undefined,
-    contactVerified: row.contact_verified_at !== null,
     passportId: row.passport_id,
     points: row.points,
     createdAt: new Date(row.created_at),

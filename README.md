@@ -7,7 +7,7 @@ and claim a prize at the tourism office with a single-use QR pass.
 **Android only** (portrait). Built with Expo (development builds, not Expo
 Go), React Native, TypeScript and Expo Router, with a Supabase backend.
 
-## Status (2026-11-22)
+## Status (2026-11-23)
 
 | Area | Status |
 | ---- | ------ |
@@ -20,8 +20,11 @@ Go), React Native, TypeScript and Expo Router, with a Supabase backend.
 | Delete account (Edge Function) | ✅ Live |
 | Push notifications: permission, token, opening tapped notifications | ✅ Live |
 | Push notifications: sending from the server (stamp request results, promo-end reminders, admin broadcasts) | ✅ Live; broadcasts are sent from the SQL editor until the admin dashboard exists |
-| Contact number verification by SMS | ⏳ Waiting for an SMS provider |
 | Catalog photos, real app icon and notification icon | ⏳ Before launch |
+
+The contact number and its SMS verification were dropped on 2026-11-23:
+Philippine SMS providers only register sender IDs for legally registered
+businesses.
 
 Every feature marked live passed a phone test round on Android. The detailed
 progress, setup steps and test checklists are in

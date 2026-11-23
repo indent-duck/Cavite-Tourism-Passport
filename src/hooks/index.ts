@@ -3,7 +3,6 @@ export { useActiveClaim } from './useActiveClaim';
 export { useAuth } from './useAuth';
 export { useChangePassword } from './useChangePassword';
 export { useCollectStamp } from './useCollectStamp';
-export { useContactVerification } from './useContactVerification';
 export { useCurrentUser } from './useCurrentUser';
 export { useAccountDeletionSummary, useDeleteAccount } from './useDeleteAccount';
 export { useEventById } from './useEventById';
