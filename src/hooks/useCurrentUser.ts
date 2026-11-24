@@ -7,12 +7,16 @@ import type { User } from '@/data/types';
  * 
  * Wraps getCurrentUser API call with React Query for caching and state management.
  * 
+ * Pass `refetchOnMount: 'always'` on screens that need the server's latest
+ * (Personal details: the name and address change locks).
+ *
  * Validates: Requirements 1.2.9 (Data Hooks)
  */
-export function useCurrentUser() {
+export function useCurrentUser(options?: { refetchOnMount?: 'always' }) {
   return useQuery<User, Error>({
     queryKey: ['currentUser'],
     queryFn: getCurrentUser,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnMount: options?.refetchOnMount ?? true,
   });
 }

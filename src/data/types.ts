@@ -19,6 +19,14 @@ export interface User {
   hasPassword?: boolean;
   /** Has used "Continue with Google" (a Google identity is linked) */
   hasGoogleSignIn?: boolean;
+  /**
+   * Settings → Personal details: the name and the address can each change once
+   * every `detailsChangeCooldownDays`. When each can change again (null = it
+   * never changed; may be in the past).
+   */
+  nameLockedUntil?: Date | null;
+  addressLockedUntil?: Date | null;
+  detailsChangeCooldownDays?: number;
 }
 
 /** How the user proves it's them before their account is deleted */
@@ -31,8 +39,11 @@ export type VerificationPurpose = 'signup' | 'reset';
 
 // Account management (Settings → Account)
 
-/** The only profile fields a user can change themselves */
-export type ProfileUpdate = Pick<User, 'firstName' | 'lastName' | 'address'>;
+/**
+ * The only profile fields a user can change themselves. Send only what
+ * changed (the first and last name together): each has its own change limit.
+ */
+export type ProfileUpdate = Partial<Pick<User, 'firstName' | 'lastName' | 'address'>>;
 
 /** How the user proves it's them before changing their password */
 export type PasswordChangeProof =

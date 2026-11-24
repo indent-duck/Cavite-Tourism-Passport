@@ -44,6 +44,8 @@ interface MunicipalityPickerProps {
   value: string | null;
   onChange: (municipality: string) => void;
   error?: string;
+  /** Read-only, like a TextInput with editable={false} */
+  disabled?: boolean;
 }
 
 /**
@@ -54,7 +56,13 @@ interface MunicipalityPickerProps {
  * for non-residents. Styled to match the shared TextInput so it sits in a form
  * alongside regular fields.
  */
-export function MunicipalityPicker({ label, value, onChange, error }: MunicipalityPickerProps) {
+export function MunicipalityPicker({
+  label,
+  value,
+  onChange,
+  error,
+  disabled = false,
+}: MunicipalityPickerProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const insets = useSafeAreaInsets();
 
@@ -80,8 +88,14 @@ export function MunicipalityPicker({ label, value, onChange, error }: Municipali
       <Text style={styles.label}>{label}</Text>
       <Pressable
         onPress={open}
-        style={[styles.field, { borderColor: error ? colors.error : colors.border }]}
+        disabled={disabled}
+        style={[
+          styles.field,
+          { borderColor: error ? colors.error : colors.border },
+          disabled && styles.fieldDisabled,
+        ]}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         accessibilityLabel={`${label}: ${value ?? 'not selected'}`}
         accessibilityHint={error ?? 'Opens a list of Cavite cities and municipalities, or choose Outside Cavite'}
       >
@@ -182,6 +196,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.input,
     borderWidth: 1.5,
     paddingHorizontal: spacing.base,
+  },
+  fieldDisabled: {
+    opacity: 0.6, // same as TextInput
   },
   value: {
     ...typography.bodyLarge,

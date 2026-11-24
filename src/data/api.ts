@@ -313,7 +313,8 @@ export async function registerPushToken(token: string): Promise<void> {
 
 const MY_ACCOUNT_COLUMNS =
   "id, email, passport_id, first_name, last_name, address, created_at, " +
-  "points, claimed_reward_id, has_password";
+  "points, claimed_reward_id, has_password, " +
+  "name_locked_until, address_locked_until, details_change_cooldown_days";
 
 // The my_account view: the signed-in user's account plus their points and
 // claimed reward in the active promo period
@@ -328,6 +329,9 @@ interface MyAccountRow {
   points: number;
   claimed_reward_id: number | null;
   has_password: boolean; // migration 004
+  name_locked_until: string | null; // migration 008
+  address_locked_until: string | null;
+  details_change_cooldown_days: number;
 }
 
 /**
@@ -367,6 +371,9 @@ export async function getCurrentUser(): Promise<User> {
     claimedRewardId: row.claimed_reward_id !== null ? String(row.claimed_reward_id) : undefined,
     hasPassword: row.has_password,
     hasGoogleSignIn: signInMethods.includes("google"),
+    nameLockedUntil: row.name_locked_until ? new Date(row.name_locked_until) : null,
+    addressLockedUntil: row.address_locked_until ? new Date(row.address_locked_until) : null,
+    detailsChangeCooldownDays: row.details_change_cooldown_days,
   };
 }
 
@@ -375,25 +382,34 @@ export async function getCurrentUser(): Promise<User> {
 // ============================================================================
 
 /**
- * Update the user's first name, last name and address. These (and
- * notifications_enabled) are the only account columns users may write: see
- * the column grants in schema/supabase-schema.sql.
+ * Update the user's name and/or address. These (and notifications_enabled)
+ * are the only account columns users may write: see the column grants in
+ * schema/supabase-schema.sql.
+ *
+ * Only the fields given are sent: the database lets the name and the address
+ * each change once every `detailsChangeCooldownDays` (migration 008). A
+ * locked one throws a FieldError for "name" or "address" with the date it
+ * unlocks, e.g. "You can change your name again on Dec 24, 2026."
  */
 export async function updateProfile(updates: ProfileUpdate): Promise<User> {
   const userId = await requireUserId();
 
-  unwrap(
-    await supabase
-      .from("accounts")
-      .update({
-        first_name: updates.firstName,
-        last_name: updates.lastName,
-        address: updates.address,
-      })
-      .eq("id", userId)
-      .select("id")
-      .single(),
-  );
+  const columns: { first_name?: string; last_name?: string; address?: string } = {};
+  if (updates.firstName !== undefined) columns.first_name = updates.firstName;
+  if (updates.lastName !== undefined) columns.last_name = updates.lastName;
+  if (updates.address !== undefined) columns.address = updates.address;
+
+  const { error } = await supabase
+    .from("accounts")
+    .update(columns)
+    .eq("id", userId)
+    .select("id")
+    .single();
+  if (error) {
+    if (error.hint === "name_locked") throw new FieldError("name", error.message);
+    if (error.hint === "address_locked") throw new FieldError("address", error.message);
+    throw new Error(error.message);
+  }
   return getCurrentUser();
 }
 

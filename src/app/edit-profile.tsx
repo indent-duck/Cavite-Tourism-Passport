@@ -1,3 +1,4 @@
+import { DetailsChangeConfirmModal } from '@/components/account';
 import {
   FormBanner,
   getAddressLineFieldProps,
@@ -8,12 +9,14 @@ import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
+import type { ProfileUpdate } from '@/data/types';
 import { useCurrentUser, useUpdateProfile } from '@/hooks';
 import { formatAddress, getAddressPlace, getOutsidePlaceError, parseAddress } from '@/lib/address';
 import { OUTSIDE_CAVITE } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { getFullName, getNameError, MAX_NAME_LENGTH, normalizeName } from '@/lib/names';
+import { formatShortDate } from '@/lib/rewards';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -29,12 +32,18 @@ import { Keyboard, StyleSheet, Text, View } from 'react-native';
  * Cavite" the city and province or country (same fields and address format as
  * sign up). Email and passport ID are shown read-only.
  *
+ * The name and the address can each change once every
+ * `detailsChangeCooldownDays` (30; the database enforces it, migration 008).
+ * A locked one shows read-only with the date it unlocks, and saving a change
+ * first confirms how long it will stay. Only what changed is sent.
+ *
  * Save stays disabled until something changed. On success the `currentUser`
  * cache is updated in place, so the passport ID card and headers follow, and
  * a feedback dialog shows the saved name and city before returning to Settings.
  */
 export default function EditProfileScreen() {
-  const { data: user } = useCurrentUser();
+  // Fresh change locks, even if the cached user is recent (e.g. changed on another phone)
+  const { data: user } = useCurrentUser({ refetchOnMount: 'always' });
 
   // The form mounts once the user has loaded, so its fields start prefilled
   if (!user) {
@@ -47,6 +56,9 @@ export default function EditProfileScreen() {
       initialFirstName={user.firstName}
       initialLastName={user.lastName}
       initialAddress={user.address}
+      nameLockedUntil={user.nameLockedUntil ?? null}
+      addressLockedUntil={user.addressLockedUntil ?? null}
+      cooldownDays={user.detailsChangeCooldownDays ?? 30}
     />
   );
 }
@@ -76,14 +88,28 @@ function ProfileForm({
   initialFirstName,
   initialLastName,
   initialAddress,
+  nameLockedUntil,
+  addressLockedUntil,
+  cooldownDays,
 }: {
   email: string;
   passportId: string;
   initialFirstName: string;
   initialLastName: string;
   initialAddress: string;
+  nameLockedUntil: Date | null;
+  addressLockedUntil: Date | null;
+  cooldownDays: number;
 }) {
   const initial = parseAddress(initialAddress);
+
+  // Fixed while the screen is open: a lock that runs out meanwhile lifts on the next visit
+  const [openedAt] = useState(Date.now);
+  const nameLocked = nameLockedUntil !== null && nameLockedUntil.getTime() > openedAt;
+  const addressLocked = addressLockedUntil !== null && addressLockedUntil.getTime() > openedAt;
+  // When a save now would let the name or address change again
+  const relockDate = new Date(openedAt);
+  relockDate.setDate(relockDate.getDate() + cooldownDays);
 
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
@@ -94,6 +120,7 @@ function ProfileForm({
   const [municipalityError, setMunicipalityError] = useState('');
   const [streetError, setStreetError] = useState('');
   const [formError, setFormError] = useState('');
+  const [confirming, setConfirming] = useState(false);
   // "Name · City" just saved; shows the feedback dialog while set
   const [savedSummary, setSavedSummary] = useState<string | null>(null);
   // Several ways close the dialog (button, backdrop, Android back); leave only once
@@ -104,24 +131,42 @@ function ProfileForm({
   const lastNameRef = useRef<TextInputRef>(null);
   const streetRef = useRef<TextInputRef>(null);
 
-  const hasChanges =
-    normalizeName(firstName) !== initialFirstName ||
-    normalizeName(lastName) !== initialLastName ||
-    municipality !== initial.municipality ||
-    street.trim() !== initial.line;
+  // A locked group shows what's saved (the server's values, if a save just
+  // found it locked) and never counts as changed
+  const shownFirstName = nameLocked ? initialFirstName : firstName;
+  const shownLastName = nameLocked ? initialLastName : lastName;
+  const shownMunicipality = addressLocked ? initial.municipality : municipality;
+  const shownStreet = addressLocked ? initial.line : street;
 
-  const handleSave = async () => {
+  const nameChanged =
+    !nameLocked &&
+    (normalizeName(firstName) !== normalizeName(initialFirstName) ||
+      normalizeName(lastName) !== normalizeName(initialLastName));
+  const addressChanged =
+    !addressLocked && (municipality !== initial.municipality || street.trim() !== initial.line);
+  const hasChanges = nameChanged || addressChanged;
+
+  // Check what changed, then confirm the lock that saving starts
+  const handleSave = () => {
     setFormError('');
 
-    const firstNameErrorMessage = getNameError(firstName, 'First name');
-    const lastNameErrorMessage = getNameError(lastName, 'Last name');
+    const firstNameErrorMessage = nameChanged ? getNameError(firstName, 'First name') : '';
+    const lastNameErrorMessage = nameChanged ? getNameError(lastName, 'Last name') : '';
+    const municipalityErrorMessage =
+      addressChanged && !municipality ? 'Select your city or municipality' : '';
+    const streetErrorMessage =
+      addressChanged && municipality === OUTSIDE_CAVITE ? getOutsidePlaceError(street) : '';
     setFirstNameError(firstNameErrorMessage);
     setLastNameError(lastNameErrorMessage);
-    const streetErrorMessage = municipality === OUTSIDE_CAVITE ? getOutsidePlaceError(street) : '';
-    setMunicipalityError(municipality ? '' : 'Select your city or municipality');
+    setMunicipalityError(municipalityErrorMessage);
     setStreetError(streetErrorMessage);
 
-    if (firstNameErrorMessage || lastNameErrorMessage || !municipality || streetErrorMessage) {
+    if (
+      firstNameErrorMessage ||
+      lastNameErrorMessage ||
+      municipalityErrorMessage ||
+      streetErrorMessage
+    ) {
       hapticError();
       if (firstNameErrorMessage) firstNameRef.current?.focus();
       else if (lastNameErrorMessage) lastNameRef.current?.focus();
@@ -129,16 +174,25 @@ function ProfileForm({
       return;
     }
 
-    const saved = {
-      firstName: normalizeName(firstName),
-      lastName: normalizeName(lastName),
-      address: formatAddress(street, municipality),
-    };
+    Keyboard.dismiss();
+    setConfirming(true);
+  };
+
+  const save = async () => {
+    setConfirming(false);
+
+    const updates: ProfileUpdate = {};
+    if (nameChanged) {
+      updates.firstName = normalizeName(firstName);
+      updates.lastName = normalizeName(lastName);
+    }
+    if (addressChanged && municipality) {
+      updates.address = formatAddress(street, municipality);
+    }
 
     try {
-      await updateProfile.mutateAsync(saved);
-      Keyboard.dismiss();
-      setSavedSummary(`${getFullName(saved)} · ${getAddressPlace(saved.address)}`);
+      const user = await updateProfile.mutateAsync(updates);
+      setSavedSummary(`${getFullName(user)} · ${getAddressPlace(user.address)}`);
       hapticSuccess();
     } catch (saveError) {
       setFormError(
@@ -186,7 +240,7 @@ function ProfileForm({
           ref={firstNameRef}
           label="First name"
           leftIcon="person-outline"
-          value={firstName}
+          value={shownFirstName}
           onChangeText={(text) => {
             setFirstName(text);
             setFirstNameError('');
@@ -201,6 +255,7 @@ function ProfileForm({
           submitBehavior="submit"
           onSubmitEditing={() => lastNameRef.current?.focus()}
           error={firstNameError}
+          editable={!nameLocked}
           testID="edit-profile-first-name"
         />
 
@@ -208,7 +263,7 @@ function ProfileForm({
           ref={lastNameRef}
           label="Last name"
           leftIcon="person-outline"
-          value={lastName}
+          value={shownLastName}
           onChangeText={(text) => {
             setLastName(text);
             setLastNameError('');
@@ -221,12 +276,18 @@ function ProfileForm({
           maxLength={MAX_NAME_LENGTH}
           returnKeyType="done"
           error={lastNameError}
+          editable={!nameLocked}
           testID="edit-profile-last-name"
         />
+        {nameLocked && nameLockedUntil ? (
+          <LockedNote>
+            You can change your name again on {formatShortDate(nameLockedUntil)}.
+          </LockedNote>
+        ) : null}
 
         <MunicipalityPicker
           label="City or municipality"
-          value={municipality}
+          value={shownMunicipality}
           onChange={(selected) => {
             // Street text means nothing as a place outside Cavite, and vice versa
             if (!isSameAddressKind(selected, municipality)) {
@@ -238,12 +299,13 @@ function ProfileForm({
             setFormError('');
           }}
           error={municipalityError}
+          disabled={addressLocked}
         />
 
         <TextInput
           ref={streetRef}
-          {...getAddressLineFieldProps(municipality)}
-          value={street}
+          {...getAddressLineFieldProps(shownMunicipality)}
+          value={shownStreet}
           onChangeText={(text) => {
             setStreet(text);
             setStreetError('');
@@ -253,10 +315,24 @@ function ProfileForm({
           returnKeyType="done"
           onSubmitEditing={hasChanges ? handleSave : undefined}
           error={streetError}
+          editable={!addressLocked}
         />
+        {addressLocked && addressLockedUntil ? (
+          <LockedNote>
+            You can change your address again on {formatShortDate(addressLockedUntil)}.
+          </LockedNote>
+        ) : null}
 
         {formError ? <FormBanner message={formError} /> : null}
       </View>
+
+      <DetailsChangeConfirmModal
+        visible={confirming}
+        nameUntil={nameChanged ? formatShortDate(relockDate) : undefined}
+        addressUntil={addressChanged ? formatShortDate(relockDate) : undefined}
+        onConfirm={save}
+        onCancel={() => setConfirming(false)}
+      />
 
       <FeedbackModal
         visible={savedSummary !== null}
@@ -269,6 +345,16 @@ function ProfileForm({
         testID="details-updated"
       />
     </Screen>
+  );
+}
+
+/** Under a locked group: when it can change again */
+function LockedNote({ children }: { children: ReactNode }) {
+  return (
+    <View style={styles.lockedNote}>
+      <Ionicons name="lock-closed" size={14} color={colors.textSecondary} />
+      <Text style={styles.lockedNoteText}>{children}</Text>
+    </View>
   );
 }
 
@@ -343,5 +429,18 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.lg,
     marginTop: spacing.lg,
+  },
+  lockedNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    marginTop: -spacing.sm, // sits under the field above, not a full form gap away
+  },
+  lockedNoteText: {
+    ...typography.bodySmall,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    flex: 1,
   },
 });
