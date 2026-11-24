@@ -18,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 const TERMS_REQUIRED = 'Please accept the Terms of Service and Privacy Policy to continue';
 
@@ -28,6 +30,11 @@ const TERMS_REQUIRED = 'Please accept the Terms of Service and Privacy Policy to
  * and agrees to the terms of service. Sends verification code on success.
  * "Continue with Google" (also needs the terms) skips the code: a new
  * Google account goes straight to step 3, an existing one into the app.
+ *
+ * Layout: the email field and terms checkbox come first, then the footer
+ * holds Continue with "or Continue with Google" under it, so the checkbox
+ * both ways need is above both buttons. The Google option folds away while
+ * the keyboard is open, so only Continue rides on the keyboard while typing.
  *
  * Validates: Requirements 1.2 (Sign up step 1)
  */
@@ -40,6 +47,18 @@ export default function SignupEmailScreen() {
 
   const { sendCode, google } = useAuth();
   const emailRef = useRef<TextInputRef>(null);
+
+  // --- Google option folding with the keyboard ------------------------------
+  // `progress` goes 0 -> 1 as the keyboard opens
+  const keyboard = useReanimatedKeyboardAnimation();
+  // Natural height of the Google group (0 until it has been measured)
+  const googleHeight = useSharedValue(0);
+  const googleCollapseStyle = useAnimatedStyle(() => {
+    const open = 1 - keyboard.progress.value;
+    // Not measured yet: leave it at its natural height
+    if (googleHeight.value === 0) return { opacity: open };
+    return { height: googleHeight.value * open, opacity: open };
+  });
 
   const handleContinue = async () => {
     setEmailError('');
@@ -133,6 +152,24 @@ export default function SignupEmailScreen() {
             disabled={google.loading}
             icon={<Ionicons name="arrow-forward" size={18} color={colors.background} />}
           />
+          {/* Folds away while the keyboard is open (see googleCollapseStyle) */}
+          <Animated.View style={[styles.googleCollapse, googleCollapseStyle]}>
+            <View
+              style={styles.googleGroup}
+              onLayout={(event) => {
+                googleHeight.value = event.nativeEvent.layout.height;
+              }}
+            >
+              <OrDivider />
+              <GoogleButton
+                onPress={handleGoogle}
+                loading={google.loading}
+                disabled={sendCode.loading}
+                testID="signup-google"
+              />
+              {googleError ? <FormBanner message={googleError} /> : null}
+            </View>
+          </Animated.View>
           <AuthSwitchPrompt
             prompt="Already have an account?"
             linkTitle="Log in"
@@ -148,17 +185,6 @@ export default function SignupEmailScreen() {
       </Text>
 
       <View style={styles.form}>
-        <View style={styles.googleGroup}>
-          <GoogleButton
-            onPress={handleGoogle}
-            loading={google.loading}
-            disabled={sendCode.loading}
-            testID="signup-google"
-          />
-          {googleError ? <FormBanner message={googleError} /> : null}
-        </View>
-        <OrDivider />
-
         <TextInput
           ref={emailRef}
           label="Email address"
@@ -199,7 +225,12 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.lg,
   },
+  // Clips the Google group while it folds away
+  googleCollapse: {
+    overflow: 'hidden',
+  },
   googleGroup: {
     gap: spacing.md,
+    paddingTop: spacing.md,
   },
 });
