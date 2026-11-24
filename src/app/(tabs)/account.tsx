@@ -3,6 +3,7 @@ import { PassportIdCard } from "@/components/account/PassportIdCard";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { getStamps } from "@/data/api";
+import type { User } from "@/data/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { usePromoPeriod } from "@/hooks/usePromoPeriod";
 import { useSignOut } from "@/hooks/useSignOut";
@@ -25,7 +26,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
  * Features:
  * - Digital Cavite Tourism Passport ID card (name, address, passport ID)
  * - Activity stats (stamps → Passport tab, points → Rewards) and promo period
- * - Account details (email)
+ * - Account details (email, sign-in method, member since)
  * - Navigation to Settings, Redemptions, Privacy Policy
  * - Sign out functionality
  */
@@ -155,22 +156,36 @@ export default function AccountScreen() {
         )}
 
         {/* Account Details */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Account details</Text>
+        <View style={[styles.card, styles.listCard]}>
+          <Text style={[styles.sectionTitle, styles.listSectionTitle]}>
+            Account details
+          </Text>
 
           <DetailRow icon="mail-outline" label="Email" value={user.email} />
+          <View style={styles.listDivider} />
+          <DetailRow
+            icon="key-outline"
+            label="Sign-in method"
+            value={getSignInMethod(user)}
+          />
+          <View style={styles.listDivider} />
+          <DetailRow
+            icon="calendar-outline"
+            label="Member since"
+            value={formatMemberSince(user.createdAt)}
+          />
         </View>
 
         {/* Navigation Links */}
         <View style={[styles.card, styles.listCard]}>
           <LinkRow
             icon="settings-outline"
-            tone="primary"
+            tone="neutral"
             title="Settings & Preferences"
             subtitle="Account, notifications & help FAQs"
             onPress={() => router.push("/settings")}
           />
-          <View style={styles.linkDivider} />
+          <View style={styles.listDivider} />
           <LinkRow
             icon="gift-outline"
             tone="accent"
@@ -178,7 +193,7 @@ export default function AccountScreen() {
             subtitle="View claimed rewards & active QR passes"
             onPress={() => router.push("/rewards")}
           />
-          <View style={styles.linkDivider} />
+          <View style={styles.listDivider} />
           <LinkRow
             icon="document-text-outline"
             tone="primary"
@@ -186,10 +201,10 @@ export default function AccountScreen() {
             subtitle="Physical passport stamps sent for review"
             onPress={() => router.push("/stamp-requests")}
           />
-          <View style={styles.linkDivider} />
+          <View style={styles.listDivider} />
           <LinkRow
             icon="shield-checkmark-outline"
-            tone="primary"
+            tone="success"
             title="Privacy Policy & Terms"
             subtitle="Cavite Tourism Registry guidelines & data privacy"
             onPress={() => router.push("/privacy")}
@@ -250,6 +265,24 @@ function formatDateRange(startDate: Date | string, endDate: Date | string) {
   return `${startPart} – ${endMonth} ${end.getDate()}, ${endYear}`;
 }
 
+/** How the user can log in, from the identities linked to their account */
+function getSignInMethod({
+  hasGoogleSignIn,
+  hasPassword,
+}: Pick<User, "hasGoogleSignIn" | "hasPassword">) {
+  if (hasGoogleSignIn && hasPassword) return "Google or email & password";
+  if (hasGoogleSignIn) return "Google";
+  return "Email & password";
+}
+
+/** e.g. "November 2026" */
+function formatMemberSince(createdAt: Date | string) {
+  return new Date(createdAt).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
 type IconName = keyof typeof Ionicons.glyphMap;
 
 function DetailRow({
@@ -262,8 +295,14 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <View style={styles.detailRow}>
-      <Ionicons name={icon} size={20} color={colors.primary} />
+    <View
+      style={styles.listRow}
+      accessible
+      accessibilityLabel={`${label}: ${value}`}
+    >
+      <View style={[styles.iconChip, styles.iconChipPrimary]}>
+        <Ionicons name={icon} size={20} color={colors.primary} />
+      </View>
       <View style={styles.detailText}>
         <Text style={styles.detailLabel}>{label}</Text>
         <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="middle">
@@ -274,6 +313,18 @@ function DetailRow({
   );
 }
 
+/**
+ * Link icon colors, each tied to what the link opens: navy for stamps and
+ * orange for rewards (matching the stat cards above), gray for settings,
+ * green for privacy
+ */
+const LINK_TONES = {
+  primary: { icon: colors.primary, chip: colors.primaryTint },
+  accent: { icon: colors.accent, chip: colors.accentTint },
+  success: { icon: colors.success, chip: colors.successLight },
+  neutral: { icon: colors.textSecondary, chip: colors.border },
+} as const;
+
 function LinkRow({
   icon,
   tone,
@@ -282,31 +333,22 @@ function LinkRow({
   onPress,
 }: {
   icon: IconName;
-  tone: "primary" | "accent";
+  tone: keyof typeof LINK_TONES;
   title: string;
   subtitle: string;
   onPress: () => void;
 }) {
-  const isAccent = tone === "accent";
+  const toneColors = LINK_TONES[tone];
   return (
     <Pressable
-      style={({ pressed }) => [styles.linkRow, pressed && styles.linkRowPressed]}
+      style={({ pressed }) => [styles.listRow, pressed && styles.listRowPressed]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={subtitle}
     >
-      <View
-        style={[
-          styles.iconChip,
-          isAccent ? styles.iconChipAccent : styles.iconChipPrimary,
-        ]}
-      >
-        <Ionicons
-          name={icon}
-          size={20}
-          color={isAccent ? colors.accent : colors.primary}
-        />
+      <View style={[styles.iconChip, { backgroundColor: toneColors.chip }]}>
+        <Ionicons name={icon} size={20} color={toneColors.icon} />
       </View>
       <View style={styles.linkText}>
         <Text style={styles.linkTitle}>{title}</Text>
@@ -376,6 +418,23 @@ const styles = StyleSheet.create({
     padding: 0,
     overflow: "hidden",
   },
+  // Rows in a list card: the details rows and the navigation links
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  listRowPressed: {
+    backgroundColor: colors.border,
+  },
+  listDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    // Align with the text column: row padding + icon chip + gap
+    marginLeft: spacing.base + ICON_CHIP_SIZE + spacing.md,
+  },
   sectionTitle: {
     ...typography.labelMedium,
     fontFamily: "Inter_600SemiBold",
@@ -383,6 +442,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: "uppercase",
     marginBottom: spacing.md,
+  },
+  // Title above list rows: the first row's top padding supplies the gap
+  listSectionTitle: {
+    paddingTop: spacing.base,
+    paddingHorizontal: spacing.base,
+    marginBottom: 0,
   },
   iconChip: {
     width: ICON_CHIP_SIZE,
@@ -494,13 +559,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  // Status pill
   // Account details
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
   detailText: {
     flex: 1,
   },
@@ -517,16 +576,6 @@ const styles = StyleSheet.create({
   },
 
   // Navigation links
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.base,
-  },
-  linkRowPressed: {
-    backgroundColor: colors.border,
-  },
   linkText: {
     flex: 1,
   },
@@ -541,13 +590,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
-  linkDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    // Align with the text column: row padding + icon chip + gap
-    marginLeft: spacing.base + ICON_CHIP_SIZE + spacing.md,
-  },
-
   // Log out
   logoutRow: {
     flexDirection: "row",
