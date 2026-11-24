@@ -18,6 +18,7 @@ import {
   Map,
   Marker,
   type CameraRef,
+  type InitialViewState,
   type LineLayerSpecification,
   type LngLat,
   type LngLatBounds,
@@ -40,6 +41,7 @@ const BELOW_CONTROLS_TOP = spacing.xl * 4;
 // Cavite center coordinates
 const CAVITE_CENTER: LngLat = [120.8833, 14.25]; // [lng, lat]
 const CAVITE_ZOOM = 9;
+const DEFAULT_VIEW: InitialViewState = { center: CAVITE_CENTER, zoom: CAVITE_ZOOM };
 const SINGLE_SITE_ZOOM = 14;
 const CAMERA_DURATION = 1000;
 
@@ -159,6 +161,13 @@ export interface CaviteMapProps {
   /** Tap on a route's line */
   onRoutePress?: (routeId: string) => void;
   /**
+   * Open already framed on what the camera fits (the selected route, else
+   * every route and pin) instead of the default Cavite view. Opt-in, so maps
+   * that don't set it keep their opening view.
+   * @default false
+   */
+  fitOnLoad?: boolean;
+  /**
    * Fixed map height. Omit to fill the parent (flex: 1) — the parent must
    * then have a bounded height.
    */
@@ -202,8 +211,9 @@ function CaviteMapView({
   routes = NO_ROUTES,
   selectedRouteId,
   onRoutePress,
+  fitOnLoad = false,
   height,
-  selectedLabel, 
+  selectedLabel,
   onMapInteractionChange,
   showControls = true,
   showInteractionBorder = true,
@@ -280,6 +290,16 @@ function CaviteMapView({
     moveCamera(cameraRef.current, JSON.parse(cameraMoveKey) as CameraMove);
   }, [cameraMoveKey]);
 
+  // The effect above first runs before the map's style has loaded, and
+  // Android drops camera moves made before then. So a map that opens framed
+  // takes the framing as its initial view, which applies once the map is ready.
+  const initialViewState: InitialViewState =
+    fitOnLoad && cameraMove
+      ? cameraMove.kind === 'fit'
+        ? { bounds: cameraMove.bounds, padding: cameraMove.padding }
+        : { center: cameraMove.center, zoom: cameraMove.zoom }
+      : DEFAULT_VIEW;
+
   const handleRecenter = () => {
     if (!cameraRef.current) return;
     moveCamera(
@@ -354,10 +374,7 @@ function CaviteMapView({
       >
         <Camera
           ref={cameraRef}
-          initialViewState={{
-            center: CAVITE_CENTER,
-            zoom: CAVITE_ZOOM,
-          }}
+          initialViewState={initialViewState}
         />
 
         {/* Route lines: casing first, so each line draws on its casing */}

@@ -273,6 +273,7 @@ export function AboutCaviteContent({
             routes={expresswayRoutes}
             selectedRouteId={selectedExpresswayId}
             onRoutePress={selectExpresswayOnMap}
+            fitOnLoad
             onMapPress={clearExpressway}
             selectedLabel={selectedExpressway?.name}
             onMapInteractionChange={setIsMapInteracting}
