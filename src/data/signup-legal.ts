@@ -89,11 +89,11 @@ export const SIGNUP_LEGAL: Record<LegalDocId, LegalDoc> = {
       },
       {
         title: 'Your rights',
-        body: 'You can view, correct, or delete your data at any time. Records are purged after 36 months of inactivity, or within 7 business days of a deletion request.',
+        body: 'You can view, correct, or delete your data at any time. Deleting your account in Settings removes your records right away. Records of accounts left inactive for 36 months may also be purged.',
       },
       {
         title: 'Contact us',
-        body: 'Reach the Data Protection Officer at privacy@tourism.cavite.gov.ph or call (046) 419-1997.',
+        body: 'Reach us at cavitetourism@gmail.com.',
       },
     ],
   },

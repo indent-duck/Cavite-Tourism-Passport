@@ -8,7 +8,9 @@ export const SITE_QR_FORMAT = 'cvt:site:<code>'; // <code> = the random code in 
 
 export const CLAIM_QR_FORMAT = 'cvt:claim:<claimId>:<token>'; // TBD
 
-export const REDEMPTION_LOCATION = 'Provincial Tourism Center, Trece Martires'; // TBD
+// Also stored in Supabase (app_settings.redemption_location) for the promo
+// reminder notifications: change both together
+export const REDEMPTION_LOCATION = 'Provincial Tourism Office';
 
 /**
  * Parse a stamp QR code payload (sites and festivals alike)
@@ -76,14 +78,37 @@ export const CAVITE_LGUS = [
 ] as const;
 
 // Social Links (TBD - pending Tourism Office URLs)
-export const SOCIAL_LINKS = {
-  BIYAHENG_SOUTH: 'https://example.com/biyaheng-south', // TBD
-  CAVITE_TOURISM: 'https://example.com/cavite-tourism', // TBD
-  DOT_4A: 'https://example.com/dot-region4a', // TBD
-  DILG_4A: 'https://example.com/dilg-region4a', // TBD
+export type SocialPlatform = 'facebook' | 'instagram' | 'tiktok';
+
+/**
+ * Each office's social accounts, as listed on the physical passport's
+ * "Follow us" page. Only the platforms an office has are listed; null means
+ * the link hasn't been found yet (the button says "coming soon").
+ */
+export const SOCIAL_LINKS: Record<
+  'BIYAHENG_SOUTH' | 'CAVITE_TOURISM' | 'DOT_4A' | 'DILG_4A',
+  Partial<Record<SocialPlatform, string | null>>
+> = {
+  BIYAHENG_SOUTH: {
+    facebook: 'https://www.facebook.com/biyahengsouth',
+    instagram: 'https://www.instagram.com/biyahengsouthph/',
+    tiktok: 'https://www.tiktok.com/@biyahengsouth',
+  },
+  CAVITE_TOURISM: {
+    facebook: 'https://www.facebook.com/CaviteTourism',
+    instagram: 'https://www.instagram.com/_cavitetourism/',
+  },
+  DOT_4A: {
+    facebook: 'https://www.facebook.com/dotcalabarzon',
+  },
+  DILG_4A: {
+    facebook: 'https://www.facebook.com/dilgr4a',
+    instagram: 'https://www.instagram.com/dilgr4a/',
+    tiktok: 'https://www.tiktok.com/@dilgr4a',
+  },
 };
 
-export const HELPDESK_EMAIL = 'helpdesk@example.com'; // TBD
+export const HELPDESK_EMAIL = 'cavitetourism@gmail.com';
 
 // Passport constants (TBD - pending Tourism Office confirmation)
 export const PASSPORT_ISSUER_LINE = 'Province of Cavite'; // TBD

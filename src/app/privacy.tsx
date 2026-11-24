@@ -1,5 +1,6 @@
 import { AccordionRow } from '@/components/ui/AccordionRow';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
+import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -20,11 +21,10 @@ import {
  * Privacy Policy & Terms Screen
  *
  * Official policy document laid out as:
- * - Navy hero banner (registration, effective date, compliance)
+ * - Navy hero banner (governing law, last-updated date)
  * - "Jump to" chips that scroll to each section
  * - Four numbered policy sections in cards
  * - Single-open FAQ accordion
- * - Certification footer
  *
  * Opened from:
  * - Account screen "Privacy Policy & Terms" navigation row
@@ -51,9 +51,7 @@ const JUMP_LINKS: { id: SectionId; label: string }[] = [
   { id: 'faqs', label: 'FAQs' },
 ];
 
-const PRIVACY_EMAIL = 'privacy@tourism.cavite.gov.ph';
-const HOTLINE_PRIMARY = '(046) 419-1997';
-const HOTLINE_SECONDARY = '(046) 419-0244';
+const CONTACT_EMAIL = 'cavitetourism@gmail.com';
 
 const POLICY_FAQS = [
   {
@@ -72,12 +70,18 @@ const POLICY_FAQS = [
     id: 'delete-account',
     question: 'How do I permanently delete my account?',
     answer:
-      'You may initiate full profile dissolution under Account > Settings > Request Data Purge, or by emailing the Data Protection Officer with your passport credential number.',
+      'Go to Account > Settings & Preferences > Delete account and confirm with your password, or by choosing your Google account again if you sign in with Google. Your passport, stamps, points, reward history, stamp requests and personal details are deleted right away, and this cannot be undone. Signing up again with the same email starts a new, empty passport.',
   },
 ];
 
 export default function PrivacyScreen() {
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+  const { data: promoPeriod } = usePromoPeriod();
+  const periodEnd = promoPeriod?.endDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
   const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
   // Y offset of each section inside the content column, filled by onLayout
   const sectionOffsets = useRef<Partial<Record<SectionId, number>>>({});
@@ -120,26 +124,18 @@ export default function PrivacyScreen() {
               <Ionicons name="shield-checkmark" size={12} color={colors.background} />
               <Text style={styles.heroBadgeText}>Official policy</Text>
             </View>
-            <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeText}>NPC Reg. No. PIC-2027-0482</Text>
-            </View>
           </View>
           <Text style={styles.heroTitle} accessibilityRole="header">
             Cavite Tourism Registry & Digital Passport Terms
           </Text>
           <Text style={styles.heroSubtitle}>
-            Governed under Republic Act No. 10173 (Data Privacy Act of 2012) and
-            Provincial Ordinance No. 2026-089.
+            Governed under Republic Act No. 10173 (Data Privacy Act of 2012).
           </Text>
           <View style={styles.heroDivider} />
           <View style={styles.heroMeta}>
             <View style={styles.heroMetaItem}>
               <Ionicons name="time-outline" size={15} color={colors.passportFoil} />
-              <Text style={styles.heroMetaText}>Effective Jan 1, 2027 · v2.4</Text>
-            </View>
-            <View style={styles.compliantPill}>
-              <Ionicons name="checkmark-circle" size={13} color={colors.success} />
-              <Text style={styles.compliantText}>DOJ-compliant</Text>
+              <Text style={styles.heroMetaText}>Last updated Nov 24, 2026</Text>
             </View>
           </View>
         </View>
@@ -238,9 +234,15 @@ export default function PrivacyScreen() {
           </Text>
           <View style={styles.rules}>
             <RuleItem number={1} title="Campaign eligibility period">
-              Current promotional cycle runs through{' '}
-              <Text style={styles.bold}>March 31, 2027</Text>. Unredeemed badge points
-              roll over to secondary cultural incentives.
+              {periodEnd && (
+                <>
+                  The current promo period runs through{' '}
+                  <Text style={styles.bold}>{periodEnd}</Text>.{' '}
+                </>
+              )}
+              Stamps and points count only within the period they were earned in. When
+              a new period starts, your stamps and points reset to zero and unused
+              points do not carry over. You can claim one reward per promo period.
             </RuleItem>
             <RuleItem number={2} title="Single-use 15-minute token">
               Reward counter claims generate a dynamic, self-invalidating 15-minute
@@ -274,9 +276,9 @@ export default function PrivacyScreen() {
               </View>
             </View>
             <Text style={styles.panelBody}>
-              Records are securely purged automatically after 36 months of profile
-              inactivity, or within 7 business days following a formal
-              right-to-be-forgotten request.
+              Records of accounts left inactive for 36 months may be purged.
+              Deleting your account under Account &gt; Settings &amp; Preferences
+              removes them right away.
             </Text>
           </View>
 
@@ -290,26 +292,16 @@ export default function PrivacyScreen() {
             </View>
             <ContactRow
               icon="location-outline"
-              title="Provincial Capitol Compound"
-              subtitle="Trece Martires City, Cavite 4109"
+              title="4F Cavite Provincial Government Center (New Capitol Building)"
+              subtitle="Trece Martires, Philippines, 4109"
             />
             <ContactRow
               icon="mail-outline"
-              title={PRIVACY_EMAIL}
-              subtitle="Data Protection Officer"
+              title={CONTACT_EMAIL}
               onPress={() =>
-                openUrl(`mailto:${PRIVACY_EMAIL}`, `Email us at ${PRIVACY_EMAIL}.`)
+                openUrl(`mailto:${CONTACT_EMAIL}`, `Email us at ${CONTACT_EMAIL}.`)
               }
-              accessibilityLabel={`Email the Data Protection Officer at ${PRIVACY_EMAIL}`}
-            />
-            <ContactRow
-              icon="call-outline"
-              title={HOTLINE_PRIMARY}
-              subtitle={`Alternate: ${HOTLINE_SECONDARY}`}
-              onPress={() =>
-                openUrl(`tel:${HOTLINE_PRIMARY.replace(/\D/g, '')}`, `Call ${HOTLINE_PRIMARY}.`)
-              }
-              accessibilityLabel={`Call the hotline at ${HOTLINE_PRIMARY}`}
+              accessibilityLabel={`Email us at ${CONTACT_EMAIL}`}
             />
           </View>
         </PolicySection>
@@ -334,18 +326,6 @@ export default function PrivacyScreen() {
               </Fragment>
             ))}
           </View>
-        </View>
-
-        {/* Certification */}
-        <View style={styles.certification}>
-          <View style={styles.certificationIcon}>
-            <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
-          </View>
-          <Text style={styles.certificationTitle}>Certified Provincial Registry</Text>
-          <Text style={styles.certificationText}>
-            This digital portal adheres to the ISO/IEC 27001 baseline privacy framework
-            and the National Privacy Commission of the Philippines.
-          </Text>
         </View>
       </View>
     </ScreenContainer>
@@ -493,7 +473,7 @@ function ContactRow({
 }: {
   icon: IconName;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   onPress?: () => void;
   accessibilityLabel?: string;
 }) {
@@ -503,10 +483,8 @@ function ContactRow({
         <Ionicons name={icon} size={16} color={colors.background} />
       </View>
       <View style={styles.flex}>
-        <Text style={styles.contactRowTitle} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.contactRowSubtitle}>{subtitle}</Text>
+        <Text style={styles.contactRowTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.contactRowSubtitle}>{subtitle}</Text> : null}
       </View>
       {onPress && <Ionicons name="chevron-forward" size={16} color={colors.onPrimaryBorder} />}
     </>
@@ -619,20 +597,6 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     fontFamily: 'Inter_500Medium',
     color: colors.background,
-  },
-  compliantPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radii.full,
-    backgroundColor: colors.successLight,
-  },
-  compliantText: {
-    ...typography.labelMedium,
-    fontFamily: 'Inter_600SemiBold',
-    color: colors.successDark,
   },
 
   // Jump chips (bleed to the screen edges so they scroll edge-to-edge)
@@ -903,35 +867,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.border,
     marginLeft: spacing.base,
-  },
-
-  // Certification
-  certification: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingTop: spacing.base,
-    paddingHorizontal: spacing.sm,
-  },
-  certificationIcon: {
-    width: ICON_CHIP_SIZE + 12,
-    height: ICON_CHIP_SIZE + 12,
-    borderRadius: radii.full,
-    backgroundColor: colors.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  certificationTitle: {
-    ...typography.titleMedium,
-    fontFamily: 'Inter_700Bold',
-    fontWeight: '700',
-    color: colors.primary,
-    textAlign: 'center',
-  },
-  certificationText: {
-    ...typography.bodySmall,
-    fontFamily: 'Inter_400Regular',
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 300,
   },
 });

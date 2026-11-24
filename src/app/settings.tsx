@@ -5,7 +5,7 @@ import { StatusPill } from '@/components/ui/StatusPill';
 import { mockFaqs } from '@/data/mock-data';
 import { useCurrentUser, useOnAppFocus, useSettings } from '@/hooks';
 import { parseAddress } from '@/lib/address';
-import { APP_VERSION, HELPDESK_EMAIL, SOCIAL_LINKS } from '@/lib/constants';
+import { APP_VERSION, HELPDESK_EMAIL, SOCIAL_LINKS, type SocialPlatform } from '@/lib/constants';
 import { getFullName } from '@/lib/names';
 import {
   getPushPermission,
@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as WebBrowser from 'expo-web-browser';
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import {
   Alert,
@@ -41,7 +40,8 @@ import {
  * 2. Device & alerts – push notification toggle (optimistic) and the real
  *    foreground location permission status, with a shortcut to enable it
  * 3. Help & FAQs – single-open accordion
- * 4. Official tourism links – open in the in-app browser
+ * 4. Official tourism links – each office's social accounts (from the physical
+ *    passport's "Follow us" page); opens the platform's app, or the browser
  * 5. Helpdesk card – compose an email to the tourism helpdesk
  * 6. Footer – app name, version, platform
  *
@@ -63,51 +63,50 @@ const TONES: Record<Tone, { background: string; icon: string }> = {
 
 const FAQ_TONES: Tone[] = ['primary', 'accent', 'neutral', 'success'];
 
+type SocialLinks = Partial<Record<SocialPlatform, string | null>>;
+
 const OFFICIAL_LINKS: {
   id: string;
-  icon: IconName;
-  tone: Tone;
   title: string;
   subtitle: string;
-  url: string;
+  socials: SocialLinks;
   verified: boolean;
 }[] = [
   {
-    id: 'biyaheng-south',
-    icon: 'compass-outline',
-    tone: 'accent',
-    title: 'Biyaheng South',
-    subtitle: 'Official South Luzon tourism guide',
-    url: SOCIAL_LINKS.BIYAHENG_SOUTH,
+    id: 'cavite-tourism',
+    title: 'Cavite Tourism',
+    subtitle: 'Provincial Capitol, Trece Martires',
+    socials: SOCIAL_LINKS.CAVITE_TOURISM,
     verified: true,
   },
   {
-    id: 'cavite-tourism',
-    icon: 'business-outline',
-    tone: 'primary',
-    title: 'Cavite Provincial Tourism',
-    subtitle: 'Provincial Capitol, Trece Martires',
-    url: SOCIAL_LINKS.CAVITE_TOURISM,
+    id: 'biyaheng-south',
+    title: 'Biyaheng South',
+    subtitle: 'Official South Luzon tourism guide',
+    socials: SOCIAL_LINKS.BIYAHENG_SOUTH,
     verified: true,
   },
   {
     id: 'dot-4a',
-    icon: 'earth-outline',
-    tone: 'success',
-    title: 'DOT IV-A',
+    title: 'DOT Region IV-A',
     subtitle: 'Department of Tourism CALABARZON',
-    url: SOCIAL_LINKS.DOT_4A,
+    socials: SOCIAL_LINKS.DOT_4A,
     verified: false,
   },
   {
     id: 'dilg-4a',
-    icon: 'shield-checkmark-outline',
-    tone: 'primary',
     title: 'DILG IV-A',
     subtitle: 'Dept. of the Interior & Local Government',
-    url: SOCIAL_LINKS.DILG_4A,
+    socials: SOCIAL_LINKS.DILG_4A,
     verified: false,
   },
+];
+
+/** Same order on every row, whatever order the passport lists them in */
+const SOCIAL_PLATFORMS: { id: SocialPlatform; label: string; icon: IconName; color: string }[] = [
+  { id: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877F2' },
+  { id: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F' },
+  { id: 'tiktok', label: 'TikTok', icon: 'logo-tiktok', color: '#000000' },
 ];
 
 export default function SettingsScreen() {
@@ -117,9 +116,15 @@ export default function SettingsScreen() {
 
   const municipality = user ? (parseAddress(user.address).municipality ?? user.address) : null;
 
-  const handleLinkPress = async (url: string) => {
+  // Linking (not the in-app browser) so Android opens the Facebook,
+  // Instagram or TikTok app when it's installed
+  const handleSocialPress = async (url: string | null | undefined) => {
+    if (!url) {
+      Alert.alert('Link coming soon', 'This account will be linked here soon.');
+      return;
+    }
     try {
-      await WebBrowser.openBrowserAsync(url);
+      await Linking.openURL(url);
     } catch {
       Alert.alert('Unable to open link', 'Please try again in a moment.');
     }
@@ -219,22 +224,8 @@ export default function SettingsScreen() {
         </Section>
 
         {/* Official Tourism Links */}
-        <Section title="Official tourism links" caption="Opens in browser">
-          <View style={styles.card}>
-            {OFFICIAL_LINKS.map((link, index) => (
-              <Fragment key={link.id}>
-                {index > 0 && <View style={styles.rowDivider} />}
-                <LinkRow
-                  icon={link.icon}
-                  tone={link.tone}
-                  title={link.title}
-                  subtitle={link.subtitle}
-                  verified={link.verified}
-                  onPress={() => handleLinkPress(link.url)}
-                />
-              </Fragment>
-            ))}
-          </View>
+        <Section title="Official tourism links">
+          <FollowUsCard onSocialPress={handleSocialPress} />
         </Section>
 
         {/* Helpdesk */}
@@ -501,43 +492,80 @@ function NavRow({
   );
 }
 
-function LinkRow({
-  icon,
-  tone,
-  title,
-  subtitle,
-  verified,
-  onPress,
+/**
+ * The official offices' social accounts, styled like the physical passport's
+ * "Follow us" page: leather-navy card, foil heading, one line per office with
+ * a brand-colored button for each account it has.
+ */
+function FollowUsCard({
+  onSocialPress,
 }: {
-  icon: IconName;
-  tone: Tone;
-  title: string;
-  subtitle: string;
-  verified: boolean;
-  onPress: () => void;
+  onSocialPress: (url: string | null | undefined) => void;
 }) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-      onPress={onPress}
-      accessibilityRole="link"
-      accessibilityLabel={verified ? `${title}, official partner` : title}
-      accessibilityHint={`${subtitle}. Opens in browser`}
-    >
-      <IconChip icon={icon} tone={tone} />
-      <View style={styles.rowText}>
-        <View style={styles.linkTitleRow}>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {title}
-          </Text>
-          {verified && <Ionicons name="checkmark-circle" size={15} color={colors.primary} />}
+    <View style={styles.followCard} testID="settings-follow-us">
+      {/* Crest watermark, as on the passport pages */}
+      <View style={styles.followWatermark}>
+        <Ionicons name="shield" size={160} color={colors.background} />
+      </View>
+
+      <View style={styles.followHeader}>
+        <View style={styles.followEmblem}>
+          <Ionicons name="share-social-outline" size={18} color={colors.passportFoil} />
         </View>
-        <Text style={styles.rowSubtitle} numberOfLines={1}>
-          {subtitle}
+        <Text style={styles.followHeading} accessibilityRole="header">
+          Follow us
         </Text>
       </View>
-      <Ionicons name="open-outline" size={18} color={colors.textSecondary} />
-    </Pressable>
+      <View style={styles.followRule} />
+
+      {OFFICIAL_LINKS.map((link, index) => (
+        <Fragment key={link.id}>
+          {index > 0 && <View style={styles.followDivider} />}
+          <View style={styles.followRow} testID={`settings-link-${link.id}`}>
+            <View style={styles.rowText}>
+              <View style={styles.linkTitleRow}>
+                <Text style={styles.followTitle} numberOfLines={1}>
+                  {link.title}
+                </Text>
+                {link.verified && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={14}
+                    color={colors.passportFoil}
+                    accessibilityLabel="Official partner"
+                  />
+                )}
+              </View>
+              <Text style={styles.followSubtitle} numberOfLines={2}>
+                {link.subtitle}
+              </Text>
+            </View>
+            <View style={styles.socialRow}>
+              {SOCIAL_PLATFORMS.filter((platform) => platform.id in link.socials).map(
+                (platform) => (
+                  <Pressable
+                    key={platform.id}
+                    style={({ pressed }) => [
+                      styles.socialButton,
+                      { backgroundColor: platform.color },
+                      pressed && styles.socialButtonPressed,
+                    ]}
+                    onPress={() => onSocialPress(link.socials[platform.id])}
+                    hitSlop={6}
+                    accessibilityRole="link"
+                    accessibilityLabel={`${link.title} on ${platform.label}`}
+                    testID={`settings-link-${link.id}-${platform.id}`}
+                  >
+                    <Ionicons name={platform.icon} size={18} color={colors.background} />
+                  </Pressable>
+                )
+              )}
+            </View>
+          </View>
+        </Fragment>
+      ))}
+    </View>
   );
 }
 
@@ -658,11 +686,97 @@ const styles = StyleSheet.create({
     color: colors.background,
   },
 
-  // Links
+  // Follow us card (official tourism links)
+  followCard: {
+    backgroundColor: colors.passportLeather,
+    borderRadius: radii.card,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  followWatermark: {
+    position: 'absolute',
+    right: -36,
+    bottom: -28,
+    opacity: 0.05,
+    pointerEvents: 'none',
+  },
+  followHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  followEmblem: {
+    width: ICON_CHIP_SIZE,
+    height: ICON_CHIP_SIZE,
+    borderRadius: radii.full,
+    borderWidth: 1.5,
+    borderColor: colors.passportFoil,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  followHeading: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_700Bold',
+    color: colors.passportFoil,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  followRule: {
+    height: 2,
+    marginHorizontal: spacing.base,
+    backgroundColor: colors.passportFoil,
+    opacity: 0.6,
+  },
+  followRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+  },
+  followDivider: {
+    height: 1,
+    marginHorizontal: spacing.base,
+    backgroundColor: colors.onPrimaryBorder,
+  },
+  followTitle: {
+    ...typography.labelLarge,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.background,
+    flexShrink: 1,
+  },
+  followSubtitle: {
+    ...typography.bodySmall,
+    fontFamily: 'Inter_400Regular',
+    color: colors.primaryTint,
+    opacity: 0.85,
+  },
   linkTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    // Wide enough that the buttons' hitSlop areas don't overlap
+    gap: spacing.md,
+  },
+  // Solid brand color (set per button); the hairline ring keeps the dark
+  // TikTok button visible on the navy card
+  socialButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.onPrimaryBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  socialButtonPressed: {
+    opacity: 0.75,
   },
 
   // Helpdesk
