@@ -175,7 +175,7 @@ export default function PrivacyScreen() {
           </Text>
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>What we collect</Text>
-            <CheckItem>Full legal name & permanent Philippine municipality / city</CheckItem>
+            <CheckItem>Full legal name & city or municipality (or home province or country, if outside Cavite)</CheckItem>
             <CheckItem>Email address (verified with a one-time code at sign-up)</CheckItem>
             <CheckItem>Issued passport identifier (e.g., CVT-2027-xxxxxx)</CheckItem>
           </View>

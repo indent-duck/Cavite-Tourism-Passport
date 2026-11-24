@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { mockFaqs } from '@/data/mock-data';
 import { useCurrentUser, useOnAppFocus, useSettings } from '@/hooks';
-import { parseAddress } from '@/lib/address';
+import { getAddressPlace } from '@/lib/address';
 import { APP_VERSION, HELPDESK_EMAIL, SOCIAL_LINKS, type SocialPlatform } from '@/lib/constants';
 import { getFullName } from '@/lib/names';
 import {
@@ -114,7 +114,7 @@ export default function SettingsScreen() {
   const { data: user } = useCurrentUser();
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
 
-  const municipality = user ? (parseAddress(user.address).municipality ?? user.address) : null;
+  const municipality = user ? getAddressPlace(user.address) : null;
 
   // Linking (not the in-app browser) so Android opens the Facebook,
   // Instagram or TikTok app when it's installed

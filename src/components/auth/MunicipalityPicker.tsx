@@ -1,4 +1,4 @@
-import { CAVITE_LGUS } from '@/lib/constants';
+import { CAVITE_LGUS, OUTSIDE_CAVITE } from '@/lib/constants';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -11,6 +11,34 @@ import { useCallback, useRef } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+/**
+ * Props for the text field under the picker. It holds the barangay and street
+ * (optional) for a Cavite LGU, or the whole place for "Outside Cavite"
+ * (required, checked with getOutsidePlaceError).
+ */
+export function getAddressLineFieldProps(municipality: string | null) {
+  return municipality === OUTSIDE_CAVITE
+    ? ({
+        label: 'City and province, or country',
+        placeholder: 'e.g. Quezon City, Metro Manila',
+        leftIcon: 'globe-outline',
+        autoComplete: 'postal-address-locality',
+        textContentType: 'addressCityAndState',
+      } as const)
+    : ({
+        label: 'Barangay and street (optional)',
+        placeholder: 'e.g. Brgy. Poblacion, Rizal St.',
+        leftIcon: 'home-outline',
+        autoComplete: 'address-line1',
+        textContentType: 'streetAddressLine1',
+      } as const);
+}
+
+/** The field's text only carries over between two Cavite LGUs */
+export function isSameAddressKind(a: string | null, b: string | null): boolean {
+  return (a === OUTSIDE_CAVITE) === (b === OUTSIDE_CAVITE);
+}
+
 interface MunicipalityPickerProps {
   label: string;
   value: string | null;
@@ -22,7 +50,8 @@ interface MunicipalityPickerProps {
  * MunicipalityPicker
  *
  * Form field that opens a bottom sheet listing all of Cavite's cities and
- * municipalities. Styled to match the shared TextInput so it sits in a form
+ * municipalities, plus an "Outside Cavite" choice (OUTSIDE_CAVITE) at the top
+ * for non-residents. Styled to match the shared TextInput so it sits in a form
  * alongside regular fields.
  */
 export function MunicipalityPicker({ label, value, onChange, error }: MunicipalityPickerProps) {
@@ -54,7 +83,7 @@ export function MunicipalityPicker({ label, value, onChange, error }: Municipali
         style={[styles.field, { borderColor: error ? colors.error : colors.border }]}
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${value ?? 'not selected'}`}
-        accessibilityHint={error ?? 'Opens a list of Cavite cities and municipalities'}
+        accessibilityHint={error ?? 'Opens a list of Cavite cities and municipalities, or choose Outside Cavite'}
       >
         <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
         <Text style={[styles.value, !value && styles.placeholder]} numberOfLines={1}>
@@ -81,28 +110,55 @@ export function MunicipalityPicker({ label, value, onChange, error }: Municipali
           data={CAVITE_LGUS}
           keyExtractor={(item) => item.name}
           contentContainerStyle={{ paddingBottom: insets.bottom + spacing.base }}
-          renderItem={({ item }) => {
-            const selected = item.name === value;
-            return (
-              <Pressable
-                onPress={() => select(item.name)}
-                style={({ pressed }) => [styles.option, (pressed || selected) && styles.optionActive]}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-              >
-                <View style={styles.optionText}>
-                  <Text style={[styles.optionName, selected && styles.optionNameSelected]}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.optionType}>{item.type}</Text>
-                </View>
-                {selected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
-              </Pressable>
-            );
-          }}
+          // Non-residents go first so they don't scroll past all 23 LGUs looking for it
+          ListHeaderComponent={
+            <View style={styles.outsideGroup}>
+              <Option
+                name={OUTSIDE_CAVITE}
+                detail="From another province or country"
+                selected={value === OUTSIDE_CAVITE}
+                onPress={() => select(OUTSIDE_CAVITE)}
+              />
+            </View>
+          }
+          renderItem={({ item }) => (
+            <Option
+              name={item.name}
+              detail={item.type}
+              selected={item.name === value}
+              onPress={() => select(item.name)}
+            />
+          )}
         />
       </BottomSheetModal>
     </View>
+  );
+}
+
+function Option({
+  name,
+  detail,
+  selected,
+  onPress,
+}: {
+  name: string;
+  detail: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.option, (pressed || selected) && styles.optionActive]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+    >
+      <View style={styles.optionText}>
+        <Text style={[styles.optionName, selected && styles.optionNameSelected]}>{name}</Text>
+        <Text style={styles.optionType}>{detail}</Text>
+      </View>
+      {selected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+    </Pressable>
   );
 }
 
@@ -158,6 +214,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
+  },
+  outsideGroup: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginBottom: spacing.xs,
   },
   option: {
     flexDirection: 'row',

@@ -77,6 +77,10 @@ export const CAVITE_LGUS = [
   { name: 'Trece Martires', type: 'City' },
 ] as const;
 
+// Picker choice for non-residents: they type their city and province (or
+// country) instead of picking an LGU. See src/lib/address.ts.
+export const OUTSIDE_CAVITE = 'Outside Cavite';
+
 // Social Links (TBD - pending Tourism Office URLs)
 export type SocialPlatform = 'facebook' | 'instagram' | 'tiktok';
 

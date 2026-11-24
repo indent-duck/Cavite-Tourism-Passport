@@ -2,6 +2,8 @@ import {
   AuthHeader,
   authScreenStyles,
   FormBanner,
+  getAddressLineFieldProps,
+  isSameAddressKind,
   MunicipalityPicker,
   TermsCheckbox,
 } from '@/components/auth';
@@ -11,7 +13,8 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useAuth } from '@/hooks/useAuth';
 import { useSignOut } from '@/hooks/useSignOut';
-import { formatAddress } from '@/lib/address';
+import { formatAddress, getOutsidePlaceError } from '@/lib/address';
+import { OUTSIDE_CAVITE } from '@/lib/constants';
 import { hapticError } from '@/lib/haptics';
 import { getNameError, MAX_NAME_LENGTH, normalizeName } from '@/lib/names';
 import { isValidPassword } from '@/lib/password';
@@ -27,7 +30,9 @@ import { StyleSheet, Text, View, type ScrollView } from 'react-native';
  * Final step of signup where user enters first and last name, address, and
  * creates a password.
  * The address is built from a city/municipality picked from all of Cavite's
- * LGUs plus an optional barangay/street line. Includes live password criteria.
+ * LGUs plus an optional barangay/street line. Non-residents pick "Outside
+ * Cavite" and type their city and province (or country) in that line instead,
+ * which is then required. Includes live password criteria.
  *
  * `method=google` (a new "Continue with Google" account): no password, since
  * they sign in with Google; the names come prefilled from Google. Coming from
@@ -59,6 +64,7 @@ export default function SignupDetailsScreen() {
   const [firstNameError, setFirstNameError] = useState('');
   const [lastNameError, setLastNameError] = useState('');
   const [municipalityError, setMunicipalityError] = useState('');
+  const [streetError, setStreetError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [termsError, setTermsError] = useState('');
@@ -99,6 +105,7 @@ export default function SignupDetailsScreen() {
     setFirstNameError('');
     setLastNameError('');
     setMunicipalityError('');
+    setStreetError('');
     setPasswordError('');
     setConfirmPasswordError('');
     setTermsError('');
@@ -108,6 +115,7 @@ export default function SignupDetailsScreen() {
       firstName: getNameError(firstName, 'First name'),
       lastName: getNameError(lastName, 'Last name'),
       municipality: !municipality ? 'Select your city or municipality' : '',
+      street: municipality === OUTSIDE_CAVITE ? getOutsidePlaceError(street) : '',
       password: isGoogle
         ? ''
         : !password
@@ -131,6 +139,7 @@ export default function SignupDetailsScreen() {
     setFirstNameError(errors.firstName);
     setLastNameError(errors.lastName);
     setMunicipalityError(errors.municipality);
+    setStreetError(errors.street);
     setPasswordError(errors.password);
     setConfirmPasswordError(errors.confirmPassword);
     setTermsError(errors.terms);
@@ -140,6 +149,7 @@ export default function SignupDetailsScreen() {
       errors.firstName ||
       errors.lastName ||
       errors.municipality ||
+      errors.street ||
       errors.password ||
       errors.confirmPassword ||
       errors.terms
@@ -154,6 +164,8 @@ export default function SignupDetailsScreen() {
           y: Math.max(0, formY.current + municipalityY.current - spacing.xl),
           animated: true,
         });
+      } else if (errors.street) {
+        streetRef.current?.focus();
       } else if (errors.password) {
         passwordRef.current?.focus();
       } else if (errors.confirmPassword) {
@@ -258,6 +270,11 @@ export default function SignupDetailsScreen() {
             label="City or municipality"
             value={municipality}
             onChange={(selected) => {
+              // Street text means nothing as a place outside Cavite, and vice versa
+              if (!isSameAddressKind(selected, municipality)) {
+                setStreet('');
+                setStreetError('');
+              }
               setMunicipality(selected);
               setMunicipalityError('');
             }}
@@ -267,17 +284,17 @@ export default function SignupDetailsScreen() {
 
         <TextInput
           ref={streetRef}
-          label="Barangay and street (optional)"
-          leftIcon="home-outline"
+          {...getAddressLineFieldProps(municipality)}
           value={street}
-          onChangeText={setStreet}
-          placeholder="e.g. Brgy. Poblacion, Rizal St."
+          onChangeText={(text) => {
+            setStreet(text);
+            setStreetError('');
+          }}
           autoCapitalize="words"
-          autoComplete="address-line1"
-          textContentType="streetAddressLine1"
           returnKeyType={isGoogle ? 'done' : 'next'}
           submitBehavior={isGoogle ? undefined : 'submit'}
           onSubmitEditing={() => (isGoogle ? handleCreateAccount() : passwordRef.current?.focus())}
+          error={streetError}
         />
 
         {!isGoogle && (

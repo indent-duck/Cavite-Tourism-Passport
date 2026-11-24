@@ -1,10 +1,16 @@
-import { FormBanner, MunicipalityPicker } from '@/components/auth';
+import {
+  FormBanner,
+  getAddressLineFieldProps,
+  isSameAddressKind,
+  MunicipalityPicker,
+} from '@/components/auth';
 import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { TextInput, type TextInputRef } from '@/components/ui/TextInput';
 import { useCurrentUser, useUpdateProfile } from '@/hooks';
-import { formatAddress, parseAddress } from '@/lib/address';
+import { formatAddress, getAddressPlace, getOutsidePlaceError, parseAddress } from '@/lib/address';
+import { OUTSIDE_CAVITE } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { getFullName, getNameError, MAX_NAME_LENGTH, normalizeName } from '@/lib/names';
@@ -19,8 +25,9 @@ import { Keyboard, StyleSheet, Text, View } from 'react-native';
  * Personal Details Screen (Settings → Account → Personal details)
  *
  * Edit the name and address entered at sign up: first name, last name, city
- * or municipality, and an optional barangay/street line (same fields and
- * address format as sign up). Email and passport ID are shown read-only.
+ * or municipality, and an optional barangay/street line, or for "Outside
+ * Cavite" the city and province or country (same fields and address format as
+ * sign up). Email and passport ID are shown read-only.
  *
  * Save stays disabled until something changed. On success the `currentUser`
  * cache is updated in place, so the passport ID card and headers follow, and
@@ -81,10 +88,11 @@ function ProfileForm({
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [municipality, setMunicipality] = useState<string | null>(initial.municipality);
-  const [street, setStreet] = useState(initial.street);
+  const [street, setStreet] = useState(initial.line);
   const [firstNameError, setFirstNameError] = useState('');
   const [lastNameError, setLastNameError] = useState('');
   const [municipalityError, setMunicipalityError] = useState('');
+  const [streetError, setStreetError] = useState('');
   const [formError, setFormError] = useState('');
   // "Name · City" just saved; shows the feedback dialog while set
   const [savedSummary, setSavedSummary] = useState<string | null>(null);
@@ -94,12 +102,13 @@ function ProfileForm({
   const updateProfile = useUpdateProfile();
   const firstNameRef = useRef<TextInputRef>(null);
   const lastNameRef = useRef<TextInputRef>(null);
+  const streetRef = useRef<TextInputRef>(null);
 
   const hasChanges =
     normalizeName(firstName) !== initialFirstName ||
     normalizeName(lastName) !== initialLastName ||
     municipality !== initial.municipality ||
-    street.trim() !== initial.street;
+    street.trim() !== initial.line;
 
   const handleSave = async () => {
     setFormError('');
@@ -108,12 +117,15 @@ function ProfileForm({
     const lastNameErrorMessage = getNameError(lastName, 'Last name');
     setFirstNameError(firstNameErrorMessage);
     setLastNameError(lastNameErrorMessage);
+    const streetErrorMessage = municipality === OUTSIDE_CAVITE ? getOutsidePlaceError(street) : '';
     setMunicipalityError(municipality ? '' : 'Select your city or municipality');
+    setStreetError(streetErrorMessage);
 
-    if (firstNameErrorMessage || lastNameErrorMessage || !municipality) {
+    if (firstNameErrorMessage || lastNameErrorMessage || !municipality || streetErrorMessage) {
       hapticError();
       if (firstNameErrorMessage) firstNameRef.current?.focus();
       else if (lastNameErrorMessage) lastNameRef.current?.focus();
+      else if (streetErrorMessage) streetRef.current?.focus();
       return;
     }
 
@@ -126,7 +138,7 @@ function ProfileForm({
     try {
       await updateProfile.mutateAsync(saved);
       Keyboard.dismiss();
-      setSavedSummary(`${getFullName(saved)} · ${municipality}`);
+      setSavedSummary(`${getFullName(saved)} · ${getAddressPlace(saved.address)}`);
       hapticSuccess();
     } catch (saveError) {
       setFormError(
@@ -216,6 +228,11 @@ function ProfileForm({
           label="City or municipality"
           value={municipality}
           onChange={(selected) => {
+            // Street text means nothing as a place outside Cavite, and vice versa
+            if (!isSameAddressKind(selected, municipality)) {
+              setStreet('');
+              setStreetError('');
+            }
             setMunicipality(selected);
             setMunicipalityError('');
             setFormError('');
@@ -224,19 +241,18 @@ function ProfileForm({
         />
 
         <TextInput
-          label="Barangay and street (optional)"
-          leftIcon="home-outline"
+          ref={streetRef}
+          {...getAddressLineFieldProps(municipality)}
           value={street}
           onChangeText={(text) => {
             setStreet(text);
+            setStreetError('');
             setFormError('');
           }}
-          placeholder="e.g. Brgy. Poblacion, Rizal St."
           autoCapitalize="words"
-          autoComplete="address-line1"
-          textContentType="streetAddressLine1"
           returnKeyType="done"
           onSubmitEditing={hasChanges ? handleSave : undefined}
+          error={streetError}
         />
 
         {formError ? <FormBanner message={formError} /> : null}
