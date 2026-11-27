@@ -540,6 +540,7 @@ function CaviteMapView({
         <View
           style={[
             styles.loadingBanner,
+            showControls && styles.loadingBannerBesideControl,
             controlsPosition === 'right-below-controls' && [
               styles.loadingBannerBelowControls,
               { top: controlsTop },
@@ -637,11 +638,15 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  // In the re-center button's row, not under it: on a short map (site,
+  // event, itinerary, About Cavite) a row lower sits over the middle, where
+  // the pins are
   loadingBanner: {
     position: 'absolute',
-    top: spacing.md + 48, // Below re-center button only (40px button + 8px gap)
-    left: spacing.base,
-    right: spacing.base,
+    top: spacing.md,
+    left: spacing.md,
+    right: spacing.md,
+    minHeight: CONTROL_SIZE,
     backgroundColor: colors.background,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -655,11 +660,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  // Stop short of the re-center button (40px wide + 8px gap)
+  loadingBannerBesideControl: {
+    right: spacing.md + CONTROL_SIZE + spacing.sm,
+  },
   loadingBannerBelowControls: {
-    // Explore map: the floating search row + chips cover the top, so sit in
-    // the re-center button's row instead (top set from `controlsTop`) and
-    // stop short of the button (40px wide + 8px gap).
-    right: spacing.base + 40 + spacing.sm,
+    // Explore map: the floating search row + chips cover the top, so the
+    // re-center button's row starts lower (top set from `controlsTop`), and
+    // its button sits further in.
+    left: spacing.base,
+    right: spacing.base + CONTROL_SIZE + spacing.sm,
   },
   loadingText: {
     ...typography.bodyMedium,
