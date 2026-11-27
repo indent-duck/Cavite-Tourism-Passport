@@ -11,7 +11,7 @@ import {
     Stamp,
     User
 } from "./types";
-import { CLAIM_QR_EXPIRY_MINUTES, REDEMPTION_LOCATION } from "@/lib/constants";
+import { CLAIM_CODE_EXPIRY_MINUTES, REDEMPTION_LOCATION } from "@/lib/constants";
 
 // ============================================================================
 // Mock User Configuration
@@ -607,7 +607,7 @@ export const mockFaqs: FAQ[] = [
     id: "faq-2",
     question: "How do points and rewards redemption work?",
     answer:
-      `Each stamp earns points by category: Dining 150, Staycation 200, Adventure 100, Heritage 50, and Festival 50 (bonus, not required). To claim a reward you need at least 700 points, or the reward's cost if it's higher, plus at least one stamp each from Dining, Staycation, Adventure and Heritage. Open the reward's claim QR and show it to a tourism officer at the ${REDEMPTION_LOCATION} within ${CLAIM_QR_EXPIRY_MINUTES} minutes. Points are deducted only when the officer scans it. You can claim one reward per promo period.`,
+      `Each stamp earns points by category: Dining 150, Staycation 200, Adventure 100, Heritage 50, and Festival 50 (bonus, not required). To claim a reward you need at least 700 points, or the reward's cost if it's higher, plus at least one stamp each from Dining, Staycation, Adventure and Heritage. At the ${REDEMPTION_LOCATION}, get the reward's claim code and tell it to the staff within ${CLAIM_CODE_EXPIRY_MINUTES} minutes. Points are deducted only when they approve it. You can claim one reward per promo period.`,
     icon: "gift-outline",
   },
   {

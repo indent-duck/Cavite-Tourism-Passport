@@ -9,14 +9,27 @@ export const REQUIRED_CATEGORIES: Category[] = [
 ];
 
 /**
- * Where a reward stands for the current user, ignoring any claim QR.
- * - ready: requirements met, can generate a claim QR
+ * Where a reward stands for the current user, ignoring any claim code.
+ * - ready: requirements met, can get a claim code
  * - locked: points and/or stamps still missing
  * - claimed: this is the reward the user claimed this promo period
  * - period-used: the user claimed a different reward this period
  * - sold-out: a limited reward with no claims left, or otherwise unavailable
  */
 export type RewardStatus = 'ready' | 'locked' | 'claimed' | 'period-used' | 'sold-out';
+
+/**
+ * Whether a live claim code for a reward in this state is shown. Once the
+ * reward is sold out (or hidden), or the user has claimed a reward this
+ * period, the desk can't grant the code, so the reward's card, its screen
+ * and the hub banner all stop showing it. The database also cancels a
+ * reward's waiting codes when it sells out or is taken down (migration 011),
+ * so a restock starts with a new code; this covers the moment before the
+ * app sees that.
+ */
+export function showsClaimCode(status: RewardStatus): boolean {
+  return status === 'ready' || status === 'locked';
+}
 
 export function isSoldOut(reward: Reward): boolean {
   return !reward.available || (reward.limited && (reward.remainingClaims ?? 0) <= 0);
@@ -89,12 +102,26 @@ export function compareRewards(
   return a.reward.pointsCost - b.reward.pointsCost;
 }
 
-/** Time left on a claim pass, "mm:ss" (rounded up, so 00:00 means expired) */
+/** Time left on a claim code, "mm:ss" (rounded up, so 00:00 means expired) */
 export function formatCountdown(ms: number): string {
   const totalSeconds = Math.ceil(Math.max(0, ms) / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/** A claim code for screen readers, one digit at a time: "0 4 2 9 1 7" */
+export function spellClaimCode(code: string): string {
+  return code.split('').join(' ');
+}
+
+/**
+ * What a denial tells the user: "Reason: Name or passport ID doesn't match.
+ * No points were deducted." (the admin's reason may or may not end in a period)
+ */
+export function describeDenial(reason: string): string {
+  const shown = reason.trim().replace(/\.+$/, '');
+  return `${shown ? `Reason: ${shown}. ` : ''}No points were deducted.`;
 }
 
 /** "Mar 31, 2027" */

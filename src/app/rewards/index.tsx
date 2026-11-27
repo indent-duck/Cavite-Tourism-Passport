@@ -1,11 +1,14 @@
+import { ClaimDeniedBanner } from '@/components/rewards/ClaimDeniedBanner';
 import { LivePassBanner } from '@/components/rewards/LivePassBanner';
 import { PointsSummaryCard, type PointsSummaryCardProps } from '@/components/rewards/PointsSummaryCard';
 import { RewardCard } from '@/components/rewards/RewardCard';
 import { StateView } from '@/components/ui/StateView';
 import type { Category, User } from '@/data/types';
+import { useClaimDenial } from '@/hooks/useClaimDenial';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLivePass } from '@/hooks/useLivePass';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
+import { useSeenClaimDenial } from '@/hooks/useSeenClaimDenial';
 import {
   useRewardsWithEligibility,
   type RewardWithEligibility,
@@ -18,11 +21,12 @@ import {
   describeRemaining,
   formatShortDate,
   getRewardStatus,
+  showsClaimCode,
   type RewardStatus,
 } from '@/lib/rewards';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
@@ -37,8 +41,12 @@ const ItemSeparator = () => <View style={styles.separator} />;
  *
  * Layout:
  * - Blue header matching the tab screens' Header (entry is the points pill)
- * - While a claim pass is live: which reward it's for, time left, and a
- *   tap to open the pass (that reward's card also says "Pass ready")
+ * - While a claim code is live: the code, which reward it's for, time
+ *   left, and a tap to open it (that reward's card also says "Code ready").
+ *   Checked every 5 seconds while the hub is on screen, so a grant or denial
+ *   at the desk shows here too
+ * - After a denial: which reward, the admin's reason, a tap to open it, and
+ *   × to dismiss it (shown until seen or until the user gets a new code)
  * - Points summary: balance, next goal, required stamp slots
  * - "One reward per period" rule, shown before the user picks anything
  * - Rewards sorted by what's actionable: claimed, ready, closest locked,
@@ -55,11 +63,20 @@ export default function RewardsScreen() {
   const userQuery = useCurrentUser();
   const stampsQuery = useStamps();
   const rewardsQuery = useRewardsWithEligibility();
-  const livePassQuery = useLivePass();
+  // Poll the live code only while the hub is the screen in front
+  const isFocused = useIsFocused();
+  const livePassQuery = useLivePass({ poll: isFocused });
+  const denialQuery = useClaimDenial();
+  const { seenClaimId, markSeen } = useSeenClaimDenial();
   const { data: promoPeriod } = usePromoPeriod();
 
   const user = userQuery.data;
   const livePass = livePassQuery.data ?? null;
+  const denial = denialQuery.data ?? null;
+  // undefined while the seen ID is still being read: wait, so a seen
+  // denial doesn't flash
+  const showDenial =
+    !livePass && denial !== null && seenClaimId !== undefined && seenClaimId !== denial.claimId;
   const stamps = stampsQuery.data;
   const rewards = rewardsQuery.data;
 
@@ -79,6 +96,12 @@ export default function RewardsScreen() {
       .sort(compareRewards);
   }, [rewards, user]);
 
+  // The banner follows the same rule as the reward's card and screen: a
+  // code for a reward that sold out (or was hidden) can't be granted, so it
+  // isn't shown, and the banner can't open a reward the list won't open
+  const passRow = livePass ? rows.find((row) => row.reward.id === livePass.rewardId) : undefined;
+  const bannerPass = passRow && showsClaimCode(passRow.status) ? livePass : null;
+
   const periodEnd = promoPeriod ? formatShortDate(promoPeriod.endDate) : undefined;
   const goal = React.useMemo(
     () => pickGoal(rows, user, periodEnd),
@@ -95,7 +118,7 @@ export default function RewardsScreen() {
   };
 
   // Pull to refresh: points, claims and stock change on the server (an
-  // officer redeeming, a stamp request approved). The rewards fetch also
+  // admin granting a claim, a stamp request approved). The rewards fetch also
   // updates each reward screen's cache (see useRewardsWithEligibility).
   const [refreshing, setRefreshing] = React.useState(false);
   const handleRefresh = async () => {
@@ -106,6 +129,7 @@ export default function RewardsScreen() {
         stampsQuery.refetch(),
         rewardsQuery.refetch(),
         livePassQuery.refetch(),
+        denialQuery.refetch(),
       ]);
     } finally {
       setRefreshing(false);
@@ -154,12 +178,24 @@ export default function RewardsScreen() {
         ItemSeparatorComponent={ItemSeparator}
         ListHeaderComponent={
           <View style={styles.listHeader}>
-            {livePass && (
+            {bannerPass && (
               <LivePassBanner
-                key={livePass.claimId}
-                pass={livePass}
-                onShowPass={() => router.push(`/rewards/${livePass.rewardId}`)}
+                key={bannerPass.claimId}
+                pass={bannerPass}
+                onShowPass={() => router.push(`/rewards/${bannerPass.rewardId}`)}
                 testID="live-pass-banner"
+              />
+            )}
+            {showDenial && denial && (
+              <ClaimDeniedBanner
+                key={denial.claimId}
+                denial={denial}
+                onOpen={() => {
+                  markSeen(denial.claimId);
+                  router.push(`/rewards/${denial.rewardId}`);
+                }}
+                onDismiss={() => markSeen(denial.claimId)}
+                testID="claim-denied-banner"
               />
             )}
 

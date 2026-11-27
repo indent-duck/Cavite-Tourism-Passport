@@ -1,7 +1,7 @@
 import { RewardPhoto } from '@/components/rewards/RewardPhoto';
 import { Card } from '@/components/ui/Card';
 import { Reward, RewardEligibility } from '@/data/types';
-import { describeRemaining, type RewardStatus } from '@/lib/rewards';
+import { describeRemaining, showsClaimCode, type RewardStatus } from '@/lib/rewards';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -16,8 +16,8 @@ import { StyleSheet, Text, View } from 'react-native';
  * - Photo with points pill (top-left) and "N left" pill for limited rewards
  * - Title and two-line description
  * - Locked rewards: slim points bar + "250 pts + Adventure stamp to go"
- * - Footer: status chip ("Pass ready" while the user's live pass is for
- *   this reward) and a chevron (the whole card is the tap target)
+ * - Footer: status chip ("Code ready" while the user's live claim code is
+ *   for this reward) and a chevron (the whole card is the tap target)
  * - Rewards that can't be claimed (sold out, period used) are dimmed
  *
  * Validates: Requirements 4.2 (RewardCard Component)
@@ -27,7 +27,7 @@ export interface RewardCardProps {
   reward: Reward;
   status: RewardStatus;
   eligibility?: RewardEligibility;
-  /** The user's live claim pass is for this reward: shows "Pass ready" */
+  /** The user's live claim code is for this reward: shows "Code ready" */
   hasLivePass?: boolean;
   onPress: () => void;
   testID?: string;
@@ -72,8 +72,8 @@ const STATUS_CHIP: Record<
 };
 
 const PASS_READY_CHIP = {
-  label: 'Pass ready',
-  icon: 'qr-code' as IconName,
+  label: 'Code ready',
+  icon: 'keypad' as IconName,
   fg: colors.accent,
   bg: colors.accentTint,
 };
@@ -86,8 +86,8 @@ export function RewardCard({
   onPress,
   testID,
 }: RewardCardProps) {
-  // Like the reward screen, a pass only counts while the reward is claimable
-  const showPass = hasLivePass && (status === 'ready' || status === 'locked');
+  // Like the reward screen, a code only counts while the reward is claimable
+  const showPass = hasLivePass && showsClaimCode(status);
   const chip = showPass ? PASS_READY_CHIP : STATUS_CHIP[status];
   const isDimmed = status === 'sold-out' || status === 'period-used';
   const showProgress = status === 'locked' && eligibility;

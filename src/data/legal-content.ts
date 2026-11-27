@@ -39,7 +39,7 @@ export const legalContent: LegalContent = {
 
 **Stamp Validation:** To verify your physical presence at partner tourism sites using location data and QR code scanning, ensuring stamps are collected legitimately.
 
-**Points and Rewards:** To calculate points earned, track your progress toward reward eligibility, generate claim QR codes, and process reward redemptions.
+**Points and Rewards:** To calculate points earned, track your progress toward reward eligibility, generate reward claim codes, and process reward claims.
 
 **Service Improvement:** To analyze usage patterns, improve App features, and enhance the overall tourism experience in Cavite.
 

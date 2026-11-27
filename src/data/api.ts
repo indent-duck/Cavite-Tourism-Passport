@@ -14,6 +14,7 @@ import {
     AboutCaviteContent,
     AccountDeletionSummary,
     ActiveClaim,
+    ClaimDenial,
     DeleteAccountConfirmation,
     Category,
     CollectStampResult,
@@ -1195,7 +1196,7 @@ export async function getRewardById(id: string): Promise<Reward | null> {
 }
 
 // Minimum balance before any reward (app_settings.reward_min_points). The
-// database checks it again when a claim QR is generated or redeemed.
+// database checks it again when a claim code is generated or granted.
 const MIN_REWARD_POINTS = 700;
 
 /**
@@ -1286,17 +1287,17 @@ interface GenerateClaimRow {
   reason?: Extract<GenerateClaimResult, { success: false }>["reason"];
   claim_id?: number;
   reward_id?: number;
-  qr_payload?: string;
+  code?: string;
   created_at?: string;
   expires_at?: string;
 }
 
-const CLAIM_COLUMNS = "id, reward_id, token, generated_at, expires_at";
+const CLAIM_COLUMNS = "id, reward_id, code, generated_at, expires_at";
 
 interface RewardClaimRow {
   id: number;
   reward_id: number;
-  token: string;
+  code: string;
   generated_at: string;
   expires_at: string;
 }
@@ -1304,8 +1305,7 @@ interface RewardClaimRow {
 function toActiveClaim(row: RewardClaimRow): ActiveClaim {
   return {
     claimId: String(row.id),
-    // Same format generate_reward_claim returns
-    qrPayload: `cvt:claim:${row.id}:${row.token}`,
+    code: row.code,
     rewardId: String(row.reward_id),
     createdAt: new Date(row.generated_at),
     expiresAt: new Date(row.expires_at),
@@ -1313,9 +1313,9 @@ function toActiveClaim(row: RewardClaimRow): ActiveClaim {
 }
 
 /**
- * The signed-in user's live passes: not redeemed, cancelled or expired.
+ * The signed-in user's live codes: not granted, denied, cancelled or expired.
  * Filtered by account because staff can read everyone's claims. There is
- * at most one (generate_reward_claim cancels the previous pass).
+ * at most one (generate_reward_claim cancels the previous code).
  */
 function livePassesQuery(userId: string, columns: string) {
   return supabase
@@ -1327,9 +1327,9 @@ function livePassesQuery(userId: string, columns: string) {
 }
 
 /**
- * The user's live claim pass for a reward, or null if there is none or it
- * has expired. A pass stops being live once an officer redeems it, or when
- * the user generates another one (for any reward).
+ * The user's live claim code for a reward, or null if there is none or it
+ * has expired. A code stops being live once an admin grants or denies it,
+ * or when the user generates another one (for any reward).
  */
 export async function getActiveClaim(rewardId: string): Promise<ActiveClaim | null> {
   if (!isDbId(rewardId)) return null;
@@ -1345,8 +1345,8 @@ export async function getActiveClaim(rewardId: string): Promise<ActiveClaim | nu
 }
 
 /**
- * The user's live claim pass for any reward, or null. For the Rewards hub
- * banner and the "this replaces your pass" warning.
+ * The user's live claim code for any reward, or null. For the Rewards hub
+ * banner and the "this replaces your code" warning.
  */
 export async function getLivePass(): Promise<LivePass | null> {
   const userId = await requireUserId();
@@ -1361,14 +1361,64 @@ export async function getLivePass(): Promise<LivePass | null> {
   return row ? { ...toActiveClaim(row), rewardTitle: row.rewards.name } : null;
 }
 
+interface LatestClaimRow {
+  id: number;
+  reward_id: number;
+  status: "generated" | "claimed" | "expired" | "cancelled" | "denied";
+  denial_reason: string | null;
+  denied_at: string | null;
+  rewards: { name: string } | null;
+}
+
 /**
- * Generate a claim pass (single-use QR) for a reward
+ * Why an admin denied the user's latest claim, or null. Only while that
+ * denial is the user's latest claim in the active promo period: getting
+ * another code (for any reward) clears it.
+ *
+ * @param rewardId - only a denial for this reward (its screen); leave it out
+ *   for any reward (the Rewards hub)
+ */
+export async function getLatestDenial(rewardId?: string): Promise<ClaimDenial | null> {
+  if (rewardId !== undefined && !isDbId(rewardId)) return null;
+  const userId = await requireUserId();
+
+  const row = unwrap(
+    await supabase
+      .from("reward_claims")
+      .select(
+        "id, reward_id, status, denial_reason, denied_at, rewards(name), promo_periods!inner(is_active)",
+      )
+      .eq("account_id", userId)
+      .eq("promo_periods.is_active", true)
+      .order("generated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .overrideTypes<LatestClaimRow, { merge: false }>(),
+  );
+  if (
+    !row ||
+    row.status !== "denied" ||
+    (rewardId !== undefined && String(row.reward_id) !== rewardId)
+  ) {
+    return null;
+  }
+  return {
+    claimId: String(row.id),
+    rewardId: String(row.reward_id),
+    rewardTitle: row.rewards?.name ?? "",
+    reason: row.denial_reason ?? "",
+    deniedAt: new Date(row.denied_at ?? Date.now()),
+  };
+}
+
+/**
+ * Generate a claim code for a reward
  *
  * generate_reward_claim checks every rule again (promo period, one reward per
  * period, stock, categories, points) and cancels the user's previous live
- * pass. Points are deducted only when an officer redeems the pass.
+ * code. Points are deducted only when an admin grants the claim.
  */
-export async function generateClaimQR(rewardId: string): Promise<GenerateClaimResult> {
+export async function generateClaimCode(rewardId: string): Promise<GenerateClaimResult> {
   if (!isDbId(rewardId)) {
     return { success: false, reason: "rewardNotFound" };
   }
@@ -1386,7 +1436,7 @@ export async function generateClaimQR(rewardId: string): Promise<GenerateClaimRe
   if (
     !row.success ||
     row.claim_id === undefined ||
-    !row.qr_payload ||
+    !row.code ||
     !row.created_at ||
     !row.expires_at
   ) {
@@ -1396,7 +1446,7 @@ export async function generateClaimQR(rewardId: string): Promise<GenerateClaimRe
     success: true,
     claim: {
       claimId: String(row.claim_id),
-      qrPayload: row.qr_payload,
+      code: row.code,
       rewardId: String(row.reward_id ?? rewardId),
       createdAt: new Date(row.created_at),
       expiresAt: new Date(row.expires_at),

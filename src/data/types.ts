@@ -56,7 +56,7 @@ export interface AccountDeletionSummary {
   stampCount: number;
   points: number;
   pendingStampRequests: number;
-  hasActiveVoucher: boolean; // An unexpired reward claim QR
+  hasActiveVoucher: boolean; // An unexpired reward claim code
 }
 
 // Category taxonomy
@@ -196,30 +196,36 @@ export interface RewardEligibility {
   missingCategories: Category[];
 }
 
-// Claim QR code
-export interface ClaimQR {
-  rewardId: string;
-  userId: string;
-  qrCode: string; // Generated QR code data
-  expiresAt: Date;
-  used: boolean;
-}
-
-// Active claim for QR generation and display
+/**
+ * A claim code for a reward: 6 digits the user reads out at the desk, where
+ * an admin grants or denies it in the admin dashboard
+ */
 export interface ActiveClaim {
   claimId: string;
-  qrPayload: string; // Full QR payload in format "cvt:claim:<claimId>:<token>"
+  code: string; // e.g. "042917" (shown as two groups of digit tiles: ClaimCodeDigits)
   rewardId: string;
   createdAt: Date;
   expiresAt: Date;
 }
 
-/** The user's one live claim pass (any reward), with the reward's name for the Rewards hub */
+/** The user's one live claim code (any reward), with the reward's name for the Rewards hub */
 export interface LivePass extends ActiveClaim {
   rewardTitle: string;
 }
 
-/** Result of generating a claim pass; the server checks every reward rule again */
+/**
+ * An admin denied the user's latest claim. Shown on that reward's screen
+ * until the user gets another code, and on the Rewards hub until it's seen.
+ */
+export interface ClaimDenial {
+  claimId: string;
+  rewardId: string;
+  rewardTitle: string;
+  reason: string;
+  deniedAt: Date;
+}
+
+/** Result of generating a claim code; the server checks every reward rule again */
 export type GenerateClaimResult =
   | { success: true; claim: ActiveClaim }
   | {

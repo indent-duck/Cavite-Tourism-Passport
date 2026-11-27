@@ -20,7 +20,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
  * Delete Account Screen (Settings → Account → Delete account)
  *
  * Spells out what is permanently removed (with the user's real counts) and
- * warns about things still in progress: an active voucher pass and stamp
+ * warns about things still in progress: a live reward claim code and stamp
  * requests waiting for review.
  *
  * Deleting needs both the "I understand" checkbox and proof it's the owner:
@@ -101,14 +101,14 @@ export default function DeleteAccountScreen() {
         ? `${summary.points.toLocaleString('en-US')} points and the rewards they could claim`
         : 'Your points and the rewards they could claim',
     },
-    { icon: 'gift-outline', text: 'Reward history and voucher passes' },
+    { icon: 'gift-outline', text: 'Reward history and claim codes' },
     { icon: 'document-text-outline', text: 'Stamp requests and their photos' },
     { icon: 'person-outline', text: 'Your name, address and email' },
   ];
 
   const warnings: string[] = [];
   if (summary?.hasActiveVoucher) {
-    warnings.push('You have an active voucher pass. It will stop working right away.');
+    warnings.push('You have a live reward claim code. It will stop working right away.');
   }
   if (summary && summary.pendingStampRequests > 0) {
     warnings.push(

@@ -16,6 +16,7 @@ export const colors = {
   secondary: "#095495", // secondary blue accent color
   accent: "#F47B20", // Orange for CTAs, highlights
   accentTint: "#FEEFE3", // Very light orange, icon chip backgrounds
+  accentBorder: "rgba(244, 123, 32, 0.35)", // Accent at 35%, hairlines on accentTint (claim code tiles)
   background: "#FFFFFF", // Main canvas background
   surface: "#F4F6FA", // Card backgrounds
 
@@ -33,7 +34,6 @@ export const colors = {
 
   // Structural colors
   border: "#E5E7EB", // Dividers, input borders
-  qrInk: "#000000", // QR modules: pure black scans most reliably
   scrim: "rgba(27, 42, 73, 0.55)", // Modal backdrop (text color at 55%)
 
   // On-brand overlays (translucent white layered on blue surfaces like the Header)

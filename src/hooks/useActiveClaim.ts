@@ -2,18 +2,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getActiveClaim } from '@/data/api';
 import type { ActiveClaim } from '@/data/types';
 
-// How often to check a live pass, so the screen notices soon after an
-// officer redeems it
+// How often to check a live code, so the screen notices soon after an
+// admin grants or denies it
 const LIVE_PASS_POLL_MS = 5000;
 
 /**
- * Hook for the user's live claim pass for a reward (null if none or expired)
+ * Hook for the user's live claim code for a reward (null if none or expired)
  *
- * Polls only while a pass is live (and the app is in the foreground). When a
- * pass that hadn't expired stops being live, an officer redeemed it (or the
- * user made another pass elsewhere): the user's points, claimed reward and
- * the rewards are refreshed *before* the pass is dropped, so the screen goes
- * straight to "claimed" instead of briefly offering the claim again.
+ * Polls only while a code is live (and the app is in the foreground). When a
+ * code that hadn't expired stops being live, an admin granted or denied it
+ * (or the user made another code elsewhere): the user's points, claimed
+ * reward, the rewards and the denial are refreshed *before* the code is
+ * dropped, so the screen goes straight to "claimed" or "not approved"
+ * instead of briefly offering the claim again.
  */
 export function useActiveClaim(rewardId: string) {
   const queryClient = useQueryClient();
@@ -32,6 +33,7 @@ export function useActiveClaim(rewardId: string) {
           queryClient.invalidateQueries({ queryKey: ['rewards'] }),
           queryClient.invalidateQueries({ queryKey: ['rewardEligibility'] }),
           queryClient.invalidateQueries({ queryKey: ['reward', rewardId] }),
+          queryClient.invalidateQueries({ queryKey: ['claimDenial', rewardId] }),
         ]);
       }
       return claim;

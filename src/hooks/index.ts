@@ -2,6 +2,7 @@ export { useAboutCavite } from './useAboutCavite';
 export { useActiveClaim } from './useActiveClaim';
 export { useAuth } from './useAuth';
 export { useChangePassword } from './useChangePassword';
+export { useClaimDenial } from './useClaimDenial';
 export { useCollectStamp } from './useCollectStamp';
 export { useCurrentUser } from './useCurrentUser';
 export { useAccountDeletionSummary, useDeleteAccount } from './useDeleteAccount';

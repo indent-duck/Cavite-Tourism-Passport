@@ -1,26 +1,37 @@
 import { StampReveal } from '@/components/passport/StampReveal';
 import { ClaimConfirmModal } from '@/components/rewards/ClaimConfirmModal';
-import { ClaimQRView } from '@/components/rewards/ClaimQRView';
+import { ClaimCodeView } from '@/components/rewards/ClaimCodeView';
 import { RewardPhoto } from '@/components/rewards/RewardPhoto';
 import { RewardRequirements } from '@/components/rewards/RewardRequirements';
 import { Button } from '@/components/ui/Button';
 import { FeedbackModal } from '@/components/ui/FeedbackModal';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { StateView } from '@/components/ui/StateView';
-import type { ActiveClaim, Category, GenerateClaimResult, RewardEligibility } from '@/data/types';
+import type {
+  ActiveClaim,
+  Category,
+  ClaimDenial,
+  GenerateClaimResult,
+  RewardEligibility,
+} from '@/data/types';
 import { useActiveClaim } from '@/hooks/useActiveClaim';
+import { useClaimDenial } from '@/hooks/useClaimDenial';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useGenerateClaimQR } from '@/hooks/useGenerateClaimQR';
+import { useGenerateClaimCode } from '@/hooks/useGenerateClaimCode';
 import { useLivePass } from '@/hooks/useLivePass';
 import { usePromoPeriod } from '@/hooks/usePromoPeriod';
 import { useRewardById } from '@/hooks/useRewardById';
 import { useRewardEligibility } from '@/hooks/useRewardEligibility';
-import { CLAIM_QR_EXPIRY_MINUTES, REDEMPTION_LOCATION } from '@/lib/constants';
+import { useSeenClaimDenial } from '@/hooks/useSeenClaimDenial';
+import { CLAIM_CODE_EXPIRY_MINUTES, REDEMPTION_LOCATION } from '@/lib/constants';
 import { hapticError } from '@/lib/haptics';
+import { getFullName } from '@/lib/names';
 import {
+  describeDenial,
   describeRemaining,
   formatShortDate,
   getRewardStatus,
+  showsClaimCode,
   type RewardStatus,
 } from '@/lib/rewards';
 import { colors, radii, shadows, spacing, typography } from '@/theme';
@@ -31,12 +42,12 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-/** Reward status plus the two claim-pass states */
-type ScreenState = RewardStatus | 'qr-active' | 'qr-expired';
+/** Reward status plus the claim-code states */
+type ScreenState = RewardStatus | 'code-active' | 'code-expired' | 'denied';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-/** Why a pass wasn't made: the server's reason, or no connection */
+/** Why a code wasn't made: the server's reason, or no connection */
 type ClaimFailure = Extract<GenerateClaimResult, { success: false }>['reason'] | 'network';
 
 /**
@@ -47,7 +58,7 @@ const CLAIM_FAILURES: Record<ClaimFailure, { icon: IconName; title: string; mess
   soldOut: {
     icon: 'gift-outline',
     title: 'This reward just sold out',
-    message: 'All claims were taken before your pass was made. No points were used.',
+    message: 'All claims were taken before your code was made. No points were used.',
   },
   alreadyClaimedThisPeriod: {
     icon: 'ribbon-outline',
@@ -76,7 +87,7 @@ const CLAIM_FAILURES: Record<ClaimFailure, { icon: IconName; title: string; mess
   },
   network: {
     icon: 'cloud-offline-outline',
-    title: "Couldn't create your pass",
+    title: "Couldn't get your code",
     message: 'Check your connection and try again.',
   },
 };
@@ -89,9 +100,10 @@ const CLAIM_FAILURES: Record<ClaimFailure, { icon: IconName; title: string; mess
  * the pinned bottom action change between states:
  *
  * - locked:      "250 pts + Adventure stamp to go" → Find Adventure sites
- * - ready:       unlocked                         → Claim (with confirmation)
- * - qr-active:   claim pass ticket                → Done
- * - qr-expired:  expired ticket                   → Generate new pass
+ * - ready:        unlocked                         → Claim (with confirmation)
+ * - code-active:  claim code ticket                → Done
+ * - code-expired: expired ticket                   → Get a new code
+ * - denied:       an admin didn't approve the code → Get a new code (if still ready)
  * - claimed:     claimed stamp (animated on claim) → Back to rewards
  * - period-used: another reward was claimed        → Back to rewards
  * - sold-out:    no claims left                   → Back to rewards
@@ -107,7 +119,8 @@ export default function RewardDetailScreen() {
   const eligibilityQuery = useRewardEligibility(rewardId);
   const userQuery = useCurrentUser();
   const activeClaimQuery = useActiveClaim(rewardId);
-  // The user's live pass for any reward: a pass for another reward gets
+  const denialQuery = useClaimDenial(rewardId);
+  // The user's live code for any reward: a code for another reward gets
   // replaced if they claim this one (useLivePass drops it once expired)
   const { data: livePass } = useLivePass();
   const { data: promoPeriod } = usePromoPeriod();
@@ -116,18 +129,25 @@ export default function RewardDetailScreen() {
   const eligibility = eligibilityQuery.data;
   const user = userQuery.data;
   const activeClaim = activeClaimQuery.data ?? null;
+  const denial = denialQuery.data ?? null;
+  const { markSeen: markDenialSeen } = useSeenClaimDenial();
+  // Once the denial shows here, the hub's notice for it can go
+  const shownDenialId = !activeClaim && denial ? denial.claimId : null;
+  useEffect(() => {
+    if (shownDenialId) markDenialSeen(shownDenialId);
+  }, [shownDenialId, markDenialSeen]);
 
-  const generateClaimQR = useGenerateClaimQR();
+  const generateClaimCode = useGenerateClaimCode();
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   // Kept after the popup closes, so its text doesn't change while it fades out
   const [claimFailure, setClaimFailure] = useState<ClaimFailure>('network');
   const [failureVisible, setFailureVisible] = useState(false);
-  // Whether a live pass was shown on this visit: if the reward then turns
-  // claimed, an officer just redeemed it, so the CLAIMED stamp animates in
+  // Whether a live code was shown on this visit: if the reward then turns
+  // claimed, an admin just granted it, so the CLAIMED stamp animates in
   const [sawLivePass, setSawLivePass] = useState(false);
 
-  // When the pass lapses, switch to the expired view right away instead of
+  // When the code lapses, switch to the expired view right away instead of
   // waiting for the next refetch, and keep showing it after the API drops
   // the expired claim.
   const [now, setNow] = useState(() => Date.now());
@@ -148,7 +168,8 @@ export default function RewardDetailScreen() {
     rewardQuery.isLoading ||
     eligibilityQuery.isLoading ||
     userQuery.isLoading ||
-    activeClaimQuery.isLoading;
+    activeClaimQuery.isLoading ||
+    denialQuery.isLoading;
 
   const shell = (children: React.ReactNode) => (
     <ScreenContainer
@@ -198,18 +219,20 @@ export default function RewardDetailScreen() {
 
   const status = getRewardStatus(reward, eligibility, user);
   let state: ScreenState = status;
-  if (status === 'ready' || status === 'locked') {
+  if (showsClaimCode(status)) {
     if (activeClaim && activeClaim.expiresAt.getTime() > now) {
-      state = 'qr-active';
+      state = 'code-active';
     } else if (activeClaim ?? expiredClaim) {
-      state = 'qr-expired';
+      state = 'code-expired';
+    } else if (denial) {
+      state = 'denied';
     }
   }
   const shownClaim = activeClaim ?? expiredClaim;
-  const isPass = (state === 'qr-active' || state === 'qr-expired') && shownClaim;
+  const isPass = (state === 'code-active' || state === 'code-expired') && shownClaim;
 
   // Adjusting state during render (guarded) avoids an extra effect pass
-  if (state === 'qr-active' && !sawLivePass) {
+  if (state === 'code-active' && !sawLivePass) {
     setSawLivePass(true);
   }
   const justClaimed = sawLivePass && state === 'claimed';
@@ -223,9 +246,9 @@ export default function RewardDetailScreen() {
     hapticError();
   };
 
-  const generatePass = async () => {
+  const generateCode = async () => {
     try {
-      const result = await generateClaimQR.mutateAsync(rewardId);
+      const result = await generateClaimCode.mutateAsync(rewardId);
       if (!result.success) {
         showClaimFailure(result.reason);
         return;
@@ -245,19 +268,31 @@ export default function RewardDetailScreen() {
   };
 
   const firstMissing = eligibility?.missingCategories[0];
+  const findSitesButton = (
+    <Button
+      title={firstMissing ? `Find ${firstMissing} sites` : 'Explore sites to earn points'}
+      onPress={() => findSites(firstMissing)}
+      variant="primary"
+      fullWidth
+      icon={<Ionicons name="compass" size={18} color={colors.background} />}
+      testID="find-sites-button"
+    />
+  );
+  const newCodeButton = (
+    <Button
+      title="Get a new code"
+      onPress={generateCode}
+      variant="accent"
+      fullWidth
+      loading={generateClaimCode.isPending}
+      icon={<Ionicons name="refresh" size={18} color={colors.background} />}
+      testID="new-code-button"
+    />
+  );
   let cta: React.ReactNode;
   switch (state) {
     case 'locked':
-      cta = (
-        <Button
-          title={firstMissing ? `Find ${firstMissing} sites` : 'Explore sites to earn points'}
-          onPress={() => findSites(firstMissing)}
-          variant="primary"
-          fullWidth
-          icon={<Ionicons name="compass" size={18} color={colors.background} />}
-          testID="find-sites-button"
-        />
-      );
+      cta = findSitesButton;
       break;
     case 'ready':
       cta = (
@@ -271,7 +306,7 @@ export default function RewardDetailScreen() {
         />
       );
       break;
-    case 'qr-active':
+    case 'code-active':
       cta = (
         <Button
           title="Done"
@@ -283,18 +318,12 @@ export default function RewardDetailScreen() {
         />
       );
       break;
-    case 'qr-expired':
-      cta = (
-        <Button
-          title="Generate new pass"
-          onPress={generatePass}
-          variant="accent"
-          fullWidth
-          loading={generateClaimQR.isPending}
-          icon={<Ionicons name="refresh" size={18} color={colors.background} />}
-          testID="generate-new-qr-button"
-        />
-      );
+    case 'code-expired':
+      cta = newCodeButton;
+      break;
+    case 'denied':
+      // A denial ends only that code; the server checks the rules again
+      cta = status === 'ready' ? newCodeButton : findSitesButton;
       break;
     default:
       cta = (
@@ -321,19 +350,21 @@ export default function RewardDetailScreen() {
         {isPass ? (
           <View style={styles.passIntro}>
             <Text style={styles.passHeading} accessibilityRole="header">
-              {state === 'qr-active' ? 'Your claim pass' : 'This pass has expired'}
+              {state === 'code-active' ? 'Your claim code' : 'This code has expired'}
             </Text>
             <Text style={styles.passSubheading}>
-              {state === 'qr-active'
-                ? 'Keep this screen open at the tourism desk.'
-                : 'Passes last a few minutes for security. Make a new one at the desk.'}
+              {state === 'code-active'
+                ? 'Read it out at the tourism desk, and keep this screen open until they approve it.'
+                : `Codes last ${CLAIM_CODE_EXPIRY_MINUTES} minutes for security. Get a new one at the desk.`}
             </Text>
-            <ClaimQRView
+            <ClaimCodeView
               key={shownClaim.claimId}
               activeClaim={shownClaim}
               reward={reward}
-              isExpired={state === 'qr-expired'}
-              testID="claim-qr-view"
+              holderName={user ? getFullName(user) : ''}
+              passportId={user?.passportId ?? ''}
+              isExpired={state === 'code-expired'}
+              testID="claim-code-view"
             />
           </View>
         ) : (
@@ -371,6 +402,7 @@ export default function RewardDetailScreen() {
               eligibility={eligibility}
               periodEnd={periodEnd}
               justClaimed={justClaimed}
+              denial={denial}
             />
 
             <Text style={styles.description} testID="reward-description">
@@ -388,7 +420,7 @@ export default function RewardDetailScreen() {
               </View>
             </View>
 
-            {(state === 'locked' || state === 'ready') && eligibility && (
+            {(state === 'locked' || state === 'ready' || state === 'denied') && eligibility && (
               <>
                 <Text style={styles.sectionTitle} accessibilityRole="header">
                   Requirements
@@ -403,7 +435,7 @@ export default function RewardDetailScreen() {
                 <Text style={styles.sectionTitle} accessibilityRole="header">
                   How to claim
                 </Text>
-                <HowToClaim requirementsMet={state === 'ready'} />
+                <HowToClaim requirementsMet={status === 'ready'} />
               </>
             )}
           </>
@@ -422,8 +454,8 @@ export default function RewardDetailScreen() {
         replacesPassFor={
           livePass && livePass.rewardId !== rewardId ? livePass.rewardTitle : undefined
         }
-        loading={generateClaimQR.isPending}
-        onConfirm={generatePass}
+        loading={generateClaimCode.isPending}
+        onConfirm={generateCode}
         onCancel={() => setConfirmVisible(false)}
       />
 
@@ -446,9 +478,11 @@ interface StatusBannerProps {
   eligibility?: RewardEligibility;
   periodEnd?: string;
   justClaimed: boolean;
+  /** Why the latest code was denied (state 'denied') */
+  denial: ClaimDenial | null;
 }
 
-function StatusBanner({ state, eligibility, periodEnd, justClaimed }: StatusBannerProps) {
+function StatusBanner({ state, eligibility, periodEnd, justClaimed, denial }: StatusBannerProps) {
   const reopen = periodEnd ? `New rewards open after ${periodEnd}.` : 'New rewards open next promo period.';
 
   if (state === 'claimed') {
@@ -502,6 +536,13 @@ function StatusBanner({ state, eligibility, periodEnd, justClaimed }: StatusBann
       title = 'Sold out';
       body = 'All claims for this reward have been taken.';
       break;
+    case 'denied':
+      icon = 'alert-circle';
+      tint = colors.errorTint;
+      fg = colors.error;
+      title = "Your claim wasn't approved";
+      body = describeDenial(denial?.reason ?? '');
+      break;
     default:
       icon = 'lock-closed';
       tint = colors.accentTint;
@@ -536,13 +577,13 @@ function HowToClaim({ requirementsMet }: { requirementsMet: boolean }) {
       done: requirementsMet,
     },
     {
-      title: 'Generate your pass at the desk',
-      body: `It stays valid for ${CLAIM_QR_EXPIRY_MINUTES} minutes.`,
+      title: 'Get your claim code at the desk',
+      body: `It stays valid for ${CLAIM_CODE_EXPIRY_MINUTES} minutes.`,
       done: false,
     },
     {
-      title: 'Show it to a tourism officer',
-      body: 'Points are deducted only when they scan it.',
+      title: 'Tell the code to the staff',
+      body: 'Points are deducted only when they approve it.',
       done: false,
     },
   ];
@@ -757,7 +798,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
-  // Claim pass
+  // Claim code
   passIntro: {
     gap: spacing.xs,
   },

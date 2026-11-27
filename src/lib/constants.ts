@@ -2,11 +2,11 @@
 // (The scan distance lives in Supabase: app_settings.geofence_radius_m, or a
 // site's verify_radius_m. The database checks it.)
 
-export const CLAIM_QR_EXPIRY_MINUTES = 15; // TBD
+// How long a reward claim code stays valid. The database sets each code's
+// expiry from app_settings.claim_code_expiry_minutes: change both together
+export const CLAIM_CODE_EXPIRY_MINUTES = 30;
 
 export const SITE_QR_FORMAT = 'cvt:site:<code>'; // <code> = the random code in Supabase qr_codes
-
-export const CLAIM_QR_FORMAT = 'cvt:claim:<claimId>:<token>'; // TBD
 
 // Also stored in Supabase (app_settings.redemption_location) for the promo
 // reminder notifications: change both together

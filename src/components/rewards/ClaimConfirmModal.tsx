@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import type { Reward } from '@/data/types';
-import { CLAIM_QR_EXPIRY_MINUTES } from '@/lib/constants';
+import { CLAIM_CODE_EXPIRY_MINUTES } from '@/lib/constants';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -12,8 +12,8 @@ export interface ClaimConfirmModalProps {
   /** End of the current promo period, e.g. "Mar 31, 2027" */
   periodEnd?: string;
   /**
-   * Title of another reward the user has a live pass for. Making this pass
-   * cancels that one (one live pass per user), so the dialog says so.
+   * Title of another reward the user has a live code for. Getting this code
+   * cancels that one (one live code per user), so the dialog says so.
    */
   replacesPassFor?: string;
   loading?: boolean;
@@ -22,9 +22,9 @@ export interface ClaimConfirmModalProps {
 }
 
 /**
- * Confirmation shown before generating a claim QR. A user can claim only one
- * reward per promo period, so this spells out the consequence before they
- * walk up to the desk with a pass.
+ * Confirmation shown before generating a claim code. A user can claim only
+ * one reward per promo period, so this spells out the consequence before
+ * they walk up to the desk with a code.
  */
 export function ClaimConfirmModal({
   visible,
@@ -65,8 +65,8 @@ export function ClaimConfirmModal({
           <View style={styles.facts}>
             {replacesPassFor ? (
               <Fact icon="swap-horizontal" emphasis>
-                This replaces your pass for{' '}
-                <Text style={styles.bold}>{replacesPassFor}</Text>. That pass will stop
+                This replaces your code for{' '}
+                <Text style={styles.bold}>{replacesPassFor}</Text>. That code will stop
                 working.
               </Fact>
             ) : null}
@@ -74,18 +74,18 @@ export function ClaimConfirmModal({
               You can claim only <Text style={styles.bold}>one reward</Text> this promo
               period. The others stay locked until {periodEnd ?? 'the period ends'}.
             </Fact>
-            <Fact icon="qr-code">
-              Your pass is valid for {CLAIM_QR_EXPIRY_MINUTES} minutes. Generate it
-              when you are at the tourism desk.
+            <Fact icon="keypad">
+              Your code is valid for {CLAIM_CODE_EXPIRY_MINUTES} minutes. Get it when
+              you are at the tourism desk.
             </Fact>
             <Fact icon="star">
-              {points} pts are deducted only when an officer scans it.
+              {points} pts are deducted only when the staff approve it.
             </Fact>
           </View>
 
           <View style={styles.actions}>
             <Button
-              title="Generate claim QR"
+              title="Get claim code"
               onPress={onConfirm}
               variant="accent"
               loading={loading}
