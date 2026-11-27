@@ -12,7 +12,7 @@ import { getSiteStampState, getUnseenResults } from '@/lib/stamp-requests';
 import { colors, spacing } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
@@ -24,10 +24,22 @@ import { RefreshControl, StyleSheet, View } from 'react-native';
  * again. Opening this screen marks the listed review results as seen (clears
  * the Passport tab dot).
  *
- * `?submitted=1` shows a confirmation banner after sending a request.
+ * `?submitted=1` shows a confirmation banner after sending a request, until
+ * it's closed or SUBMITTED_BANNER_MS passes.
  */
+const SUBMITTED_BANNER_MS = 10000;
+
 export default function StampRequestsScreen() {
   const { submitted } = useLocalSearchParams<{ submitted?: string }>();
+
+  // Hide the banner (X or its countdown) by clearing the param on this
+  // screen. Not router.setParams: that acts on the focused screen, which could
+  // be the form if the user opened it again before the countdown ran out.
+  const navigation = useNavigation<{ setParams(params: { submitted?: string }): void }>();
+  const dismissSubmittedBanner = useCallback(() => {
+    navigation.setParams({ submitted: undefined });
+  }, [navigation]);
+
   const requestsQuery = useStampRequests();
   const stampsQuery = useStamps();
   const markSeen = useMarkStampRequestsSeen();
@@ -96,6 +108,8 @@ export default function StampRequestsScreen() {
             color={colors.successDark}
             title="Request sent"
             body="We'll review your photo and add the stamp to your passport once it's approved."
+            onDismiss={dismissSubmittedBanner}
+            autoDismissMs={SUBMITTED_BANNER_MS}
             testID="stamp-request-submitted-banner"
           />
         )}
