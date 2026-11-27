@@ -1,11 +1,12 @@
 /**
  * LocationMapSection Component
  * 
- * Reusable component that displays a map with location coordinates,
- * and an "Open in Maps" button. Used in Site and Event detail screens.
+ * Reusable component that displays a map zoomed in on the location's pin,
+ * its coordinates, and an "Open in Maps" button. Used in Site and Event
+ * detail screens.
  */
 
-import { CaviteMap } from '@/components/map/CaviteMap';
+import { CaviteMap, type MapPin } from '@/components/map/CaviteMap';
 import { Button } from '@/components/ui/Button';
 import { openInMaps } from '@/lib/open-maps';
 import { colors, spacing, typography } from '@/theme';
@@ -30,6 +31,16 @@ export interface LocationMapSectionProps {
   locationName: string;
 
   /**
+   * Pin color, e.g. the site's or event's category color
+   */
+  pinColor: string;
+
+  /**
+   * Pin icon, e.g. the site's or event's category icon
+   */
+  pinIcon: MapPin['icon'];
+
+  /**
    * Optional label to show above the coordinates
    * e.g., "Navigate to Aguinaldo Shrine"
    */
@@ -45,6 +56,8 @@ export function LocationMapSection({
   latitude,
   longitude,
   locationName,
+  pinColor,
+  pinIcon,
   label,
   onMapInteractionChange,
 }: LocationMapSectionProps) {
@@ -52,9 +65,27 @@ export function LocationMapSection({
     openInMaps(latitude, longitude, locationName);
   };
 
+  const pins: MapPin[] = [
+    {
+      id: 'location',
+      latitude,
+      longitude,
+      color: pinColor,
+      icon: pinIcon,
+      accessibilityLabel: locationName,
+    },
+  ];
+
   return (
     <View style={styles.container}>
-      <CaviteMap height={280} onMapInteractionChange={onMapInteractionChange} />
+      {/* fitOnLoad: open on the pin. A camera move after mount would be
+          dropped on Android, since the map's style hasn't loaded yet. */}
+      <CaviteMap
+        height={280}
+        pins={pins}
+        fitOnLoad
+        onMapInteractionChange={onMapInteractionChange}
+      />
       
       {label && <Text style={styles.label}>{label}</Text>}
       

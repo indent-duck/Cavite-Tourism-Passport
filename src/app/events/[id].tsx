@@ -6,6 +6,7 @@ import { EventPhoto } from '@/components/discover/EventPhoto';
 import { useEventById } from '@/hooks/useEventById';
 import { formatEventDate, getEventPoints, getEventStatus } from '@/lib/event-utils';
 import { colors, radii, spacing, typography } from '@/theme';
+import { EVENT_CATEGORY_COLORS, EVENT_CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
@@ -218,6 +219,8 @@ export default function EventDetailScreen() {
             latitude={event.latitude}
             longitude={event.longitude}
             locationName={event.title}
+            pinColor={EVENT_CATEGORY_COLORS[event.category]}
+            pinIcon={EVENT_CATEGORY_ICONS[event.category]}
             label={`Navigate to ${truncatedAddress}`}
             onMapInteractionChange={handleMapInteractionChange}
           />

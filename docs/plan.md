@@ -40,27 +40,27 @@ nothing on it. Site and event details show the default Cavite view (center,
 zoom 9) and the coordinates as text, not where the place is.
 
 **Plan:**
-- [ ] `CaviteMap`: a `pins` prop for markers that aren't catalog sites
+- [x] `CaviteMap`: a `pins` prop for markers that aren't catalog sites
   (`id`, `latitude`, `longitude`, `color`, `icon`, `accessibilityLabel`),
   drawn like the site markers and included in `getCameraMove`, so a single
   pin gets the single-pin zoom (14). Explore and About Cavite don't pass
   `pins`, so they don't change.
-- [ ] `LocationMapSection`: takes the pin's color and icon, and passes
+- [x] `LocationMapSection`: takes the pin's color and icon, and passes
   `pins={[pin]}` and `fitOnLoad`. Without `fitOnLoad` the map stays on the
   Cavite view: Android drops camera moves made before the map's style loads
   (the expressway map fix, 2026-11-24).
-- [ ] Site detail (`src/app/sites/[id].tsx`): `CATEGORY_COLORS` /
+- [x] Site detail (`src/app/sites/[id].tsx`): `CATEGORY_COLORS` /
   `CATEGORY_ICONS` for the site's category.
-- [ ] Event detail (`src/app/events/[id].tsx`): `EVENT_CATEGORY_COLORS` /
+- [x] Event detail (`src/app/events/[id].tsx`): `EVENT_CATEGORY_COLORS` /
   `EVENT_CATEGORY_ICONS`.
 - [ ] Optional: drop the coordinates line once the pin shows.
 
 **Phone check:**
-- [ ] A site opens with its pin centered and zoomed in, in its category color
-- [ ] An event (a Festival and a Cultural one) opens the same way, in its event color
-- [ ] Pan away, then re-center: back on the pin
-- [ ] Dragging the map doesn't scroll the screen
-- [ ] Explore and About Cavite maps unchanged
+- [x] A site opens with its pin centered and zoomed in, in its category color
+- [x] An event (a Festival and a Cultural one) opens the same way, in its event color
+- [x] Pan away, then re-center: back on the pin
+- [x] Dragging the map doesn't scroll the screen
+- [x] Explore and About Cavite maps unchanged
 
 ## 2. Itinerary detail map
 

@@ -2,8 +2,9 @@
  * CaviteMap Component
  * 
  * Renders an interactive map using MapLibre with Protomaps tiles.
- * Displays site pins and route lines (e.g. expressways), handles selecting
- * either, and fits the camera to the selected route or everything shown.
+ * Displays site pins, other pins (e.g. an event's venue) and route lines
+ * (e.g. expressways), handles selecting sites and routes, and fits the camera
+ * to the selected route or everything shown.
  */
 
 import type { Site } from '@/data/types';
@@ -59,13 +60,29 @@ const ROUTES_BELOW_LAYER = 'roads_labels_minor';
 
 // Stable defaults, so a render without these props doesn't pass a new array
 const NO_SITES: Site[] = [];
+const NO_PINS: MapPin[] = [];
 const NO_ROUTES: MapRoute[] = [];
+
+type IconName = keyof typeof Ionicons.glyphMap;
 
 /** A line on the map, e.g. an expressway */
 export interface MapRoute {
   id: string;
   color: string;
   geometry: GeoJSON.LineString | GeoJSON.MultiLineString;
+}
+
+/**
+ * A pin that isn't a catalog site, e.g. an event's venue. Drawn like a site
+ * pin, but not tappable.
+ */
+export interface MapPin {
+  id: string;
+  latitude: number;
+  longitude: number;
+  color: string;
+  icon: IconName;
+  accessibilityLabel: string;
 }
 
 type CameraMove =
@@ -78,6 +95,7 @@ type CameraMove =
  */
 function getCameraMove(
   sites: Site[],
+  pins: MapPin[],
   routes: MapRoute[],
   selectedRouteId: string | null | undefined,
   padding: ViewPadding,
@@ -88,6 +106,7 @@ function getCameraMove(
     : [
         ...routes.flatMap((route) => linePoints(route.geometry)),
         ...sites.map((site) => [site.longitude, site.latitude]),
+        ...pins.map((pin) => [pin.longitude, pin.latitude]),
       ];
 
   const bounds = getBounds(points);
@@ -145,6 +164,49 @@ function getRouteStyles(selectedRouteId: string | null | undefined) {
   return { layout, casing, line };
 }
 
+interface PinViewProps {
+  color: string;
+  icon: IconName;
+  accessibilityLabel: string;
+  pressable: boolean;
+  selected?: boolean;
+  visited?: boolean;
+}
+
+/** A round pin with an icon: the look shared by site pins and other pins */
+function PinView({
+  color,
+  icon,
+  accessibilityLabel,
+  pressable,
+  selected = false,
+  visited = false,
+}: PinViewProps) {
+  return (
+    <View
+      accessible
+      accessibilityRole={pressable ? 'button' : 'image'}
+      accessibilityLabel={accessibilityLabel}
+      style={styles.markerHitArea}
+    >
+      <View
+        style={[
+          styles.marker,
+          selected && styles.markerSelected,
+          { backgroundColor: color },
+        ]}
+      >
+        <Ionicons name={icon} size={selected ? 20 : 16} color={colors.background} />
+      </View>
+      {visited && (
+        <View style={styles.visitedBadge}>
+          <Ionicons name="checkmark" size={10} color={colors.background} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 export interface CaviteMapProps {
   sites?: Site[];
   onSitePress?: (siteId: string) => void;
@@ -152,6 +214,11 @@ export interface CaviteMapProps {
   visitedSiteIds?: ReadonlySet<string>;
   /** Pin drawn enlarged, e.g. the one whose preview is open */
   selectedSiteId?: string | null;
+  /**
+   * Pins that aren't catalog sites, e.g. an event's venue. The camera frames
+   * them with the sites; a single pin on its own gets zoomed in on.
+   */
+  pins?: MapPin[];
   /** Tap on the map itself (not a pin or route), e.g. to dismiss a preview */
   onMapPress?: () => void;
   /** Lines drawn under the pins and the map's labels, e.g. expressways */
@@ -207,6 +274,7 @@ function CaviteMapView({
   onSitePress,
   visitedSiteIds,
   selectedSiteId,
+  pins = NO_PINS,
   onMapPress,
   routes = NO_ROUTES,
   selectedRouteId,
@@ -279,7 +347,7 @@ function CaviteMapView({
     left: spacing.xl,
   };
 
-  const cameraMove = getCameraMove(sites, routes, selectedRouteId, fitPadding);
+  const cameraMove = getCameraMove(sites, pins, routes, selectedRouteId, fitPadding);
   // Keyed on the serialized move, so the camera moves when what it frames
   // changes, not on every render that rebuilds an equal one (that would pull
   // the camera back while the user is panning). Nothing to frame: stay put.
@@ -416,34 +484,34 @@ function CaviteMapView({
               anchor="center"
               onPress={onSitePress ? () => handlePinPress(site.id) : undefined}
             >
-              <View
-                accessible
-                accessibilityRole={onSitePress ? 'button' : 'image'}
+              <PinView
+                color={CATEGORY_COLORS[site.category]}
+                icon={CATEGORY_ICONS[site.category]}
                 accessibilityLabel={`${site.name}, ${site.category}${isVisited ? ', visited' : ''}`}
-                style={styles.markerHitArea}
-              >
-                <View
-                  style={[
-                    styles.marker,
-                    isSelected && styles.markerSelected,
-                    { backgroundColor: CATEGORY_COLORS[site.category] },
-                  ]}
-                >
-                  <Ionicons
-                    name={CATEGORY_ICONS[site.category]}
-                    size={isSelected ? 20 : 16}
-                    color={colors.background}
-                  />
-                </View>
-                {isVisited && (
-                  <View style={styles.visitedBadge}>
-                    <Ionicons name="checkmark" size={10} color={colors.background} />
-                  </View>
-                )}
-              </View>
+                pressable={onSitePress != null}
+                selected={isSelected}
+                visited={isVisited}
+              />
             </Marker>
           );
         })}
+
+        {/* Other pins; ids prefixed so they can't clash with a site's */}
+        {pins.map((pin) => (
+          <Marker
+            key={`pin-${pin.id}`}
+            id={`pin-${pin.id}`}
+            lngLat={[pin.longitude, pin.latitude]}
+            anchor="center"
+          >
+            <PinView
+              color={pin.color}
+              icon={pin.icon}
+              accessibilityLabel={pin.accessibilityLabel}
+              pressable={false}
+            />
+          </Marker>
+        ))}
       </Map>
       </View>
 
@@ -643,6 +711,6 @@ const styles = StyleSheet.create({
 /**
  * Memoized: the map renders a native marker per site, so it should only
  * re-render when its own props change. Pass stable callbacks (setters or
- * useCallback) and memoized `sites`/`visitedSiteIds`/`routes` to benefit.
+ * useCallback) and memoized `sites`/`pins`/`visitedSiteIds`/`routes` to benefit.
  */
 export const CaviteMap = memo(CaviteMapView);

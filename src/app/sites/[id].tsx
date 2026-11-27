@@ -10,6 +10,7 @@ import { useStampRequests } from "@/hooks/useStampRequests";
 import { useStamps } from "@/hooks/useStamps";
 import { getPendingRequest, getSiteStampState } from "@/lib/stamp-requests";
 import { colors, spacing, typography } from "@/theme";
+import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/theme/categories";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -186,6 +187,8 @@ export default function SiteDetailScreen() {
         latitude={site.latitude}
         longitude={site.longitude}
         locationName={site.name}
+        pinColor={CATEGORY_COLORS[site.category]}
+        pinIcon={CATEGORY_ICONS[site.category]}
         onMapInteractionChange={handleMapInteractionChange}
       />
     </ScreenContainer>
