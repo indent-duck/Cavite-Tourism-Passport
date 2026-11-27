@@ -127,14 +127,21 @@ Still the Expo template:
   the popup is light, like the rest of the app.
 
 ### 3.4 Error boundary (JavaScript only)
-- [ ] Export `ErrorBoundary` from `src/app/_layout.tsx` (props:
+- [x] Export `ErrorBoundary` from `src/app/_layout.tsx` (props:
   `ErrorBoundaryProps` from `expo-router`, with `error` and `retry`). An
   error in a screen without its own boundary goes to the nearest parent's,
   so one at the root covers the app.
-- [ ] Show "Something went wrong" with a Try again button (`retry`). It
+- [x] Show "Something went wrong" with a Try again button (`retry`). It
   replaces the root layout while it shows, so it can't use what the layout
-  provides (React Query, safe area): plain views and theme values only.
-- [ ] Check: temporarily throw in a screen. After closing the dev error
+  provides (React Query, gestures): views, theme values and the safe area
+  (Expo Router provides it above the layout). It also hides the splash
+  screen, in case the crash came before fonts loaded.
+- [x] Also a per-screen boundary (`unstable_settings.screenErrorBoundary`
+  in the root layout, SDK 58): a screen that throws is replaced on its own,
+  with Try again and Go back, while the navigators, tab bar and back button
+  keep working. The root boundary is left for errors in a layout, and takes
+  over if a later SDK drops the unstable setting.
+- [x] Check: temporarily throw in a screen. After closing the dev error
   screen, the boundary shows; remove the throw and Try again recovers.
 - Later, optional: crash reporting (e.g. Sentry) to see errors from users'
   phones.

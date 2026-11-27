@@ -48,9 +48,7 @@ export default function AccountScreen() {
 
   const stampCount = stamps?.length ?? 0;
   const totalStamps = sites?.length;
-  const stampProgress = totalStamps
-    ? Math.min(stampCount / totalStamps, 1)
-    : 0;
+  const stampProgress = totalStamps ? Math.min(stampCount / totalStamps, 1) : 0;
 
   return (
     <ScreenContainer
@@ -305,7 +303,11 @@ function DetailRow({
       </View>
       <View style={styles.detailText}>
         <Text style={styles.detailLabel}>{label}</Text>
-        <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="middle">
+        <Text
+          style={styles.detailValue}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
           {value}
         </Text>
       </View>
@@ -341,7 +343,10 @@ function LinkRow({
   const toneColors = LINK_TONES[tone];
   return (
     <Pressable
-      style={({ pressed }) => [styles.listRow, pressed && styles.listRowPressed]}
+      style={({ pressed }) => [
+        styles.listRow,
+        pressed && styles.listRowPressed,
+      ]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={title}
@@ -373,13 +378,19 @@ function AccountSkeleton() {
         accessibilityRole="progressbar"
       >
         <View style={[styles.skeleton, { width: 140, height: 32 }]} />
-        <View style={[styles.skeleton, { height: 180, borderRadius: radii.card }]} />
+        <View
+          style={[styles.skeleton, { height: 180, borderRadius: radii.card }]}
+        />
         <View style={styles.statsGrid}>
           <View style={[styles.skeleton, styles.skeletonStat]} />
           <View style={[styles.skeleton, styles.skeletonStat]} />
         </View>
-        <View style={[styles.skeleton, { height: 64, borderRadius: radii.card }]} />
-        <View style={[styles.skeleton, { height: 140, borderRadius: radii.card }]} />
+        <View
+          style={[styles.skeleton, { height: 64, borderRadius: radii.card }]}
+        />
+        <View
+          style={[styles.skeleton, { height: 140, borderRadius: radii.card }]}
+        />
       </View>
     </ScreenContainer>
   );

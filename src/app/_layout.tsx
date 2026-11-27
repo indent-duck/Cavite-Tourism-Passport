@@ -1,3 +1,4 @@
+import { AppErrorFallback, ScreenErrorFallback } from '@/components/ui/ErrorFallback';
 import { showNotificationsInForeground } from '@/lib/push-notifications';
 import { queryClient } from '@/lib/query-client';
 import {
@@ -20,6 +21,20 @@ SplashScreen.preventAutoHideAsync();
 
 // Notifications that arrive while the app is open still show as a banner
 showNotificationsInForeground();
+
+/**
+ * Crashes while rendering. A screen that throws is replaced by
+ * ScreenErrorFallback, and every screen below this layout, in the tabs and
+ * auth groups too, gets it. The navigators stay, so back and the tab bar
+ * still work. Unstable API (Expo Router, SDK 58): if a later SDK drops it,
+ * screen errors fall through to ErrorBoundary below.
+ */
+export const unstable_settings = {
+  screenErrorBoundary: ScreenErrorFallback,
+};
+
+/** An error in a layout itself replaces the whole app */
+export const ErrorBoundary = AppErrorFallback;
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({

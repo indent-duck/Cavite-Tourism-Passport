@@ -3,6 +3,7 @@ export { Button, type ButtonProps } from './Button';
 export { Card, type CardProps } from './Card';
 export { Chip, type ChipProps } from './Chip';
 export { CodeInput, type CodeInputProps } from './CodeInput';
+export { AppErrorFallback, ScreenErrorFallback } from './ErrorFallback';
 export {
   FeedbackContent,
   FeedbackModal,
