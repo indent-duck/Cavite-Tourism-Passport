@@ -69,19 +69,19 @@ timeline, but no map. `docs/app.md` #12 and #13 call for the stops and their
 route on a map.
 
 **Plan:**
-- [ ] A map (about 260 high, like About Cavite) between the progress card
+- [x] A map (about 260 high, like About Cavite) between the progress card
   and the timeline, framing every stop (`fitOnLoad`).
-- [ ] Numbered pins (1, 2, 3… in visiting order) in each stop's category
+- [x] Numbered pins (1, 2, 3… in visiting order) in each stop's category
   color; stamped stops get the green check badge. `CaviteMap` pins get an
   optional `text` (the number) shown instead of the icon, and a `visited`
   flag. The screen already loads the sites and stamps.
-- [ ] A dashed line through the stops in order (decision 1). `MapRoute`
+- [x] A dashed line through the stops in order (decision 1). `MapRoute`
   gets a `dashed` option, drawn in its own layer filtered on it, so the
   solid expressway lines don't change.
-- [ ] Tapping a pin opens that site, like tapping its timeline card.
-- [ ] The page doesn't scroll while the map is dragged: `ScreenContainer`'s
+- [x] Tapping a pin opens that site, like tapping its timeline card.
+- [x] The page doesn't scroll while the map is dragged: `ScreenContainer`'s
   `scrollEnabled` with `onMapInteractionChange`, as on site detail.
-- [ ] Stops missing from the catalog are left off the map, as the timeline
+- [x] Stops missing from the catalog are left off the map, as the timeline
   already does.
 - [ ] Optional (decision 2): the expressway lines, faded, under the stops.
 

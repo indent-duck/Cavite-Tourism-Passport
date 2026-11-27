@@ -1,5 +1,6 @@
 import { ItineraryProgressCard } from '@/components/explore/ItineraryProgressCard';
 import { TimelineStopCard } from '@/components/explore/TimelineStopCard';
+import { CaviteMap, type MapPin, type MapRoute } from '@/components/map/CaviteMap';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -8,22 +9,29 @@ import { useItineraryById } from '@/hooks/useItineraryById';
 import { useSites } from '@/hooks/useSites';
 import { useStamps } from '@/hooks/useStamps';
 import { colors, spacing, typography } from '@/theme';
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/theme/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+
+const MAP_HEIGHT = 260;
 
 /**
  * Itinerary Detail Screen
- * 
+ *
  * Shows detailed information about a specific itinerary including:
  * - Header with tour type, stop count, title, and description
  * - Progress card with stamps and points tracking
+ * - Map of the stops, numbered in visiting order and joined by a dashed line
  * - Timeline with all stops (with dashed connectors and stop cards)
- * 
+ *
  * Validates: Requirements 4.1, 4.2.1, 4.2.2, 4.2.3
  */
 export default function ItineraryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  // The page doesn't scroll while the map is being dragged
+  const [isMapInteracting, setIsMapInteracting] = useState(false);
 
   // Fetch itinerary, stamps, and sites data
   const { 
@@ -129,9 +137,43 @@ export default function ItineraryDetailScreen() {
     0
   );
 
+  const openSite = (siteId: string) => router.push(`/sites/${siteId}`);
+
+  // Map: the stops numbered in visiting order (same as the timeline), in
+  // their category colors, joined in that order by a dashed line
+  const stopPins: MapPin[] = stopSites.map((site, index) => {
+    const isStamped = visitedSiteIds.has(site.id);
+    return {
+      id: site.id,
+      latitude: site.latitude,
+      longitude: site.longitude,
+      color: CATEGORY_COLORS[site.category],
+      icon: CATEGORY_ICONS[site.category],
+      text: String(index + 1),
+      visited: isStamped,
+      accessibilityLabel: `Stop ${index + 1}, ${site.name}${isStamped ? ', stamped' : ''}`,
+    };
+  });
+
+  const stopRoutes: MapRoute[] =
+    stopSites.length > 1
+      ? [
+          {
+            id: 'stop-order',
+            color: colors.primary,
+            dashed: true,
+            geometry: {
+              type: 'LineString',
+              coordinates: stopSites.map(site => [site.longitude, site.latitude]),
+            },
+          },
+        ]
+      : [];
+
   return (
     <ScreenContainer
       scrollable
+      scrollEnabled={!isMapInteracting}
       showHeader
       headerTitle="Itinerary Detail"
       onBackPress={handleBackPress}
@@ -184,6 +226,20 @@ export default function ItineraryDetailScreen() {
         pointsCollected={pointsCollected}
       />
 
+      {/* Map of the stops; opens framed on all of them */}
+      {stopPins.length > 0 && (
+        <View style={styles.mapContainer}>
+          <CaviteMap
+            height={MAP_HEIGHT}
+            pins={stopPins}
+            onPinPress={openSite}
+            routes={stopRoutes}
+            fitOnLoad
+            onMapInteractionChange={setIsMapInteracting}
+          />
+        </View>
+      )}
+
       {/* Timeline */}
       <View style={styles.timelineContainer}>
         <Text style={styles.timelineTitle}>Itinerary Timeline</Text>
@@ -199,7 +255,7 @@ export default function ItineraryDetailScreen() {
               stopNumber={stopNumber}
               isStamped={isStamped}
               showConnector={showConnector}
-              onPress={() => router.push(`/sites/${site.id}`)}
+              onPress={() => openSite(site.id)}
               testID={`timeline-stop-${site.id}`}
             />
           );
@@ -236,6 +292,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     lineHeight: 24,
     marginBottom: spacing.lg,
+  },
+  mapContainer: {
+    marginTop: spacing.lg,
   },
   timelineContainer: {
     marginTop: spacing.lg,

@@ -19,6 +19,7 @@ import {
   Map,
   Marker,
   type CameraRef,
+  type FilterSpecification,
   type InitialViewState,
   type LineLayerSpecification,
   type LngLat,
@@ -70,11 +71,16 @@ export interface MapRoute {
   id: string;
   color: string;
   geometry: GeoJSON.LineString | GeoJSON.MultiLineString;
+  /**
+   * Thin dashed line without a casing, e.g. the order of an itinerary's
+   * stops. Drawn in its own layer, since a dash pattern can't vary per line.
+   */
+  dashed?: boolean;
 }
 
 /**
- * A pin that isn't a catalog site, e.g. an event's venue. Drawn like a site
- * pin, but not tappable.
+ * A pin that isn't a catalog site, e.g. an event's venue or an itinerary
+ * stop. Drawn like a site pin.
  */
 export interface MapPin {
   id: string;
@@ -83,7 +89,14 @@ export interface MapPin {
   color: string;
   icon: IconName;
   accessibilityLabel: string;
+  /** Short text shown instead of the icon, e.g. a stop number */
+  text?: string;
+  /** Gets the check mark, like a stamped site */
+  visited?: boolean;
 }
+
+const SOLID_ROUTES: FilterSpecification = ['!=', ['get', 'dashed'], true];
+const DASHED_ROUTES: FilterSpecification = ['==', ['get', 'dashed'], true];
 
 type CameraMove =
   | { kind: 'fly'; center: LngLat; zoom: number }
@@ -164,21 +177,34 @@ function getRouteStyles(selectedRouteId: string | null | undefined) {
   return { layout, casing, line };
 }
 
+const DASHED_LAYOUT: LineLayout = { 'line-join': 'round', 'line-cap': 'round' };
+// Dash and gap lengths are in line widths; the round caps eat into the gaps
+const DASHED_PAINT: LinePaint = {
+  'line-color': ['get', 'color'],
+  'line-width': 3,
+  'line-dasharray': [2, 2.5],
+};
+
 interface PinViewProps {
   color: string;
   icon: IconName;
   accessibilityLabel: string;
   pressable: boolean;
+  text?: string;
   selected?: boolean;
   visited?: boolean;
 }
 
-/** A round pin with an icon: the look shared by site pins and other pins */
+/**
+ * A round pin with an icon, or a short text in its place: the look shared
+ * by site pins and other pins
+ */
 function PinView({
   color,
   icon,
   accessibilityLabel,
   pressable,
+  text,
   selected = false,
   visited = false,
 }: PinViewProps) {
@@ -196,7 +222,13 @@ function PinView({
           { backgroundColor: color },
         ]}
       >
-        <Ionicons name={icon} size={selected ? 20 : 16} color={colors.background} />
+        {text != null ? (
+          <Text style={styles.markerText} numberOfLines={1}>
+            {text}
+          </Text>
+        ) : (
+          <Ionicons name={icon} size={selected ? 20 : 16} color={colors.background} />
+        )}
       </View>
       {visited && (
         <View style={styles.visitedBadge}>
@@ -219,6 +251,8 @@ export interface CaviteMapProps {
    * them with the sites; a single pin on its own gets zoomed in on.
    */
   pins?: MapPin[];
+  /** Tap on one of `pins`; without it they aren't tappable */
+  onPinPress?: (pinId: string) => void;
   /** Tap on the map itself (not a pin or route), e.g. to dismiss a preview */
   onMapPress?: () => void;
   /** Lines drawn under the pins and the map's labels, e.g. expressways */
@@ -275,6 +309,7 @@ function CaviteMapView({
   visitedSiteIds,
   selectedSiteId,
   pins = NO_PINS,
+  onPinPress,
   onMapPress,
   routes = NO_ROUTES,
   selectedRouteId,
@@ -306,9 +341,14 @@ function CaviteMapView({
     }, 400);
   };
 
-  const handlePinPress = (siteId: string) => {
+  const handleSitePress = (siteId: string) => {
     guardMapPress();
     onSitePress?.(siteId);
+  };
+
+  const handlePinPress = (pinId: string) => {
+    guardMapPress();
+    onPinPress?.(pinId);
   };
 
   const handleRoutePress = (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
@@ -381,11 +421,12 @@ function CaviteMapView({
     features: routes.map((route) => ({
       type: 'Feature',
       id: route.id,
-      properties: { id: route.id, color: route.color },
+      properties: { id: route.id, color: route.color, dashed: route.dashed ?? false },
       geometry: route.geometry,
     })),
   };
   const routeStyles = getRouteStyles(selectedRouteId);
+  const hasDashedRoutes = routes.some((route) => route.dashed);
 
   if (!apiKey) {
     return (
@@ -456,6 +497,7 @@ function CaviteMapView({
               id="route-casings"
               type="line"
               beforeId={ROUTES_BELOW_LAYER}
+              filter={SOLID_ROUTES}
               layout={routeStyles.layout}
               paint={routeStyles.casing}
             />
@@ -463,9 +505,20 @@ function CaviteMapView({
               id="route-lines"
               type="line"
               beforeId={ROUTES_BELOW_LAYER}
+              filter={SOLID_ROUTES}
               layout={routeStyles.layout}
               paint={routeStyles.line}
             />
+            {hasDashedRoutes && (
+              <Layer
+                id="route-dashed-lines"
+                type="line"
+                beforeId={ROUTES_BELOW_LAYER}
+                filter={DASHED_ROUTES}
+                layout={DASHED_LAYOUT}
+                paint={DASHED_PAINT}
+              />
+            )}
           </GeoJSONSource>
         )}
 
@@ -482,7 +535,7 @@ function CaviteMapView({
               id={site.id}
               lngLat={[site.longitude, site.latitude]}
               anchor="center"
-              onPress={onSitePress ? () => handlePinPress(site.id) : undefined}
+              onPress={onSitePress ? () => handleSitePress(site.id) : undefined}
             >
               <PinView
                 color={CATEGORY_COLORS[site.category]}
@@ -503,12 +556,15 @@ function CaviteMapView({
             id={`pin-${pin.id}`}
             lngLat={[pin.longitude, pin.latitude]}
             anchor="center"
+            onPress={onPinPress ? () => handlePinPress(pin.id) : undefined}
           >
             <PinView
               color={pin.color}
               icon={pin.icon}
+              text={pin.text}
               accessibilityLabel={pin.accessibilityLabel}
-              pressable={false}
+              pressable={onPinPress != null}
+              visited={pin.visited}
             />
           </Marker>
         ))}
@@ -605,6 +661,11 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     borderWidth: 3,
+  },
+  markerText: {
+    ...typography.labelMedium,
+    color: colors.background,
+    fontFamily: 'Inter_700Bold',
   },
   visitedBadge: {
     position: 'absolute',
